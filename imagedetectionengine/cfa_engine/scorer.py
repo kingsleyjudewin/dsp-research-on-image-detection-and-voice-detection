@@ -26,7 +26,7 @@ import numpy as np
 
 from . import constants
 from .contracts import CalibrationSettings
-from .utils import clip_to_unit_interval
+from .utils import clip_to_unit_interval, find_connected_components
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,10 @@ class CfaScorer:
 
         rule = constants.MAP_REDUCTION_RULE
         if rule == "max":
-            return float(np.max(usable)), rule
+            # ENHANCEMENT 1: the max is taken only over blocks that belong to a
+            # spatially coherent cluster. See _coherent_maximum.
+            return (CfaScorer._coherent_maximum(tampering_map, validity_mask),
+                    rule)
         if rule == "percentile":
             return float(np.percentile(usable,
                                        constants.MAP_REDUCTION_PERCENTILE)), rule
@@ -81,6 +84,42 @@ class CfaScorer:
                 usable > constants.TAMPERED_BLOCK_PROBABILITY_THRESHOLD)
             return float(flagged) / float(usable.size), rule
         raise ValueError(f"unknown map reduction rule {rule!r}")
+
+    @staticmethod
+    def _coherent_maximum(tampering_map: np.ndarray,
+                          validity_mask: np.ndarray) -> float:
+        """Largest tampering probability inside a spatially coherent cluster.
+
+        ENHANCEMENT 1, forced by diagnostic testing. A plain maximum over
+        thousands of blocks is an extreme-value statistic: against ground truth
+        an AUTHENTIC image at QF100 reached 0.9654 because a few
+        compression-perturbed blocks fall confidently into M2. A genuine splice
+        is contiguous and a compression outlier is not, so the maximum is taken
+        only over blocks belonging to a connected component of at least
+        constants.MINIMUM_SCORED_REGION_BLOCK_COUNT blocks. Measured effect and
+        its honest limits are recorded against that constant.
+
+        Args:
+            tampering_map: Per-block 1 - Pr{M1|L}, in [0, 1].
+            validity_mask: True where the block carried usable texture.
+
+        Returns:
+            The coherence-filtered maximum, or 0.0 when no cluster qualifies.
+        """
+        suspect = ((np.asarray(tampering_map)
+                    > constants.TAMPERED_BLOCK_PROBABILITY_THRESHOLD)
+                   & np.asarray(validity_mask, dtype=bool))
+        if not np.any(suspect):
+            return 0.0
+
+        best = 0.0
+        for component in find_connected_components(suspect):
+            if len(component) < constants.MINIMUM_SCORED_REGION_BLOCK_COUNT:
+                continue
+            rows = [row for row, _ in component]
+            columns = [column for _, column in component]
+            best = max(best, float(np.max(tampering_map[rows, columns])))
+        return best
 
     def to_probability(self,
                        raw_score: float,

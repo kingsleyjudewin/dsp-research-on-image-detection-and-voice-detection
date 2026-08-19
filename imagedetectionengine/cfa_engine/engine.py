@@ -292,19 +292,52 @@ class CfaEngine:
                 "component's mean held at zero exactly as Eq. 14 specifies."),
             input_shape=describe_array_shape(prepared.green_channel),
             output_shape=describe_array_shape(computation.feature_map),
-            key_values={
-                "authentic_component_mean": round(mixture.authentic_mean, 4),
-                "authentic_component_variance":
-                    round(mixture.authentic_variance, 4),
-                "tampered_component_variance":
-                    round(mixture.tampered_variance, 4),
-                "em_mixing_weight": round(mixture.mixing_weight, 4),
-                "em_iterations": mixture.iterations,
-                "em_converged": mixture.converged,
-                "valid_block_count": computation.valid_block_count,
-                "eq13_requires_positive_mean": True,
-            },
+            key_values=CfaEngine._mixture_key_values(mixture, computation),
         )
+
+    @staticmethod
+    def _mixture_key_values(mixture, computation: CfaComputation) -> dict:
+        """Collect the mixture-fit numbers for the computation trace.
+
+        Args:
+            mixture: The fitted Gaussian mixture.
+            computation: Result of the mathematical core.
+
+        Returns:
+            Dictionary of named scalars.
+        """
+        return {
+            "authentic_component_mean": round(mixture.authentic_mean, 4),
+            "authentic_component_variance":
+                round(mixture.authentic_variance, 4),
+            "tampered_component_variance":
+                round(mixture.tampered_variance, 4),
+            "em_mixing_weight": round(mixture.mixing_weight, 4),
+            "em_iterations": mixture.iterations,
+            "em_converged": mixture.converged,
+            "valid_block_count": computation.valid_block_count,
+            "eq13_requires_positive_mean": True,
+            # ENHANCEMENT 2: standardised gap between the components.
+            "mixture_separation_ratio":
+                CfaEngine._mixture_separation_ratio(mixture),
+            "minimum_separation_required":
+                constants.MINIMUM_MIXTURE_SEPARATION_RATIO,
+        }
+
+    @staticmethod
+    def _mixture_separation_ratio(mixture) -> float:
+        """Standardised distance between the two mixture components.
+
+        Args:
+            mixture: The fitted Gaussian mixture.
+
+        Returns:
+            mu1 / sigma1, or 0.0 when the variance is degenerate.
+        """
+        if mixture.authentic_variance <= 0:
+            return 0.0
+        return round(float(mixture.authentic_mean
+                           / np.sqrt(mixture.authentic_variance)), 4)
 
     @staticmethod
     def _describe_posterior_stage(computation: CfaComputation) -> dict:
@@ -480,6 +513,10 @@ class CfaEngine:
             self.condition_checker.assess_sample_quality(
                 computation.valid_block_count),
             self.condition_checker.assess_global_cfa_presence(
+                computation.mixture),
+            # ENHANCEMENT 4: a fit that hit the iteration cap is reported, not
+            # silently used at full weight.
+            self.condition_checker.assess_mixture_convergence(
                 computation.mixture),
         ]
 
