@@ -1384,13 +1384,49 @@ class HeightRatioAnalyser:
         return distance <= constants.MAXIMUM_APPEARANCE_DISTANCE
 
     @staticmethod
+    def _corroborated_consistency(measurements: list) -> tuple:
+        """Worst object's median consistency across the pairs it belongs to.
+
+        ENHANCEMENT 1. The SKILL's own reason for the pair minimum - "one
+        spliced object is typically inconsistent with several others" - is the
+        fix: a splice disagrees with EVERY partner, a mislocalised box with one,
+        and a median tells them apart where a minimum cannot. Measurements in
+        constants.TEST_DERIVED_ENHANCEMENTS.
+
+        Args:
+            measurements: HeightRatioMeasurement objects, at least one.
+
+        Returns:
+            Tuple of (corroborated consistency, worst object id, partner count).
+        """
+        by_object: dict = {}
+        for item in measurements:
+            for identifier in (item.first_region_id, item.second_region_id):
+                by_object.setdefault(identifier, []).append(item.consistency)
+
+        corroborated, worst_id, partners = 1.0, -1, 0
+        for identifier, values in by_object.items():
+            if len(values) < constants.MINIMUM_PARTNERS_FOR_CORROBORATION:
+                continue
+            median = float(np.median(values))
+            if median < corroborated:
+                corroborated, worst_id, partners = median, identifier, len(values)
+
+        if worst_id == -1:
+            # Too few objects for any of them to have several partners; the
+            # SKILL's pair minimum is the only statistic available.
+            worst = min(measurements, key=lambda item: item.consistency)
+            return (float(worst.consistency), int(worst.first_region_id),
+                    len(by_object.get(worst.first_region_id, [])))
+        return corroborated, int(worst_id), int(partners)
+
+    @staticmethod
     def _summarise(measurements: list, rejected: int) -> HeightRatioAnalysis:
         """Reduce the per-pair measurements to the analysis record.
 
-        SKILL B step 5 recommends that "several measurements of beta are taken
-        ... and averaged to improve accuracy", which is why both the mean and
-        the minimum are carried; the minimum drives the score because "one
-        spliced object is typically inconsistent with several others".
+        SKILL B step 5 wants "several measurements of beta ... averaged", so
+        mean and minimum are both carried; ENHANCEMENT 1's corroborated
+        statistic drives the score.
 
         Args:
             measurements: HeightRatioMeasurement objects, possibly empty.
@@ -1401,6 +1437,7 @@ class HeightRatioAnalyser:
         """
         if not measurements:
             return HeightRatioAnalysis(measurements=[], minimum_consistency=1.0,
+                                       corroborated_consistency=1.0,
                                        mean_consistency=1.0,
                                        mean_measured_ratio=0.0,
                                        evaluated_pair_count=0,
@@ -1411,9 +1448,33 @@ class HeightRatioAnalyser:
                                  dtype=np.float64)
         ratios = np.array([item.measured_ratio for item in measurements],
                           dtype=np.float64)
+        return HeightRatioAnalyser._build_analysis(
+            measurements, rejected, consistencies, ratios)
+
+    @staticmethod
+    def _build_analysis(measurements: list,
+                        rejected: int,
+                        consistencies: np.ndarray,
+                        ratios: np.ndarray) -> HeightRatioAnalysis:
+        """Assemble the analysis record from the per-pair measurements.
+
+        Args:
+            measurements: HeightRatioMeasurement objects, at least one.
+            rejected: Pairs discarded before measurement.
+            consistencies: Per-pair C values.
+            ratios: Per-pair beta values.
+
+        Returns:
+            HeightRatioAnalysis.
+        """
+        corroborated, worst_id, partners = \
+            HeightRatioAnalyser._corroborated_consistency(measurements)
         return HeightRatioAnalysis(
             measurements=measurements,
             minimum_consistency=float(consistencies.min()),
+            corroborated_consistency=corroborated,
+            worst_object_id=worst_id,
+            worst_object_partner_count=partners,
             mean_consistency=float(consistencies.mean()),
             mean_measured_ratio=float(ratios.mean()),
             evaluated_pair_count=len(measurements),
