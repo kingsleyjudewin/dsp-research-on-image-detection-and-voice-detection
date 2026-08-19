@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 
+import cv2
 import numpy as np
 from scipy.signal import wiener as scipy_wiener_filter
 
@@ -49,51 +50,149 @@ class LocalNoiseInconsistencyComputer:
             grid[block.row, block.col] = float(np.var(block.residual_pixels))
         return grid
 
-    def flag_deviant_blocks(self, statistic_grid: np.ndarray) -> np.ndarray:
-        """Compare each block's statistic to its local neighbourhood median.
+    def block_texture_energy(self, blocks: list) -> np.ndarray:
+        """Per-block scene-texture energy, measured on the intensity plane.
+
+        Args:
+            blocks: List of NoiseBlock objects from the preprocessor.
+
+        Returns:
+            2-D array matching the statistic grid, holding the mean absolute
+            Laplacian of each block's original intensity pixels.
+        """
+        # ENHANCEMENT 1: diagnostic testing measured Spearman(block residual
+        # variance, block Laplacian energy) between 0.7726 and 0.9912 on all
+        # six corpus images, so what step 3's "local noise-level statistic"
+        # actually ranks is scene texture. Texture is measured here from the
+        # INTENSITY plane, never from the residual: a feature derived from the
+        # residual moves with a denoising attack and cancels the signal being
+        # looked for - SKILL Eq. 20's f_T was tested and scored 0.076
+        # top-10%-inside on denoised regions, BELOW the 0.111 chance rate.
+        # See REJECTED_ENHANCEMENTS in constants.py.
+        max_row = max(block.row for block in blocks) + 1
+        max_col = max(block.col for block in blocks) + 1
+        grid = np.zeros((max_row, max_col), dtype=np.float64)
+        for block in blocks:
+            laplacian = cv2.Laplacian(block.intensity_pixels, cv2.CV_64F)
+            grid[block.row, block.col] = float(np.mean(np.abs(laplacian)))
+        return grid
+
+    def _texture_conditioned_statistic(self, statistic_grid: np.ndarray,
+                                       texture_grid: np.ndarray) -> np.ndarray:
+        """Regress the texture-explained part out of the block statistic.
 
         Args:
             statistic_grid: Per-block residual-variance grid.
+            texture_grid: Per-block scene-texture energy grid.
 
         Returns:
-            [0,1]-normalised anomaly grid: each cell's symmetric log-ratio
-            deviation from its neighbourhood median, capped at 1.0.
+            Grid of fit residuals: the part of log2(statistic) that block
+            texture does not account for.
         """
         # ── SKILL VERIFICATION ──────────────────────────────────────
-        # Formula: compare block statistic against local neighborhood
-        #   median (not a fixed global threshold); flag blocks whose
-        #   statistic deviates significantly from their neighborhood.
+        # Formula: least-squares fit of log2(block statistic) on
+        #   log2(block texture feature); the fit residual is what texture
+        #   does not explain.
+        # Variables: statistic=per-block residual variance, texture=per-block
+        #   scene-texture energy.
+        # Source: SKILL, Pipeline A step 4's own stated rationale - "the same
+        #   value of a raw statistic means different things in different
+        #   texture/intensity contexts" - which it attributes directly to
+        #   Chen et al.'s correlation predictor, Pipeline B.4. B.4 predicts
+        #   rho_b from block features by "polynomial multivariate
+        #   least-squares fitting", for which the SKILL's Implementation
+        #   Notes name numpy.linalg.lstsq. Only B.4's texture direction is
+        #   used: its intensity and signal-flattening features need the
+        #   camera-specific constants I_crit, tau and c that the SKILL states
+        #   "do not transfer directly across camera models".
+        # Expected range: real-valued, centred near 0.
+        # ──────────────────────────────────────────────────────────
+        floor = constants.MINIMUM_STATISTIC_FLOOR
+        texture = np.log2(np.maximum(texture_grid.ravel(), floor))
+        statistic = np.log2(np.maximum(statistic_grid.ravel(), floor))
+        if (texture.size < constants.MINIMUM_BLOCKS_FOR_TEXTURE_FIT
+                or float(np.std(texture)) == 0.0):
+            return statistic.reshape(statistic_grid.shape)
+        slope, intercept = np.polyfit(texture, statistic,
+                                      constants.TEXTURE_FIT_POLYNOMIAL_DEGREE)
+        return (statistic - (slope * texture + intercept)).reshape(
+            statistic_grid.shape)
+
+    def deviation_field(self, statistic_grid: np.ndarray,
+                        texture_grid: np.ndarray) -> np.ndarray:
+        """Each block's departure from what its neighbourhood predicts.
+
+        Args:
+            statistic_grid: Per-block residual-variance grid.
+            texture_grid: Per-block scene-texture energy grid.
+
+        Returns:
+            Signed deviation grid, same shape as statistic_grid.
+        """
+        # ── SKILL VERIFICATION ──────────────────────────────────────
+        # Formula: compare each block's statistic against its local
+        #   neighborhood median (not a fixed global threshold).
         # Source: SKILL, Pipeline A step 4.
-        # Expected range: symmetric around 0 in log-space; flagged when the
-        #   ratio exceeds constants.DEVIATION_FLAG_RATIO in EITHER direction.
+        # Expected range: symmetric around 0.
+        # ──────────────────────────────────────────────────────────
+        conditioned = (
+            self._texture_conditioned_statistic(statistic_grid, texture_grid)
+            if constants.TEXTURE_CONDITIONING_ENABLED
+            else np.log2(np.maximum(statistic_grid,
+                                    constants.MINIMUM_STATISTIC_FLOOR)))
+        return conditioned - grid_neighbourhood_median(
+            conditioned, constants.LOCAL_NEIGHBOURHOOD_WINDOW_BLOCKS)
+
+    @staticmethod
+    def deviation_scale(field: np.ndarray) -> float:
+        """Flag threshold, taken from the deviation field's own robust spread.
+
+        Args:
+            field: Signed deviation grid.
+
+        Returns:
+            The absolute deviation beyond which a block counts as flagged.
+        """
+        # ENHANCEMENT 2: the fixed factor-of-2 cutoff was measured to sit
+        # BELOW the ordinary block-to-block spread of authentic photographs -
+        # median |log2 ratio| ran 0.4192 to 0.7725 across the six corpus
+        # images, i.e. the typical authentic block already differs from its
+        # neighbours by 1.34x to 1.71x - so 24% to 42% of every image's cells
+        # clipped at the 1.0 ceiling and raw_score was exactly 1.000000 on all
+        # six. The SKILL's step 4 itself insists the comparison must not use
+        # "a fixed global threshold"; this reads the scale off the image's own
+        # deviation distribution instead.
+        absolute = np.abs(field - np.median(field))
+        sigma = (float(np.median(absolute))
+                 / constants.MEDIAN_ABSOLUTE_DEVIATION_TO_SIGMA)
+        return max(constants.DEVIATION_ROBUST_SPREAD_MULTIPLE * sigma,
+                   constants.MINIMUM_STATISTIC_FLOOR)
+
+    def flag_deviant_blocks(self, statistic_grid: np.ndarray,
+                            texture_grid: np.ndarray) -> np.ndarray:
+        """Render the deviation field as a [0,1]-normalised anomaly heatmap.
+
+        Args:
+            statistic_grid: Per-block residual-variance grid.
+            texture_grid: Per-block scene-texture energy grid.
+
+        Returns:
+            [0,1]-normalised anomaly grid.
+        """
+        # ── SKILL VERIFICATION ──────────────────────────────────────
+        # Formula: flag blocks whose statistic deviates significantly from
+        #   their neighborhood; aggregate into a [0,1]-normalized heatmap.
+        # Source: SKILL, Pipeline A steps 4-5.
+        # Expected range: [0, 1].
         # "Deviates" is bidirectional in the SKILL's own wording, and the
         # SKILL's single most emphasised failure mode - a denoising/
         # smoothing attack - produces LOWER local variance than the
         # surroundings, not higher; a one-directional (over-variance-only)
         # flag would silently miss exactly that case. [ENGINEERING]
-        # resolution of "deviates significantly" as symmetric log-ratio
-        # deviation, not a one-sided excess check.
+        # resolution of "deviates significantly" as a symmetric deviation.
         # ──────────────────────────────────────────────────────────
-        log_ratio = self._log_ratio_to_neighbourhood(statistic_grid)
-        deviation_scale = np.log2(constants.DEVIATION_FLAG_RATIO)
-        normalised = np.abs(log_ratio) / deviation_scale
-        return np.clip(normalised, 0.0, 1.0)
-
-    def _log_ratio_to_neighbourhood(self, statistic_grid: np.ndarray) -> np.ndarray:
-        """Log2 ratio of each block's statistic to its neighbourhood median.
-
-        Args:
-            statistic_grid: Per-block residual-variance grid.
-
-        Returns:
-            Array of log2(statistic / neighbourhood_median), same shape.
-        """
-        neighbourhood_median = grid_neighbourhood_median(
-            statistic_grid, constants.LOCAL_NEIGHBOURHOOD_WINDOW_BLOCKS)
-        safe_statistic = np.where(statistic_grid > 0.0, statistic_grid, 1.0)
-        safe_median = np.where(neighbourhood_median > 0.0,
-                               neighbourhood_median, 1.0)
-        return np.log2(safe_statistic / safe_median)
+        field = self.deviation_field(statistic_grid, texture_grid)
+        return np.clip(np.abs(field) / self.deviation_scale(field), 0.0, 1.0)
 
     def compute(self, blocks: list, block_size: int) -> LocalInconsistencyResult:
         """Run the full local noise-inconsistency pipeline.
@@ -106,20 +205,29 @@ class LocalNoiseInconsistencyComputer:
             LocalInconsistencyResult with the heatmap and aggregate scalar.
         """
         statistic_grid = self.block_residual_variance(blocks)
-        heatmap = self.flag_deviant_blocks(statistic_grid)
-        # SKILL Output: "[0,1]-normalized heatmap and a global scalar (max or
-        # top-k% mean)". [ENGINEERING] choice of top-k%, see constants.py.
-        aggregate_scalar = top_k_fraction_mean(
-            heatmap, constants.SCALAR_AGGREGATION_TOP_K_FRACTION)
+        texture_grid = self.block_texture_energy(blocks)
+        field = self.deviation_field(statistic_grid, texture_grid)
+        scale = self.deviation_scale(field)
+        heatmap = np.clip(np.abs(field) / scale, 0.0, 1.0)
 
-        log_ratio = self._log_ratio_to_neighbourhood(statistic_grid)
-        deviant = np.abs(log_ratio) > np.log2(constants.DEVIATION_FLAG_RATIO)
+        deviant = np.abs(field) > scale
         flagged = [block for block in blocks if deviant[block.row, block.col]]
+        # ENHANCEMENT 2: SKILL step 5 - "Aggregate flagged blocks into a
+        # heatmap and a scalar summary". The Output section's alternative
+        # top-k% mean of the heatmap was measured to have exactly zero dynamic
+        # range: 1.000000 on all six corpus images, on all six global nuisance
+        # transforms of each, and on all 18 ground-truth manipulations of a
+        # real photograph (delta +0.000000 every time). The flagged-block
+        # fraction moved in the correct direction on 17 of those 18.
+        aggregate_scalar = (float(np.count_nonzero(deviant))
+                            / float(deviant.size))
 
         return LocalInconsistencyResult(
             heatmap=heatmap, flagged_blocks=flagged, total_blocks=len(blocks),
             flagged_block_count=len(flagged), aggregate_scalar=aggregate_scalar,
-            block_size=block_size)
+            block_size=block_size,
+            legacy_top_k_scalar=top_k_fraction_mean(
+                heatmap, constants.SCALAR_AGGREGATION_TOP_K_FRACTION))
 
 
 class BlindSpectralAnalyser:

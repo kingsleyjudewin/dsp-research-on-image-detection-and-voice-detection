@@ -88,8 +88,9 @@ class LocalInconsistencyResult:
     flagged_blocks: list  # list[NoiseBlock]
     total_blocks: int
     flagged_block_count: int
-    aggregate_scalar: float  # top-k% mean of the heatmap
+    aggregate_scalar: float  # fraction of blocks flagged as deviant
     block_size: int
+    legacy_top_k_scalar: float = 0.0  # pre-enhancement scalar, reported only
 
 
 @dataclass
