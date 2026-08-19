@@ -1,0 +1,132 @@
+================================================================
+LIGHTING / ILLUMINATION ENGINE (illumination_inconsistency)
+DIAGNOSTIC SUMMARY - generated 2026-08-19
+Tested: 6 supplied images + Lambertian ground truth in which the
+lighting inconsistency is exact by construction.
+================================================================
+
+OVERALL HEALTH:  NEEDS INVESTIGATION BEFORE INTEGRATION
+   Not because of a coding defect - the code is clean and does exactly what
+   its SKILL describes. Because the technique itself, measured directly, has
+   ZERO sensitivity to the property it is named for. The engine now abstains,
+   which is the correct behaviour and also means it contributes nothing.
+
+SEPARATION
+   Six supplied images : 0.0000 before (probability was EXACTLY 1.0000 on all
+                         six, including both authentic photographs - a constant
+                         function), undefined after (the engine abstains).
+   Ground truth        : a sphere re-lit from a different direction changes
+                         raw_score by EXACTLY 0.0000, while re-saving the same
+                         picture at JPEG quality 60 changes it by 14.96 and
+                         altering ONE PIXEL changes it by 0.71.
+
+TOP 3 STRENGTHS (evidence-based)
+ 1. It is honest about itself, and that honesty is load-bearing. The SKILL's
+    Corpus Gap section is transcribed into the code, MAXIMUM_CONFIDENCE_CEILING
+    caps every vote at 0.05 unconditionally, and flagged_regions is hard-wired
+    to None because no corpus procedure exists for localisation. This engine
+    was built to under-claim, and it does.
+ 2. It is fast and deterministic - 169 ms per image, no randomness anywhere.
+ 3. Its structural gating is sound: degenerate, undersized, malformed and
+    None inputs are all caught and return a well-formed abstention with all 11
+    contract fields intact.
+
+TOP 3 WEAKNESSES (honest)
+ 1. IT DOES NOT MEASURE LIGHTING. On Lambertian ground truth where one object
+    is re-lit from a different direction and nothing else changes at all, the
+    score moves by EXACTLY 0.0000 - across a mild, a two-object and a gross
+    (lit-from-below) inconsistency. No reduction of the gradient map recovers
+    it either: the best candidate tested is still 13.8x more sensitive to
+    nuisance than to lighting. The SKILL predicted this in its own words - the
+    feature is "at most a generic edge/gradient-strength feature ... not
+    specifically lighting-direction inconsistency".
+ 2. IT WAS A CONSTANT FUNCTION. Probability was exactly 1.0000 on every one of
+    the six supplied images, a confident FAKE on two authentic photographs, and
+    a separation of exactly 0.0000. The provisional sigmoid's midpoint of 3.0
+    sits far below the statistic's 18-392 operating range, so everything
+    saturates.
+ 3. THE SCORE RESTS ON ONE PIXEL. Pixels within 1% of the maximum, per image:
+    1, 1, 172, 2, 3, 1. On "fake .jpeg" all 172 of those sat on the array's own
+    boundary, where numpy.gradient switches to a one-sided difference - the
+    engine was reading the edge of the array rather than the picture.
+
+BUGS FOUND
+  TWO REAL DEFECTS, both fixed.
+  (a) A degenerate image published raw_score = 96,873,629,022.56 - max_grad
+      divided by the 1e-9 floor - while correctly reporting is_reliable=False.
+      A fusion layer reading raw_score without checking is_reliable would have
+      ingested 10^11. Seen on all four Lambertian renders and on 4 of the 6
+      supplied images under ordinary transforms.
+  (b) max_grad was being read off the array boundary on "fake .jpeg", a
+      numerical artifact of numpy.gradient's one-sided edge difference rather
+      than any feature of the scene. Worth -15.50% of that image's score.
+  NO contract violations. All four fixed shapes unchanged field-for-field, all
+  three EngineOutput construction sites pass all 11 fields, probability is None
+  exactly when is_reliable is False across every input class tested, and the
+  engine is deterministic. No numeric literals outside constants.py.
+  AUDIT-SCRIPT ARTIFACT, not an engine issue: my structural audit counts 4
+  "SKILL VERIFICATION" strings against 3 "# Formula:" lines. The fourth is the
+  phrase appearing in computer.py's module docstring. HEAD has identical
+  counts; there are genuinely 3 blocks and 3 formulas.
+
+CHANGES APPLIED (all evidence-cited; see enhancement_plan.txt)
+  1. A degenerate image publishes raw_score 0.0, matching the skip and failure
+     paths, instead of a 10^11 artifact.
+  2. The uncalibrated route no longer votes - is_reliable=False, probability
+     None, raw_score still published. The SKILL's Corpus Gap section names
+     exactly this option: "a near-zero or explicitly 'abstain' weight is more
+     honest than presenting an unvalidated gradient heuristic as equivalent
+     evidence". The empirical-CDF route still votes when >= 30 authentic
+     reference ratios are supplied (verified: probability 0.4250, reliable).
+  3. Gradient statistics are taken over the interior, excluding the boundary
+     where numpy.gradient uses a different estimator.
+
+CHANGES TESTED AND REJECTED (do not re-propose)
+  - Replacing max_grad with p99.99, p99.9, p99, mean or std. None responds to
+    lighting; the best nuisance-to-lighting ratio is 13.8x against max's
+    literal zero. It would change a formula the SKILL prints verbatim and buy
+    stability without validity.
+  - Re-fitting the sigmoid midpoint. That invents the calibration the SKILL
+    states does not exist. Abstaining is the honest response to an absent
+    calibration.
+  - A block-wise or region-wise variant for spatial sensitivity. That is
+    Pipeline B, every step of which the SKILL tags "(not specified in the
+    corpus)" and calls "entirely engineering synthesis".
+
+FUSION WEIGHT RECOMMENDATIONS
+    Every input condition without supplied calibration ....... ZERO (abstains)
+    With >= 30 known-authentic reference ratios supplied ..... 0.05 CEILING,
+                                and even then the number is a generic
+                                edge-strength percentile, not lighting evidence
+    JPEG original / recompressed / PNG / resized / AI-gen /
+    low resolution ........................................... ZERO
+    A LOW score from this engine ............................. NEVER evidence
+                                                               of authenticity
+    A HIGH score from this engine ............................ NEVER evidence
+                                                               of manipulation
+  There is no input condition under which this engine should be weighted above
+  the ceiling. Its own SKILL says it "should carry the lowest reliability
+  weight of the nine detectors", and the ground-truth measurement is stronger
+  than that: its sensitivity to lighting inconsistency is zero, not merely low.
+
+FUSION ONE-LINER
+    illumination_inconsistency: measures nothing about illumination - on
+    ground truth where one object is re-lit from a different direction its
+    score changes by exactly 0.0000, while a single altered pixel moves it by
+    0.71 and a JPEG re-save by 14.96 - so it detects sharpness, not lighting;
+    it now abstains by default rather than emitting the constant probability
+    1.0 it previously returned for every image including authentic ones.
+    Weight ZERO on every condition; at most 0.05 if an orchestrator supplies
+    known-authentic reference ratios, and never as lighting evidence.
+
+PERFORMANCE
+    169 ms per image before, 168 ms after - no regression. Slowest step is the
+    gradient computation itself, which is a single numpy.gradient call. No
+    memory concern: one float64 array the size of the image.
+
+WHAT TO DO NEXT (from the SKILL's own recommendation)
+    "Source at least 2-3 dedicated illumination-forensics papers (e.g. the
+    classic Johnson & Farid illuminant-direction-inconsistency line of work,
+    and specular-highlight consistency work such as O'Brien & Farid) before
+    treating this module's output as more than a placeholder." Nothing in this
+    engine can be improved by further tuning; it needs a different technique.

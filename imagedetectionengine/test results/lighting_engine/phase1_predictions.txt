@@ -1,0 +1,122 @@
+PHASE 1 - PRE-TEST EXPECTATIONS: LIGHTING / ILLUMINATION ENGINE
+Written 2026-08-19 BEFORE the engine was run on any image. No probe preceded
+this file. Prior knowledge carried in from earlier sessions in this project and
+declared here: eight of the nine files in the two supplied folders share
+byte-identical JPEG quantization tables, so all six test images have passed
+through one common re-encoder.
+
+STEP 1.1 - CORE ENGINE CAPABILITY (from the SKILL)
+
+Property measured: NOT lighting. The SKILL says so itself, twice and without
+hedging. Its "Honest assessment" of Pipeline A reads: "this is at most a
+generic edge/gradient-strength feature (high gradient magnitude correlates with
+sharp edges, splice boundaries, or strong shading discontinuities in general -
+not specifically lighting-direction inconsistency)". Its Corpus Gap section
+adds that "zero papers in this folder ... perform actual photometric lighting
+analysis".
+
+What is actually computed: grayscale, then numpy.gradient, then
+gradient_mag = sqrt(Gx^2 + Gy^2), then max_grad = max(gradient_mag). The engine
+divides that by the image's own median gradient magnitude, per the SKILL's
+Output note ("normalize per-image (e.g. divide by the image's own median
+gradient magnitude) rather than using an absolute cutoff"), giving
+    raw_score = max_grad / median(gradient_mag)
+bounded below at 1.0 and unbounded above.
+
+Signal present in FAKE, absent in REAL: none is specified anywhere. The source
+paper's entire decision rule is one qualitative sentence - "if large gradients
+or multiple light directions are detected, this may suggest manipulation" -
+with no threshold, no validation, and, as the SKILL points out, an internal
+contradiction: a scalar magnitude carries no directional information, so the
+"multiple light directions" half of the rule cannot be evaluated from the
+quantity the code computes.
+
+Signal present in REAL: likewise unspecified.
+
+Range meaning: undefined by the corpus. The probability comes from a
+placeholder logistic (midpoint 3.0, slope 0.5) that the engine's own scorer
+labels PROVISIONAL and that approximates no corpus-stated threshold, because
+none exists.
+
+THE PREDICTION THAT MATTERS MOST, AND IT IS A STRUCTURAL ONE.
+raw_score is an EXTREME-VALUE statistic: one pixel - the single sharpest edge
+in the frame - divided by a population median. Every engine in this system that
+has reduced a large population by max() has been found to saturate or to track
+content rather than the forensic property. I therefore predict:
+  (a) raw_score will be governed by whatever the sharpest edge in the picture
+      happens to be, which is a content property, not a lighting property;
+  (b) it will move MORE under transformations that change no lighting at all
+      (rescaling, re-compression, sharpening) than under a genuine
+      lighting inconsistency;
+  (c) separation between real and fake will be near zero, and whatever sign it
+      has will not be reproducible.
+Prediction (b) is the decisive one and is directly testable on ground truth I
+can construct, because I can render a scene twice from one geometry and change
+only the light direction.
+
+CASE 1 - REAL IMAGES (campic.jpeg, campic2.jpeg)
+  Expected probability range : 0.5 - 1.0, and NOT because they are fake. The
+                              provisional sigmoid has midpoint 3.0, and
+                              max/median for any ordinary photograph should sit
+                              well above 3, so the sigmoid will saturate high
+                              on authentic images.
+  Expected raw_score range   : 5 - 50 (a sharp edge is many times the median)
+  Expected is_reliable       : True. The only gates are structural - array
+                              shape, minimum 2x2, and a near-flat-image floor -
+                              and ordinary photographs pass all of them.
+  Expected evidence_map      : a gradient-magnitude heatmap that will light up
+                              on every object boundary in the scene. Not a
+                              tamper map; the engine sets flagged_regions=None
+                              because the SKILL gives no procedure for turning
+                              the gradient map into discrete suspect regions.
+  Signal that should be ABSENT: nothing specified.
+  Most likely failure mode   : confident FAKE verdicts on authentic photographs
+                              because the sigmoid midpoint of 3.0 is far below
+                              the natural operating range of the statistic.
+
+CASE 2 - FAKE / MANIPULATED IMAGES (fake .jpeg, fake.jpeg)
+  Expected probability range : the SAME as Case 1. I expect no separation.
+  Expected raw_score range   : 5 - 50, overlapping Case 1 entirely.
+  Expected is_reliable       : True, same structural gates.
+  Expected evidence_map      : the same edge map.
+  Signal that should be PRESENT: a splice boundary would raise max_grad only if
+                              it happens to be the sharpest edge in the whole
+                              frame, which for a competent composite it will
+                              not be.
+  Most likely failure mode   : a miss, because a single global maximum cannot
+                              represent a localised inconsistency.
+
+CASE 3 - AI-GENERATED IMAGES (gen.jpeg, genratedimage.jpeg)
+  Expected probability range : same again. Possibly LOWER raw scores, since
+                              diffusion output is often smoother than a
+                              photograph and may lack a single dominant sharp
+                              edge - which would push the score DOWN and make
+                              AI images look MORE authentic to this engine.
+  Expected is_reliable       : True.
+  Is AI detection in SKILL scope: NO. The only technique in this SKILL that
+                              targets generated imagery is Pipeline C, which is
+                              tagged [ML - excluded] and which the SKILL says
+                              "is not a lighting-modeling technique at all".
+                              The SKILL further records that against advanced
+                              generators "StyleGAN leaves no identifiable
+                              artifacts at all", calling this "a fundamental
+                              blind spot" of the whole technique family.
+  If NO, what will it do     : report an edge-strength number that reflects how
+                              sharp the generated picture is.
+  Most likely failure mode   : engine is not designed for this case at all.
+
+SECONDARY PREDICTIONS, testable independently of the labels:
+  - confidence will be exactly 0.025 on every image: the ceiling is 0.05 and
+    the uncalibrated route multiplies by 0.5. It is a constant, not a
+    measurement, so it carries no per-image information.
+  - raw_score should rise with image dimensions, because a larger pixel
+    population gives max() more chances to find an extreme value while the
+    median stays put. Directly testable by rescaling one image.
+  - raw_score should fall with JPEG quality loss, because compression blurs
+    the sharpest edges.
+  Both of these would be nuisance sensitivities, not forensic ones.
+
+NOTE ON THE AI FOLDER: the folder named in the specification does not exist on
+disk. The two files inside the fake-images folder whose names denote AI
+generation (gen.jpeg, genratedimage.jpeg) stand in for Case 3. Their AI
+provenance is inferred from their filenames, not verified.

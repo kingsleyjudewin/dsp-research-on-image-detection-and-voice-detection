@@ -1,0 +1,432 @@
+==========================================================================
+LIGHTING ENGINE DIAGNOSTIC REPORT  [before]
+Generated: 2026-08-19 22:26:10
+==========================================================================
+
+Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case
+--------------------------------------------------------------------------------
+campic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real
+campic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real
+mobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real
+mobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real
+fake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI
+fake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI
+fake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI
+gen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI
+genratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI
+
+NOTICES:
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+  - Engine configuration: Pipeline A only (Sobel gradient magnitude); raw_score = max_grad / median(gradient_mag); probability via a PROVISIONAL logistic with midpoint 3.0 and slope 0.5 that approximates no corpus threshold; confidence hard-capped at 0.05 per the SKILL's own Corpus Gap instruction. Pipelines B and C not implemented.
+  - The SKILL file states this module has 'the thinnest evidentiary base of all nine' and 'should carry the lowest reliability weight of the nine detectors in the fusion layer'. Every number below should be read against that.
+
+
+##########################################################################
+CASE 1: Case 1 Real (ground truth REAL)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images
+##########################################################################
+
+==========================================================================
+IMAGE: campic.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 79.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 166.433170
+  Probability  : 1.000000
+  Confidence   : 0.0500
+  Is reliable  : True
+  Time         : 350.5 ms
+  Reliability  : Input is structurally valid. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.
+      in=1200x1599x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 1.0
+        maximum_confidence_ceiling = 0.05
+    Step 2: Grayscale conversion
+      Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.
+      in=1200x1599x3  out=1200x1599
+        luma_weight_red = 0.299
+        luma_weight_green = 0.587
+        luma_weight_blue = 0.114
+    Step 3: Gradient magnitude (SKILL Pipeline A)
+      Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.
+      in=1200x1599  out=1200x1599
+        max_gradient = 83.2166
+        median_gradient = 0.5
+        ratio = 166.4332
+        is_degenerate = False
+    Step 4: Calibration
+      Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+      in=scalar ratio  out=scalar probability
+        raw_score = 166.43317
+        probability = 1.0
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.05
+
+  REASONING:
+    Engine reported raw_score=166.433170 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=True, flagged_regions=None. Gradient stage reported {'max_gradient': 83.2166, 'median_gradient': 0.5, 'ratio': 166.4332, 'is_degenerate': False}. Calibration stage reported {'raw_score': 166.43317, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 800, column 844 of a 1200x1599 field (on_border=False), and only 1 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=0.5, p99=18.3098, p99.9=41.1023, max=83.2166, so max/median=166.4332 against a far steadier p99.99/median of 126.2014. Under transformations that change NO lighting whatsoever the same score moves to {'original': 166.4332, 'downscale_0.5x': 144.5164, 'upscale_2x': 84.0536, 'gaussian_blur_3': 139.0575, 'unsharp_mask': 129.1898, 'jpeg_q40': 80555881225.3953, 'spread_max_minus_min': 80555881141.3417, 'ratio_max_over_min': 958387043.8077}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 166.433170. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.
+
+  Engine says   : FAKE
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/before/lighting_case1_img1_campic_heatmap.png
+
+==========================================================================
+IMAGE: campic2.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 80.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 176.705970
+  Probability  : 1.000000
+  Confidence   : 0.0500
+  Is reliable  : True
+  Time         : 177.2 ms
+  Reliability  : Input is structurally valid. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.
+      in=1200x1599x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 1.0
+        maximum_confidence_ceiling = 0.05
+    Step 2: Grayscale conversion
+      Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.
+      in=1200x1599x3  out=1200x1599
+        luma_weight_red = 0.299
+        luma_weight_green = 0.587
+        luma_weight_blue = 0.114
+    Step 3: Gradient magnitude (SKILL Pipeline A)
+      Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.
+      in=1200x1599  out=1200x1599
+        max_gradient = 88.353
+        median_gradient = 0.5
+        ratio = 176.706
+        is_degenerate = False
+    Step 4: Calibration
+      Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+      in=scalar ratio  out=scalar probability
+        raw_score = 176.70597
+        probability = 1.0
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.05
+
+  REASONING:
+    Engine reported raw_score=176.705970 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=True, flagged_regions=None. Gradient stage reported {'max_gradient': 88.353, 'median_gradient': 0.5, 'ratio': 176.706, 'is_degenerate': False}. Calibration stage reported {'raw_score': 176.70597, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 992, column 1144 of a 1200x1599 field (on_border=False), and only 1 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=0.5, p99=18.3441, p99.9=40.9567, max=88.353, so max/median=176.706 against a far steadier p99.99/median of 125.0184. Under transformations that change NO lighting whatsoever the same score moves to {'original': 176.706, 'downscale_0.5x': 147.4263, 'upscale_2x': 91.9239, 'gaussian_blur_3': 136.7187, 'unsharp_mask': 134.1054, 'jpeg_q40': 87664131775.7725, 'spread_max_minus_min': 87664131683.8486, 'ratio_max_over_min': 953659840.1044}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 176.705970. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.
+
+  Engine says   : FAKE
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/before/lighting_case1_img2_campic2_heatmap.png
+
+  CASE 1 SUMMARY
+    average probability : 1.0000
+    score spread        : 0.0000
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 2: Case 2 Manipulated (ground truth FAKE)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: fake .jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg
+==========================================================================
+  Resolution   : 728x1600
+  Format       : JPEG
+  File size    : 157.8 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 392.127530
+  Probability  : 1.000000
+  Confidence   : 0.0500
+  Is reliable  : True
+  Time         : 91.8 ms
+  Reliability  : Input is structurally valid. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.
+      in=1600x728x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 1.0
+        maximum_confidence_ceiling = 0.05
+    Step 2: Grayscale conversion
+      Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.
+      in=1600x728x3  out=1600x728
+        luma_weight_red = 0.299
+        luma_weight_green = 0.587
+        luma_weight_blue = 0.114
+    Step 3: Gradient magnitude (SKILL Pipeline A)
+      Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.
+      in=1600x728  out=1600x728
+        max_gradient = 196.0638
+        median_gradient = 0.5
+        ratio = 392.1275
+        is_degenerate = False
+    Step 4: Calibration
+      Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+      in=scalar ratio  out=scalar probability
+        raw_score = 392.12753
+        probability = 1.0
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.05
+
+  REASONING:
+    Engine reported raw_score=392.127530 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=True, flagged_regions=None. Gradient stage reported {'max_gradient': 196.0638, 'median_gradient': 0.5, 'ratio': 392.1275, 'is_degenerate': False}. Calibration stage reported {'raw_score': 392.12753, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 0, column 559 of a 1600x728 field (on_border=True), and only 172 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=0.5, p99=121.1961, p99.9=183.0, max=196.0638, so max/median=392.1275 against a far steadier p99.99/median of 390.0. Under transformations that change NO lighting whatsoever the same score moves to {'original': 392.1275, 'downscale_0.5x': 237.0527, 'upscale_2x': 178.0449, 'gaussian_blur_3': 201.2213, 'unsharp_mask': 267254560297.8553, 'jpeg_q40': 388.2898, 'spread_max_minus_min': 267254560119.8104, 'ratio_max_over_min': 1501051478.014}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 392.127530. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.
+
+  Engine says   : FAKE
+  Ground truth  : FAKE
+  Correct       : True
+  Surprise level: EXPECTED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/before/lighting_case2_img1_fake__heatmap.png
+
+==========================================================================
+IMAGE: fake.jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg
+==========================================================================
+  Resolution   : 928x1152
+  Format       : JPEG
+  File size    : 67.4 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 114.792204
+  Probability  : 1.000000
+  Confidence   : 0.0500
+  Is reliable  : True
+  Time         : 168.9 ms
+  Reliability  : Input is structurally valid. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.
+      in=1152x928x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 1.0
+        maximum_confidence_ceiling = 0.05
+    Step 2: Grayscale conversion
+      Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.
+      in=1152x928x3  out=1152x928
+        luma_weight_red = 0.299
+        luma_weight_green = 0.587
+        luma_weight_blue = 0.114
+    Step 3: Gradient magnitude (SKILL Pipeline A)
+      Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.
+      in=1152x928  out=1152x928
+        max_gradient = 114.7922
+        median_gradient = 1.0
+        ratio = 114.7922
+        is_degenerate = False
+    Step 4: Calibration
+      Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+      in=scalar ratio  out=scalar probability
+        raw_score = 114.792204
+        probability = 1.0
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.05
+
+  REASONING:
+    Engine reported raw_score=114.792204 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=True, flagged_regions=None. Gradient stage reported {'max_gradient': 114.7922, 'median_gradient': 1.0, 'ratio': 114.7922, 'is_degenerate': False}. Calibration stage reported {'raw_score': 114.792204, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 120, column 427 of a 1152x928 field (on_border=False), and only 2 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=1.0, p99=29.5042, p99.9=59.5081, max=114.7922, so max/median=114.7922 against a far steadier p99.99/median of 83.5532. Under transformations that change NO lighting whatsoever the same score moves to {'original': 114.7922, 'downscale_0.5x': 80.4501, 'upscale_2x': 114.1271, 'gaussian_blur_3': 74.0017, 'unsharp_mask': 117.644, 'jpeg_q40': 123.7275, 'spread_max_minus_min': 49.7258, 'ratio_max_over_min': 1.672}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 114.792204. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.
+
+  Engine says   : FAKE
+  Ground truth  : FAKE
+  Correct       : True
+  Surprise level: EXPECTED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/before/lighting_case2_img2_fake_heatmap.png
+
+  CASE 2 SUMMARY
+    average probability : 1.0000
+    score spread        : 0.0000
+    correct verdicts    : 2 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 3: Case 3 AI-generated (ground truth AI-GENERATED)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: gen.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg
+==========================================================================
+  Resolution   : 800x1006
+  Format       : JPEG
+  File size    : 44.6 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 341.533307
+  Probability  : 1.000000
+  Confidence   : 0.0500
+  Is reliable  : True
+  Time         : 88.7 ms
+  Reliability  : Input is structurally valid. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.
+      in=1006x800x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 1.0
+        maximum_confidence_ceiling = 0.05
+    Step 2: Grayscale conversion
+      Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.
+      in=1006x800x3  out=1006x800
+        luma_weight_red = 0.299
+        luma_weight_green = 0.587
+        luma_weight_blue = 0.114
+    Step 3: Gradient magnitude (SKILL Pipeline A)
+      Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.
+      in=1006x800  out=1006x800
+        max_gradient = 170.7667
+        median_gradient = 0.5
+        ratio = 341.5333
+        is_degenerate = False
+    Step 4: Calibration
+      Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+      in=scalar ratio  out=scalar probability
+        raw_score = 341.533307
+        probability = 1.0
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.05
+
+  REASONING:
+    Engine reported raw_score=341.533307 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=True, flagged_regions=None. Gradient stage reported {'max_gradient': 170.7667, 'median_gradient': 0.5, 'ratio': 341.5333, 'is_degenerate': False}. Calibration stage reported {'raw_score': 341.533307, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 175, column 310 of a 1006x800 field (on_border=False), and only 3 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=0.5, p99=45.8804, p99.9=125.5373, max=170.7667, so max/median=341.5333 against a far steadier p99.99/median of 301.914. Under transformations that change NO lighting whatsoever the same score moves to {'original': 341.5333, 'downscale_0.5x': 157.6991, 'upscale_2x': 187.0428, 'gaussian_blur_3': 202.9409, 'unsharp_mask': 180.3122, 'jpeg_q40': 166931123521.0498, 'spread_max_minus_min': 166931123363.3507, 'ratio_max_over_min': 1058542017.8115}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 341.533307. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.
+
+  Engine says   : FAKE
+  Ground truth  : AI-GENERATED
+  Correct       : True
+  Surprise level: EXPECTED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/before/lighting_case3_img1_gen_heatmap.png
+
+==========================================================================
+IMAGE: genratedimage.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg
+==========================================================================
+  Resolution   : 768x1376
+  Format       : JPEG
+  File size    : 71.2 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 248.565887
+  Probability  : 1.000000
+  Confidence   : 0.0500
+  Is reliable  : True
+  Time         : 138.5 ms
+  Reliability  : Input is structurally valid. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.
+      in=1376x768x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 1.0
+        maximum_confidence_ceiling = 0.05
+    Step 2: Grayscale conversion
+      Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.
+      in=1376x768x3  out=1376x768
+        luma_weight_red = 0.299
+        luma_weight_green = 0.587
+        luma_weight_blue = 0.114
+    Step 3: Gradient magnitude (SKILL Pipeline A)
+      Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.
+      in=1376x768  out=1376x768
+        max_gradient = 124.2829
+        median_gradient = 0.5
+        ratio = 248.5659
+        is_degenerate = False
+    Step 4: Calibration
+      Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION: no known-authentic reference ratios were supplied, so a placeholder logistic curve was used. The SKILL file gives no calibration function for this statistic at all - unlike the other engines' provisional routes, there is no corpus-stated threshold this curve even approximates. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement. The raw score is a weak auxiliary signal at best, and both is_reliable and confidence should be read with that in mind regardless of this route.
+      in=scalar ratio  out=scalar probability
+        raw_score = 248.565887
+        probability = 1.0
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.05
+
+  REASONING:
+    Engine reported raw_score=248.565887 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=True, flagged_regions=None. Gradient stage reported {'max_gradient': 124.2829, 'median_gradient': 0.5, 'ratio': 248.5659, 'is_degenerate': False}. Calibration stage reported {'raw_score': 248.565887, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 330, column 376 of a 1376x768 field (on_border=False), and only 1 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=0.5, p99=51.0098, p99.9=85.4239, max=124.2829, so max/median=248.5659 against a far steadier p99.99/median of 196.8895. Under transformations that change NO lighting whatsoever the same score moves to {'original': 248.5659, 'downscale_0.5x': 258.5073, 'upscale_2x': 70215738976.3862, 'gaussian_blur_3': 161.2762, 'unsharp_mask': 251.008, 'jpeg_q40': 120035411441.7908, 'spread_max_minus_min': 120035411280.5146, 'ratio_max_over_min': 744284720.5092}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 248.565887. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.
+
+  Engine says   : FAKE
+  Ground truth  : AI-GENERATED
+  Correct       : True
+  Surprise level: EXPECTED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/before/lighting_case3_img2_genratedimage_heatmap.png
+
+  CASE 3 SUMMARY
+    average probability : 1.0000
+    score spread        : 0.0000
+    correct verdicts    : 2 / 2
+    case verdict        : 
+    
+
+
+==========================================================================
+OVERALL
+==========================================================================
+  real average probability     : 1.0
+  manipulated average          : 1.0
+  ai-generated average         : 1.0
+  separation (fake - real)     : 0.0
+  raw-score separation         : 81.89029680095203
+  reliable results             : 6 / 6
+  average processing time (ms) : 169.24754516666476

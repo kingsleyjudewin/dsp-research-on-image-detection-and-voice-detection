@@ -1,0 +1,86 @@
+PHASE 7.1 - ENHANCEMENT PLAN: LIGHTING / ILLUMINATION ENGINE
+Every row cites the measurement that forced it.
+
++---+------------------------------+------------------------------+------------------------------+
+| # | Weakness found               | Root cause                   | Enhancement                  |
++---+------------------------------+------------------------------+------------------------------+
+| 1 | A degenerate image published | MEDIAN_GRADIENT_FLOOR of     | Publish raw_score 0.0 on the |
+|   | raw_score =                  | 1e-9 keeps the ratio finite  | degenerate path, matching    |
+|   | 96,873,629,022.56 while      | but not meaningful. Dividing | the skip and failure paths   |
+|   | correctly reporting          | by it turns a flat image     | which already do. An         |
+|   | is_reliable=False. Seen on   | into a 10^11 artifact.       | abstention should look like  |
+|   | all four Lambertian renders  |                              | one on every field, not just |
+|   | (median gradient exactly 0)  |                              | on is_reliable.              |
+|   | and on 4 of 6 corpus images  |                              |                              |
+|   | under ordinary transforms.   |                              |                              |
++---+------------------------------+------------------------------+------------------------------+
+| 2 | probability was EXACTLY      | The provisional sigmoid has  | Do not vote on the           |
+|   | 1.0000 on all six supplied   | midpoint 3.0 while the       | uncalibrated route:          |
+|   | images - separation exactly  | statistic's observed range   | is_reliable=False,           |
+|   | 0.0000 - and 0.9996-1.0000   | is 18 to 392. Every input    | probability=None, raw_score  |
+|   | on ground truth. The engine  | saturates it. A constant     | still published for the      |
+|   | is a CONSTANT FUNCTION, and  | function carries zero        | record. The empirical-CDF    |
+|   | its constant is a confident  | information; voting it can   | route still votes when >= 30 |
+|   | FAKE on authentic            | only add bias.               | authentic reference ratios   |
+|   | photographs.                 |                              | are supplied.                |
++---+------------------------------+------------------------------+------------------------------+
+| 3 | On "fake .jpeg" the maximum  | numpy.gradient uses a        | Take max and median over the |
+|   | gradient sat at row 0 - the  | CENTRED difference in the    | interior only. This narrows  |
+|   | array's own boundary - with  | interior but a ONE-SIDED     | where max(gradient_mag(:))   |
+|   | 172 pixels tied at that      | difference on the first and  | is evaluated; it does not    |
+|   | value. max_grad was reading  | last row and column, so      | change the formula. The full |
+|   | the edge of the array, not   | boundary values come from a  | map is still rendered into   |
+|   | an edge in the scene.        | different estimator.         | the evidence image.          |
++---+------------------------------+------------------------------+------------------------------+
+
+FILES AND METHODS CHANGED
+  1. computer.py  GradientMagnitudeComputer.compute
+     constants.py DEGENERATE_IMAGE_RAW_SCORE
+     Risk: none to the contract. It only replaces a number the engine had
+     already declared meaningless with one that reads as meaningless.
+  2. scorer.py    LightingScorer.to_probability, new UNCALIBRATED_ABSTENTION_NOTE
+     engine.py    JpegEngine-equivalent _score_computation gains a may_vote term
+     constants.py ABSTAIN_WHEN_UNCALIBRATED
+     Risk: the engine now abstains by default, so a fusion layer expecting a
+     vote gets none. That is the intent, and it is reversible by supplying
+     calibration data - verified: with 40 reference ratios the same image
+     returns probability 0.4250 at is_reliable=True.
+  3. computer.py  new GradientMagnitudeComputer._interior
+     constants.py GRADIENT_BORDER_EXCLUSION_WIDTH,
+                  MINIMUM_SIDE_FOR_BORDER_EXCLUSION
+     Risk: images smaller than 3 pixels on a side have no interior; the helper
+     returns the map unchanged in that case rather than emptying it.
+
+CATEGORIES COVERED
+  A (signal extraction) : #3 only. Nothing more was justified - see the
+                          rejected list; no reduction of this map responds to
+                          lighting at all.
+  B (condition checker) : #1 and #2.
+  C (scoring)           : #2.
+  D (robustness)        : #1 and #3.
+  E (performance)       : not needed. 169 ms per image.
+
+TESTED AND REJECTED (do not re-propose)
+  - Replacing max_grad with a high percentile or with mean/std. Measured on
+    Lambertian ground truth where one object is re-lit from a different
+    direction and NOTHING else changes, sensitivity to that genuine
+    inconsistency against sensitivity to transforms that change no lighting:
+        max/median     0.000000  vs 14.96
+        p99.99/median  0.134190  vs 14.53
+        p99.9/median   0.887615  vs 13.20
+        p99/median     0.004327  vs  5.27
+        mean/median    0.000128  vs  0.204
+        std/median     0.003716  vs  1.047
+    The best nuisance-to-lighting ratio of any candidate is 13.8x. No reduction
+    of this map detects lighting, so a percentile would buy stability without
+    buying validity - at the cost of changing a formula the SKILL prints
+    verbatim as max_grad = max(gradient_mag(:)). Rejected.
+  - Re-fitting PROVISIONAL_SIGMOID_MIDPOINT to the observed operating range.
+    That would turn a constant into a curve fitted to six unlabelled corpus
+    images and one synthetic scene - inventing the calibration the SKILL states
+    does not exist ("no normalization or calibration given"). Abstaining is the
+    honest response to an absent calibration; guessing one is not.
+  - Adding a block-wise or region-wise variant to give the engine spatial
+    sensitivity. That is Pipeline B in disguise, and the SKILL tags every step
+    of Pipeline B "(not specified in the corpus)" and calls it "entirely
+    engineering synthesis". Building it would mean inventing a technique.

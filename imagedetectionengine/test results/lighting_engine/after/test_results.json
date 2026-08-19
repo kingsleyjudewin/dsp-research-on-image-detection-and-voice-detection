@@ -1,0 +1,913 @@
+{
+  "tag": "after",
+  "engine": "illumination_inconsistency",
+  "generated_at": "2026-08-19 22:33:27",
+  "pre_run_table": "Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case\n--------------------------------------------------------------------------------\ncampic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real\ncampic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real\nmobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real\nmobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real\nfake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI\nfake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI\nfake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI\ngen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI\ngenratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI",
+  "notices": [
+    "The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.",
+    "Engine configuration: Pipeline A only (Sobel gradient magnitude); raw_score = max_grad / median(gradient_mag); probability via a PROVISIONAL logistic with midpoint 3.0 and slope 0.5 that approximates no corpus threshold; confidence hard-capped at 0.05 per the SKILL's own Corpus Gap instruction. Pipelines B and C not implemented.",
+    "The SKILL file states this module has 'the thinnest evidentiary base of all nine' and 'should carry the lowest reliability weight of the nine detectors in the fusion layer'. Every number below should be read against that."
+  ],
+  "cases": [
+    {
+      "case_number": 1,
+      "case_type": "Case 1 Real",
+      "ground_truth": "REAL",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg",
+            "filename": "campic.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 81624,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 166.43316977093238,
+          "probability": null,
+          "confidence": 0.05,
+          "is_reliable": false,
+          "reliability_note": "Input is structurally valid. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+          "processing_time_ms": 192.58788900003765,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=166.433170 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=False, flagged_regions=None. Gradient stage reported {'max_gradient': 83.2166, 'median_gradient': 0.5, 'ratio': 166.4332, 'is_degenerate': False}. Calibration stage reported {'raw_score': 166.43317, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 800, column 844 of a 1200x1599 field (on_border=False), and only 1 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=0.5, p99=18.3098, p99.9=41.1023, max=83.2166, so max/median=166.4332 against a far steadier p99.99/median of 126.2014. Under transformations that change NO lighting whatsoever the same score moves to {'original': 166.4332, 'downscale_0.5x': 144.5164, 'upscale_2x': 84.0536, 'gaussian_blur_3': 139.0575, 'unsharp_mask': 129.1898, 'jpeg_q40': 0.0, 'spread_max_minus_min': 166.4332, 'ratio_max_over_min': 166433200000.0}.",
+          "mathematical_explanation": "This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 166.433170. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.",
+              "input_shape": "1200x1599x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              }
+            },
+            {
+              "step": 2,
+              "name": "Grayscale conversion",
+              "description": "Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.",
+              "input_shape": "1200x1599x3",
+              "output_shape": "1200x1599",
+              "key_values": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              }
+            },
+            {
+              "step": 3,
+              "name": "Gradient magnitude (SKILL Pipeline A)",
+              "description": "Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.",
+              "input_shape": "1200x1599",
+              "output_shape": "1200x1599",
+              "key_values": {
+                "max_gradient": 83.2166,
+                "median_gradient": 0.5,
+                "ratio": 166.4332,
+                "is_degenerate": false
+              }
+            },
+            {
+              "step": 4,
+              "name": "Calibration",
+              "description": "Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+              "input_shape": "scalar ratio",
+              "output_shape": "scalar probability",
+              "key_values": {
+                "raw_score": 166.43317,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case1_img1_campic_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case1_img1_campic_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              },
+              "Grayscale conversion": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              },
+              "Gradient magnitude (SKILL Pipeline A)": {
+                "max_gradient": 83.2166,
+                "median_gradient": 0.5,
+                "ratio": 166.4332,
+                "is_degenerate": false
+              },
+              "Calibration": {
+                "raw_score": 166.43317,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            },
+            "gradient_distribution": {
+              "p50": 0.5,
+              "p90": 2.8284,
+              "p99": 18.3098,
+              "p99.9": 41.1023,
+              "p99.99": 63.1007,
+              "max": 83.2166,
+              "argmax_row": 800,
+              "argmax_col": 844,
+              "height": 1200,
+              "width": 1599,
+              "on_border": false,
+              "ratio_max_over_median": 166.4332,
+              "ratio_p9999_over_median": 126.2014,
+              "pixels_within_1pct_of_max": 1
+            },
+            "nuisance_sensitivity": {
+              "original": 166.4332,
+              "downscale_0.5x": 144.5164,
+              "upscale_2x": 84.0536,
+              "gaussian_blur_3": 139.0575,
+              "unsharp_mask": 129.1898,
+              "jpeg_q40": 0.0,
+              "spread_max_minus_min": 166.4332,
+              "ratio_max_over_min": 166433200000.0
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg",
+            "filename": "campic2.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 82589,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 176.70597047072292,
+          "probability": null,
+          "confidence": 0.05,
+          "is_reliable": false,
+          "reliability_note": "Input is structurally valid. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+          "processing_time_ms": 153.92653899994002,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=176.705970 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=False, flagged_regions=None. Gradient stage reported {'max_gradient': 88.353, 'median_gradient': 0.5, 'ratio': 176.706, 'is_degenerate': False}. Calibration stage reported {'raw_score': 176.70597, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 992, column 1144 of a 1200x1599 field (on_border=False), and only 1 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=0.5, p99=18.3441, p99.9=40.9567, max=88.353, so max/median=176.706 against a far steadier p99.99/median of 125.0184. Under transformations that change NO lighting whatsoever the same score moves to {'original': 176.706, 'downscale_0.5x': 147.4263, 'upscale_2x': 91.9239, 'gaussian_blur_3': 136.7187, 'unsharp_mask': 134.1054, 'jpeg_q40': 0.0, 'spread_max_minus_min': 176.706, 'ratio_max_over_min': 176706000000.0}.",
+          "mathematical_explanation": "This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 176.705970. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.",
+              "input_shape": "1200x1599x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              }
+            },
+            {
+              "step": 2,
+              "name": "Grayscale conversion",
+              "description": "Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.",
+              "input_shape": "1200x1599x3",
+              "output_shape": "1200x1599",
+              "key_values": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              }
+            },
+            {
+              "step": 3,
+              "name": "Gradient magnitude (SKILL Pipeline A)",
+              "description": "Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.",
+              "input_shape": "1200x1599",
+              "output_shape": "1200x1599",
+              "key_values": {
+                "max_gradient": 88.353,
+                "median_gradient": 0.5,
+                "ratio": 176.706,
+                "is_degenerate": false
+              }
+            },
+            {
+              "step": 4,
+              "name": "Calibration",
+              "description": "Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+              "input_shape": "scalar ratio",
+              "output_shape": "scalar probability",
+              "key_values": {
+                "raw_score": 176.70597,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case1_img2_campic2_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case1_img2_campic2_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              },
+              "Grayscale conversion": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              },
+              "Gradient magnitude (SKILL Pipeline A)": {
+                "max_gradient": 88.353,
+                "median_gradient": 0.5,
+                "ratio": 176.706,
+                "is_degenerate": false
+              },
+              "Calibration": {
+                "raw_score": 176.70597,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            },
+            "gradient_distribution": {
+              "p50": 0.5,
+              "p90": 2.8284,
+              "p99": 18.3441,
+              "p99.9": 40.9567,
+              "p99.99": 62.5092,
+              "max": 88.353,
+              "argmax_row": 992,
+              "argmax_col": 1144,
+              "height": 1200,
+              "width": 1599,
+              "on_border": false,
+              "ratio_max_over_median": 176.706,
+              "ratio_p9999_over_median": 125.0184,
+              "pixels_within_1pct_of_max": 1
+            },
+            "nuisance_sensitivity": {
+              "original": 176.706,
+              "downscale_0.5x": 147.4263,
+              "upscale_2x": 91.9239,
+              "gaussian_blur_3": 136.7187,
+              "unsharp_mask": 134.1054,
+              "jpeg_q40": 0.0,
+              "spread_max_minus_min": 176.706,
+              "ratio_max_over_min": 176706000000.0
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": null,
+      "score_spread": null,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 2,
+      "case_type": "Case 2 Manipulated",
+      "ground_truth": "FAKE",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg",
+            "filename": "fake .jpeg",
+            "format": "JPEG",
+            "height": 1600,
+            "width": 728,
+            "file_size_bytes": 161570,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 331.3608305156178,
+          "probability": null,
+          "confidence": 0.05,
+          "is_reliable": false,
+          "reliability_note": "Input is structurally valid. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+          "processing_time_ms": 91.12956500007385,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=331.360831 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=False, flagged_regions=None. Gradient stage reported {'max_gradient': 165.6804, 'median_gradient': 0.5, 'ratio': 331.3608, 'is_degenerate': False}. Calibration stage reported {'raw_score': 331.360831, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 0, column 559 of a 1600x728 field (on_border=True), and only 172 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=0.5, p99=121.1961, p99.9=183.0, max=196.0638, so max/median=392.1275 against a far steadier p99.99/median of 390.0. Under transformations that change NO lighting whatsoever the same score moves to {'original': 331.3608, 'downscale_0.5x': 237.0527, 'upscale_2x': 178.0449, 'gaussian_blur_3': 201.2213, 'unsharp_mask': 0.0, 'jpeg_q40': 343.4021, 'spread_max_minus_min': 343.4021, 'ratio_max_over_min': 343402100000.0}.",
+          "mathematical_explanation": "This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 331.360831. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.",
+              "input_shape": "1600x728x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              }
+            },
+            {
+              "step": 2,
+              "name": "Grayscale conversion",
+              "description": "Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.",
+              "input_shape": "1600x728x3",
+              "output_shape": "1600x728",
+              "key_values": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              }
+            },
+            {
+              "step": 3,
+              "name": "Gradient magnitude (SKILL Pipeline A)",
+              "description": "Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.",
+              "input_shape": "1600x728",
+              "output_shape": "1600x728",
+              "key_values": {
+                "max_gradient": 165.6804,
+                "median_gradient": 0.5,
+                "ratio": 331.3608,
+                "is_degenerate": false
+              }
+            },
+            {
+              "step": 4,
+              "name": "Calibration",
+              "description": "Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+              "input_shape": "scalar ratio",
+              "output_shape": "scalar probability",
+              "key_values": {
+                "raw_score": 331.360831,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case2_img1_fake__heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case2_img1_fake__heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              },
+              "Grayscale conversion": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              },
+              "Gradient magnitude (SKILL Pipeline A)": {
+                "max_gradient": 165.6804,
+                "median_gradient": 0.5,
+                "ratio": 331.3608,
+                "is_degenerate": false
+              },
+              "Calibration": {
+                "raw_score": 331.360831,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            },
+            "gradient_distribution": {
+              "p50": 0.5,
+              "p90": 62.476,
+              "p99": 121.1961,
+              "p99.9": 183.0,
+              "p99.99": 195.0,
+              "max": 196.0638,
+              "argmax_row": 0,
+              "argmax_col": 559,
+              "height": 1600,
+              "width": 728,
+              "on_border": true,
+              "ratio_max_over_median": 392.1275,
+              "ratio_p9999_over_median": 390.0,
+              "pixels_within_1pct_of_max": 172
+            },
+            "nuisance_sensitivity": {
+              "original": 331.3608,
+              "downscale_0.5x": 237.0527,
+              "upscale_2x": 178.0449,
+              "gaussian_blur_3": 201.2213,
+              "unsharp_mask": 0.0,
+              "jpeg_q40": 343.4021,
+              "spread_max_minus_min": 343.4021,
+              "ratio_max_over_min": 343402100000.0
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg",
+            "filename": "fake.jpeg",
+            "format": "JPEG",
+            "height": 1152,
+            "width": 928,
+            "file_size_bytes": 68990,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 114.79220356801241,
+          "probability": null,
+          "confidence": 0.05,
+          "is_reliable": false,
+          "reliability_note": "Input is structurally valid. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+          "processing_time_ms": 73.93531699995037,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=114.792204 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=False, flagged_regions=None. Gradient stage reported {'max_gradient': 114.7922, 'median_gradient': 1.0, 'ratio': 114.7922, 'is_degenerate': False}. Calibration stage reported {'raw_score': 114.792204, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 120, column 427 of a 1152x928 field (on_border=False), and only 2 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=1.0, p99=29.5042, p99.9=59.5081, max=114.7922, so max/median=114.7922 against a far steadier p99.99/median of 83.5532. Under transformations that change NO lighting whatsoever the same score moves to {'original': 114.7922, 'downscale_0.5x': 80.4501, 'upscale_2x': 114.1271, 'gaussian_blur_3': 74.0017, 'unsharp_mask': 117.644, 'jpeg_q40': 123.7275, 'spread_max_minus_min': 49.7258, 'ratio_max_over_min': 1.672}.",
+          "mathematical_explanation": "This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 114.792204. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.",
+              "input_shape": "1152x928x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              }
+            },
+            {
+              "step": 2,
+              "name": "Grayscale conversion",
+              "description": "Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.",
+              "input_shape": "1152x928x3",
+              "output_shape": "1152x928",
+              "key_values": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              }
+            },
+            {
+              "step": 3,
+              "name": "Gradient magnitude (SKILL Pipeline A)",
+              "description": "Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.",
+              "input_shape": "1152x928",
+              "output_shape": "1152x928",
+              "key_values": {
+                "max_gradient": 114.7922,
+                "median_gradient": 1.0,
+                "ratio": 114.7922,
+                "is_degenerate": false
+              }
+            },
+            {
+              "step": 4,
+              "name": "Calibration",
+              "description": "Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+              "input_shape": "scalar ratio",
+              "output_shape": "scalar probability",
+              "key_values": {
+                "raw_score": 114.792204,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case2_img2_fake_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case2_img2_fake_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              },
+              "Grayscale conversion": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              },
+              "Gradient magnitude (SKILL Pipeline A)": {
+                "max_gradient": 114.7922,
+                "median_gradient": 1.0,
+                "ratio": 114.7922,
+                "is_degenerate": false
+              },
+              "Calibration": {
+                "raw_score": 114.792204,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            },
+            "gradient_distribution": {
+              "p50": 1.0,
+              "p90": 6.0415,
+              "p99": 29.5042,
+              "p99.9": 59.5081,
+              "p99.99": 83.5532,
+              "max": 114.7922,
+              "argmax_row": 120,
+              "argmax_col": 427,
+              "height": 1152,
+              "width": 928,
+              "on_border": false,
+              "ratio_max_over_median": 114.7922,
+              "ratio_p9999_over_median": 83.5532,
+              "pixels_within_1pct_of_max": 2
+            },
+            "nuisance_sensitivity": {
+              "original": 114.7922,
+              "downscale_0.5x": 80.4501,
+              "upscale_2x": 114.1271,
+              "gaussian_blur_3": 74.0017,
+              "unsharp_mask": 117.644,
+              "jpeg_q40": 123.7275,
+              "spread_max_minus_min": 49.7258,
+              "ratio_max_over_min": 1.672
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": null,
+      "score_spread": null,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 3,
+      "case_type": "Case 3 AI-generated",
+      "ground_truth": "AI-GENERATED",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg",
+            "filename": "gen.jpeg",
+            "format": "JPEG",
+            "height": 1006,
+            "width": 800,
+            "file_size_bytes": 45706,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 341.5333073069155,
+          "probability": null,
+          "confidence": 0.05,
+          "is_reliable": false,
+          "reliability_note": "Input is structurally valid. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+          "processing_time_ms": 67.04743499994947,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=341.533307 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=False, flagged_regions=None. Gradient stage reported {'max_gradient': 170.7667, 'median_gradient': 0.5, 'ratio': 341.5333, 'is_degenerate': False}. Calibration stage reported {'raw_score': 341.533307, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 175, column 310 of a 1006x800 field (on_border=False), and only 3 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=0.5, p99=45.8804, p99.9=125.5373, max=170.7667, so max/median=341.5333 against a far steadier p99.99/median of 301.914. Under transformations that change NO lighting whatsoever the same score moves to {'original': 341.5333, 'downscale_0.5x': 157.6991, 'upscale_2x': 187.0428, 'gaussian_blur_3': 202.9409, 'unsharp_mask': 180.3122, 'jpeg_q40': 0.0, 'spread_max_minus_min': 341.5333, 'ratio_max_over_min': 341533300000.0}.",
+          "mathematical_explanation": "This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 341.533307. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.",
+              "input_shape": "1006x800x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              }
+            },
+            {
+              "step": 2,
+              "name": "Grayscale conversion",
+              "description": "Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.",
+              "input_shape": "1006x800x3",
+              "output_shape": "1006x800",
+              "key_values": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              }
+            },
+            {
+              "step": 3,
+              "name": "Gradient magnitude (SKILL Pipeline A)",
+              "description": "Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.",
+              "input_shape": "1006x800",
+              "output_shape": "1006x800",
+              "key_values": {
+                "max_gradient": 170.7667,
+                "median_gradient": 0.5,
+                "ratio": 341.5333,
+                "is_degenerate": false
+              }
+            },
+            {
+              "step": 4,
+              "name": "Calibration",
+              "description": "Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+              "input_shape": "scalar ratio",
+              "output_shape": "scalar probability",
+              "key_values": {
+                "raw_score": 341.533307,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case3_img1_gen_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case3_img1_gen_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              },
+              "Grayscale conversion": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              },
+              "Gradient magnitude (SKILL Pipeline A)": {
+                "max_gradient": 170.7667,
+                "median_gradient": 0.5,
+                "ratio": 341.5333,
+                "is_degenerate": false
+              },
+              "Calibration": {
+                "raw_score": 341.533307,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            },
+            "gradient_distribution": {
+              "p50": 0.5,
+              "p90": 4.0311,
+              "p99": 45.8804,
+              "p99.9": 125.5373,
+              "p99.99": 150.957,
+              "max": 170.7667,
+              "argmax_row": 175,
+              "argmax_col": 310,
+              "height": 1006,
+              "width": 800,
+              "on_border": false,
+              "ratio_max_over_median": 341.5333,
+              "ratio_p9999_over_median": 301.914,
+              "pixels_within_1pct_of_max": 3
+            },
+            "nuisance_sensitivity": {
+              "original": 341.5333,
+              "downscale_0.5x": 157.6991,
+              "upscale_2x": 187.0428,
+              "gaussian_blur_3": 202.9409,
+              "unsharp_mask": 180.3122,
+              "jpeg_q40": 0.0,
+              "spread_max_minus_min": 341.5333,
+              "ratio_max_over_min": 341533300000.0
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg",
+            "filename": "genratedimage.jpeg",
+            "format": "JPEG",
+            "height": 1376,
+            "width": 768,
+            "file_size_bytes": 72944,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 248.5658866377283,
+          "probability": null,
+          "confidence": 0.05,
+          "is_reliable": false,
+          "reliability_note": "Input is structurally valid. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+          "processing_time_ms": 69.28364999998848,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=248.565887 - the single largest gradient magnitude in the frame divided by that frame's median gradient magnitude - at confidence 0.0500, is_reliable=False, flagged_regions=None. Gradient stage reported {'max_gradient': 124.2829, 'median_gradient': 0.5, 'ratio': 248.5659, 'is_degenerate': False}. Calibration stage reported {'raw_score': 248.565887, 'probability': 1.0, 'calibration_route': 'provisional_sigmoid', 'is_calibrated': False, 'confidence': 0.05}. The whole score rests on ONE pixel: the maximum sits at row 330, column 376 of a 1376x768 field (on_border=False), and only 1 pixel(s) in the entire image lie within 1% of it. The gradient distribution runs p50=0.5, p99=51.0098, p99.9=85.4239, max=124.2829, so max/median=248.5659 against a far steadier p99.99/median of 196.8895. Under transformations that change NO lighting whatsoever the same score moves to {'original': 248.5659, 'downscale_0.5x': 258.5073, 'upscale_2x': 0.0, 'gaussian_blur_3': 161.2762, 'unsharp_mask': 251.008, 'jpeg_q40': 0.0, 'spread_max_minus_min': 258.5073, 'ratio_max_over_min': 258507300000.0}.",
+          "mathematical_explanation": "This engine computes sqrt(Gx^2 + Gy^2) per pixel and takes its maximum, exactly as the source paper's MATLAB snippet does, then divides by the image's own median gradient magnitude because the SKILL's Output section recommends normalising per-image rather than using an absolute cutoff. For this image that gives 248.565887. What the number cannot do is speak to illumination: the SKILL's own honest assessment is that this is 'at most a generic edge/gradient-strength feature ... not specifically lighting-direction inconsistency', and its Corpus Gap section states that zero papers in the folder perform photometric lighting analysis at all. The source's decision rule - 'if large gradients or multiple light directions are detected, this may suggest manipulation' - is additionally self-contradictory, because a scalar magnitude carries no directional information from which multiple light directions could be recovered. Confidence is therefore capped at 0.05 unconditionally, which is the engine correctly refusing to present this as evidence.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Verified the input is structurally usable for numpy.gradient. The SKILL file states no quantified reliable/unreliable operating envelope exists for this module, so no quality-factor or resampling gate is applied here, unlike the other engines in this system.",
+              "input_shape": "1376x768x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              }
+            },
+            {
+              "step": 2,
+              "name": "Grayscale conversion",
+              "description": "Converted to grayscale, matching the SKILL's 'double(gray_img) per the source's own MATLAB code'. The exact RGB weighting is not printed in the SKILL; ITU-R BT.601 luma weights were used, verified to match MATLAB's own rgb2gray default.",
+              "input_shape": "1376x768x3",
+              "output_shape": "1376x768",
+              "key_values": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              }
+            },
+            {
+              "step": 3,
+              "name": "Gradient magnitude (SKILL Pipeline A)",
+              "description": "Computed the numerical image gradient via numpy.gradient (the direct equivalent of MATLAB's gradient(), per the SKILL's own Implementation Notes), took its per-pixel magnitude sqrt(Gx^2+Gy^2), and formed a scale-invariant ratio of the maximum to the median gradient magnitude - the normalization the SKILL's Output section recommends in place of an absolute cutoff, since none is given. The paper's stated decision rule also mentions detecting 'multiple light directions', which is NOT implemented: the SKILL itself flags this as an unresolved internal inconsistency, since a single scalar magnitude carries no directional information.",
+              "input_shape": "1376x768",
+              "output_shape": "1376x768",
+              "key_values": {
+                "max_gradient": 124.2829,
+                "median_gradient": 0.5,
+                "ratio": 248.5659,
+                "is_degenerate": false
+              }
+            },
+            {
+              "step": 4,
+              "name": "Calibration",
+              "description": "Mapped the gradient ratio onto a probability using the 'provisional_sigmoid' route, then capped confidence at 0.05 regardless of route, per the SKILL's own Corpus Gap instruction. PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference ratios were supplied, so a placeholder logistic was evaluated for the record only. Measured, that curve is a CONSTANT over this statistic's whole operating range: it returned probability 1.0000 on all six test photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic ground truth. A constant carries no information, so reporting it as a vote would add bias to the fusion layer rather than evidence - and it would be a confident FAKE on authentic photographs. The engine therefore abstains, which the SKILL's own Corpus Gap section names as the more honest option. This engine's underlying feature is furthermore an unvalidated generic edge-strength heuristic, not a lighting-consistency measurement: on Lambertian ground truth where one object was re-lit from a different direction, the score changed by EXACTLY 0.0000, while transforms that change no lighting at all moved it by up to 14.96.",
+              "input_shape": "scalar ratio",
+              "output_shape": "scalar probability",
+              "key_values": {
+                "raw_score": 248.565887,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case3_img2_genratedimage_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/lighting_engine/after/lighting_case3_img2_genratedimage_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "maximum_confidence_ceiling": 0.05
+              },
+              "Grayscale conversion": {
+                "luma_weight_red": 0.299,
+                "luma_weight_green": 0.587,
+                "luma_weight_blue": 0.114
+              },
+              "Gradient magnitude (SKILL Pipeline A)": {
+                "max_gradient": 124.2829,
+                "median_gradient": 0.5,
+                "ratio": 248.5659,
+                "is_degenerate": false
+              },
+              "Calibration": {
+                "raw_score": 248.565887,
+                "probability": 1.0,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.05
+              }
+            },
+            "gradient_distribution": {
+              "p50": 0.5,
+              "p90": 9.0139,
+              "p99": 51.0098,
+              "p99.9": 85.4239,
+              "p99.99": 98.4448,
+              "max": 124.2829,
+              "argmax_row": 330,
+              "argmax_col": 376,
+              "height": 1376,
+              "width": 768,
+              "on_border": false,
+              "ratio_max_over_median": 248.5659,
+              "ratio_p9999_over_median": 196.8895,
+              "pixels_within_1pct_of_max": 1
+            },
+            "nuisance_sensitivity": {
+              "original": 248.5659,
+              "downscale_0.5x": 258.5073,
+              "upscale_2x": 0.0,
+              "gaussian_blur_3": 161.2762,
+              "unsharp_mask": 251.008,
+              "jpeg_q40": 0.0,
+              "spread_max_minus_min": 258.5073,
+              "ratio_max_over_min": 258507300000.0
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": null,
+      "score_spread": null,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    }
+  ],
+  "statistics": {
+    "total_images": 6,
+    "real_average": null,
+    "fake_average": null,
+    "ai_average": null,
+    "separation": null,
+    "real_raw_average": 171.56957012082765,
+    "fake_raw_average": 223.07651704181512,
+    "raw_separation": 51.506946920987474,
+    "reliable_count": 0,
+    "correct_verdicts": 0,
+    "abstained_count": 6,
+    "wrong_verdicts": 0,
+    "average_time_ms": 107.9850658333233
+  }
+}

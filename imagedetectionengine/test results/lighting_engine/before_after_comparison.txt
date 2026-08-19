@@ -1,0 +1,125 @@
+BEFORE vs AFTER - LIGHTING / ILLUMINATION ENGINE
+================================================
+
+PART 1 - THE SIX SUPPLIED IMAGES (Phase 7.4 table)
+
+  Image                 truth          before prob  after prob  change
+  ---------------------------------------------------------------------
+  campic.jpeg           REAL                1.0000        None  abstains
+  campic2.jpeg          REAL                1.0000        None  abstains
+  fake .jpeg            FAKE                1.0000        None  abstains
+  fake.jpeg             FAKE                1.0000        None  abstains
+  gen.jpeg              AI-GENERATED        1.0000        None  abstains
+  genratedimage.jpeg    AI-GENERATED        1.0000        None  abstains
+  ---------------------------------------------------------------------
+  separation (fake-real)                    0.0000   undefined
+  wrong verdicts                               2/6         0/6
+  abstentions                                  0/6         6/6
+
+  BEFORE, the engine returned probability EXACTLY 1.0000 on every image - both
+  authentic photographs included - giving a separation of exactly 0.0000. It
+  was a constant function wearing the costume of a detector, and its constant
+  was "FAKE, certainly". Two of the six verdicts were wrong and the other four
+  were right only by accident, since the same answer was given to everything.
+
+  AFTER, it abstains. That is not an improvement in discrimination, because
+  there was none to improve; it is the engine no longer asserting something it
+  cannot support. Raw scores are still published for the record:
+
+  Image                 before raw  after raw  change   why
+  ------------------------------------------------------------------------
+  campic.jpeg             166.4332   166.4332  =        max not on border
+  campic2.jpeg            176.7060   176.7060  =        max not on border
+  fake .jpeg              392.1275   331.3608  -15.50%  max WAS on row 0
+  fake.jpeg               114.7922   114.7922  =        max not on border
+  gen.jpeg                341.5333   341.5333  =        max not on border
+  genratedimage.jpeg      248.5659   248.5659  =        max not on border
+
+PART 2 - GROUND TRUTH: DOES THE STATISTIC SEE LIGHTING AT ALL?
+A Lambertian scene of five spheres on a plane, rendered from ONE fixed
+geometry. In the consistent version every sphere is lit from direction L1. In
+each inconsistent version exactly one sphere is lit from a different direction,
+with its geometry, albedo, position and size untouched - so the ONLY difference
+between the images is the illumination of one object, which is precisely the
+property this engine is named for. Verified local: the images differ only
+inside that sphere's bounding box, 3.2-6.0% of the frame, with a maximum pixel
+delta of 178-192 out of 255. Identical texture is added to every variant so the
+engine runs non-degenerate.
+
+  case                     raw_score   delta vs consistent
+  ---------------------------------------------------------
+  consistent                 21.3564   +0.0000
+  inconsistent_mild          21.3564   +0.0000
+  inconsistent_two           21.3564   +0.0000
+  inconsistent_gross         21.3564   +0.0000
+
+  A sphere re-lit from BELOW instead of from the upper left changes the score
+  by EXACTLY ZERO, to four decimal places. The reason is structural: raw_score
+  is the maximum over the whole frame, that maximum lives on some silhouette
+  elsewhere in the image, and re-lighting the interior of one object does not
+  touch it.
+
+  Meanwhile, transformations that change NO lighting whatsoever:
+
+  transform                raw_score   delta vs original
+  ---------------------------------------------------------
+  original                   21.3564   +0.0000
+  unsharp                    18.5762   -2.7802
+  jpeg_q90                   20.6468   -0.7096
+  crop 90%                   21.1540   -0.2024
+  ONE PIXEL changed          22.0666   +0.7101
+  upscale 1.5x               24.9825   +3.6261
+  downscale 0.75x            30.4138   +9.0574
+  gaussian blur 3x3          32.0010   +10.6446
+  downscale 0.5x             34.4477   +13.0913
+  jpeg quality 60            36.3184   +14.9620
+
+  Changing a SINGLE PIXEL moves the score by 0.7101 - infinitely more than any
+  genuine lighting inconsistency does, because that is 0.0000. Re-saving the
+  same picture at JPEG quality 60 moves it by 14.96.
+
+PART 3 - NO REDUCTION OF THIS MAP FIXES IT
+Every candidate replacement for max() was measured on the same ground truth.
+Sensitivity to a real lighting inconsistency, against sensitivity to the
+nuisance transforms above:
+
+  statistic       lighting     nuisance    nuisance/lighting
+  ------------------------------------------------------------
+  max/median      0.000000        14.96    1.5e13
+  p99.99/median   0.134190        14.53      108.3
+  p99.9/median    0.887615        13.20       14.9
+  p99/median      0.004327         5.27     1217.2
+  mean/median     0.000128         0.204    1593.4
+  std/median      0.003716         1.047     281.8
+
+  The best of them is still 13.8x more sensitive to nuisance than to lighting.
+  This is not a tuning problem. The gradient-magnitude map does not carry the
+  information, so no way of reducing it can recover the information.
+
+PART 4 - WHAT THE SCORE ACTUALLY RESTS ON
+  Pixels within 1% of the maximum, per supplied image: 1, 1, 172, 2, 3, 1.
+  On five of the six, raw_score is decided by ONE pixel out of one to two
+  million. On the sixth ("fake .jpeg") the 172 tied pixels were all on the
+  array's own boundary, where numpy.gradient switches to a one-sided
+  difference - the engine was measuring the edge of the array, not the picture.
+  Gradient distributions run p50 = 0.5-1.0 against a max of 83-196, so the
+  statistic is a ratio of the most extreme sample in the frame to the middle
+  of a distribution it sits three orders of magnitude above.
+
+HONEST RESIDUAL DEFECTS
+  - The engine now produces NO probability at all by default. It is, for
+    fusion purposes, switched off unless an orchestrator supplies at least 30
+    known-authentic reference ratios. Verified that this path works: with 40
+    reference ratios the same image returns probability 0.4250 at
+    is_reliable=True. But even then the underlying feature is still an
+    edge-strength statistic with zero measured sensitivity to lighting, so the
+    calibrated route buys a well-defined number, not a valid one.
+  - raw_score remains dominated by a single pixel. This was not changed,
+    because the SKILL prints max_grad = max(gradient_mag(:)) verbatim and no
+    alternative reduction was measured to help.
+  - No spatial localisation. flagged_regions is always None, correctly: the
+    SKILL gives no procedure for turning the gradient map into suspect regions.
+  - The median gradient of an ordinary photograph is 0.5-1.0, which sits close
+    to the 0.01 degeneracy floor. A slightly flatter image tips into the
+    degenerate branch, so the engine's operating regime is narrower than it
+    looks.

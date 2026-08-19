@@ -1,0 +1,33 @@
+LIGHTING / ILLUMINATION ENGINE - DIAGNOSTIC SUMMARY
+run tag       : before
+generated     : 2026-08-19 22:26:10
+
+images tested : 6
+reliable      : 6 / 6
+correct       : 4 / 6
+wrong         : 2 / 6
+abstained     : 0 / 6
+
+PROBABILITY BY CASE
+  real        : 1.0
+  manipulated : 1.0
+  ai-generated: 1.0
+  separation  : 0.0
+
+RAW SCORE BY CASE
+  real        : 171.56957012082765
+  manipulated : 253.45986692177968
+  separation  : 81.89029680095203
+
+NOTICES
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+  - Engine configuration: Pipeline A only (Sobel gradient magnitude); raw_score = max_grad / median(gradient_mag); probability via a PROVISIONAL logistic with midpoint 3.0 and slope 0.5 that approximates no corpus threshold; confidence hard-capped at 0.05 per the SKILL's own Corpus Gap instruction. Pipelines B and C not implemented.
+  - The SKILL file states this module has 'the thinnest evidentiary base of all nine' and 'should carry the lowest reliability weight of the nine detectors in the fusion layer'. Every number below should be read against that.
+
+PER-IMAGE
+  campic.jpeg            truth=REAL          raw=166.4332 prob=1.0000 conf=0.050 verdict=FAKE
+  campic2.jpeg           truth=REAL          raw=176.7060 prob=1.0000 conf=0.050 verdict=FAKE
+  fake .jpeg             truth=FAKE          raw=392.1275 prob=1.0000 conf=0.050 verdict=FAKE
+  fake.jpeg              truth=FAKE          raw=114.7922 prob=1.0000 conf=0.050 verdict=FAKE
+  gen.jpeg               truth=AI-GENERATED  raw=341.5333 prob=1.0000 conf=0.050 verdict=FAKE
+  genratedimage.jpeg     truth=AI-GENERATED  raw=248.5659 prob=1.0000 conf=0.050 verdict=FAKE
