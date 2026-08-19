@@ -1,0 +1,316 @@
+==========================================================================
+CFA ENGINE DIAGNOSTIC REPORT  [before]
+Generated: 2026-08-18 18:16:04
+==========================================================================
+
+Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case
+--------------------------------------------------------------------------------
+campic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real
+campic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real
+mobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real
+mobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real
+fake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI
+fake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI
+fake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI
+gen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI
+genratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI
+
+NOTICES:
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+
+
+##########################################################################
+CASE 1: Case 1 Real (ground truth REAL)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images
+##########################################################################
+
+==========================================================================
+IMAGE: campic.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 79.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.000000
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 8.2 ms
+  Reliability  : Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.
+      in=1200x1599x3  out=condition report
+        is_reliable = False
+        skip_engine = True
+        confidence_weight = 0.0
+        estimated_jpeg_quality = 74.0
+        is_resized = False
+        container_format = JPEG
+
+  REASONING:
+    Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.5777868753830039, probability=None, 41 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.
+
+  MATHEMATICAL EXPLANATION:
+    Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : none
+
+==========================================================================
+IMAGE: campic2.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 80.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.000000
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 5.4 ms
+  Reliability  : Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.
+      in=1200x1599x3  out=condition report
+        is_reliable = False
+        skip_engine = True
+        confidence_weight = 0.0
+        estimated_jpeg_quality = 74.0
+        is_resized = False
+        container_format = JPEG
+
+  REASONING:
+    Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.5798567062488624, probability=None, 37 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.
+
+  MATHEMATICAL EXPLANATION:
+    Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : none
+
+  CASE 1 SUMMARY
+    average probability : n/a
+    score spread        : n/a
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 2: Case 2 Manipulated (ground truth FAKE)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: fake .jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg
+==========================================================================
+  Resolution   : 728x1600
+  Format       : JPEG
+  File size    : 157.8 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.000000
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 1.8 ms
+  Reliability  : Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.
+      in=1600x728x3  out=condition report
+        is_reliable = False
+        skip_engine = True
+        confidence_weight = 0.0
+        estimated_jpeg_quality = 74.0
+        is_resized = False
+        container_format = JPEG
+
+  REASONING:
+    Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.8431018795676763, probability=None, 1 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.
+
+  MATHEMATICAL EXPLANATION:
+    Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : FAKE
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : none
+
+==========================================================================
+IMAGE: fake.jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg
+==========================================================================
+  Resolution   : 928x1152
+  Format       : JPEG
+  File size    : 67.4 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.000000
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 3.7 ms
+  Reliability  : Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.
+      in=1152x928x3  out=condition report
+        is_reliable = False
+        skip_engine = True
+        confidence_weight = 0.0
+        estimated_jpeg_quality = 74.0
+        is_resized = False
+        container_format = JPEG
+
+  REASONING:
+    Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.6514461989547158, probability=None, 50 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.
+
+  MATHEMATICAL EXPLANATION:
+    Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : FAKE
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : none
+
+  CASE 2 SUMMARY
+    average probability : n/a
+    score spread        : n/a
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 3: Case 3 AI-generated (ground truth AI-GENERATED)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: gen.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg
+==========================================================================
+  Resolution   : 800x1006
+  Format       : JPEG
+  File size    : 44.6 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.000000
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 0.6 ms
+  Reliability  : Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.
+      in=1006x800x3  out=condition report
+        is_reliable = False
+        skip_engine = True
+        confidence_weight = 0.0
+        estimated_jpeg_quality = 74.0
+        is_resized = False
+        container_format = JPEG
+
+  REASONING:
+    Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.6527924272580977, probability=None, 14 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.
+
+  MATHEMATICAL EXPLANATION:
+    Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : AI-GENERATED
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : none
+
+==========================================================================
+IMAGE: genratedimage.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg
+==========================================================================
+  Resolution   : 768x1376
+  Format       : JPEG
+  File size    : 71.2 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.000000
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 0.7 ms
+  Reliability  : Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.
+      in=1376x768x3  out=condition report
+        is_reliable = False
+        skip_engine = True
+        confidence_weight = 0.0
+        estimated_jpeg_quality = 74.0
+        is_resized = False
+        container_format = JPEG
+
+  REASONING:
+    Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.7361036555760047, probability=None, 29 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.
+
+  MATHEMATICAL EXPLANATION:
+    Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : AI-GENERATED
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : none
+
+  CASE 3 SUMMARY
+    average probability : n/a
+    score spread        : n/a
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+==========================================================================
+OVERALL
+==========================================================================
+  real average probability     : None
+  manipulated average          : None
+  ai-generated average         : None
+  separation (fake - real)     : None
+  raw-score separation         : 0.0
+  reliable results             : 0 / 6
+  average processing time (ms) : 3.386915500035078

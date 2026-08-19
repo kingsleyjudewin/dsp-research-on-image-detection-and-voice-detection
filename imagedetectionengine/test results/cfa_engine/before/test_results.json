@@ -1,0 +1,779 @@
+{
+  "tag": "before",
+  "engine": "cfa",
+  "generated_at": "2026-08-18 18:16:04",
+  "pre_run_table": "Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case\n--------------------------------------------------------------------------------\ncampic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real\ncampic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real\nmobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real\nmobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real\nfake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI\nfake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI\nfake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI\ngen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI\ngenratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI",
+  "notices": [
+    "The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified."
+  ],
+  "cases": [
+    {
+      "case_number": 1,
+      "case_type": "Case 1 Real",
+      "ground_truth": "REAL",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg",
+            "filename": "campic.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 81624,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.",
+          "processing_time_ms": 8.197656999982428,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.5777868753830039, probability=None, 41 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.",
+          "mathematical_explanation": "Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.",
+              "input_shape": "1200x1599x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": false,
+                "skip_engine": true,
+                "confidence_weight": 0.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "ungated_raw_score": 0.5777868753830039,
+            "ungated_probability": null,
+            "ungated_is_reliable": false,
+            "ungated_note": "No JPEG compression reported, which is the uncompressed condition all quantitative results in the corpus are measured under. 79.4% of blocks were excluded as almost flat or edge-dominated, exceeding the 50% limit. Ferrara et al. state the method 'is less effective in the presence of either almost flat areas or sharp edges', so the surviving blocks are not a representative sample of the scene. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_unusable', so a placeholder logistic curve was used. The SKILL file specifies no calibration function for this statistic and leaves the map reduction rule itself as an engineering recommendation, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score and the per-block map are the trustworthy quantities.",
+            "ungated_flagged_regions": 41,
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 0.0,
+                "is_resized": false,
+                "container_format": "TIFF"
+              },
+              "Channel extraction and texture screening": {
+                "analysis_channel": "green",
+                "feature_block_size": 8,
+                "excluded_block_fraction": 0.7942,
+                "flat_variance_threshold": 4.0,
+                "sharp_edge_gradient_threshold": 40.0
+              },
+              "CFA phase estimation (Pipeline C)": {
+                "configuration": "RGGB",
+                "green_acquired_parity": 1,
+                "estimation_block_size": 512,
+                "was_verified_by_svd": true,
+                "diagonal_scores": [
+                  7.401,
+                  1.713
+                ]
+              },
+              "Prediction error, local variance and mixture fit": {
+                "authentic_component_mean": 0.0084,
+                "authentic_component_variance": 0.0566,
+                "tampered_component_variance": 0.0288,
+                "em_mixing_weight": 0.6831,
+                "em_iterations": 500,
+                "em_converged": false,
+                "valid_block_count": 6144,
+                "eq13_requires_positive_mean": true
+              },
+              "Posterior likelihood map (Pipeline A)": {
+                "output_block_size": 8,
+                "blocks_above_tampering_threshold": 2729,
+                "tampering_threshold": 0.5,
+                "map_filter": "5x5 median",
+                "mean_tampering_probability": 0.5033
+              },
+              "Grid-position consistency (Pipeline B)": {
+                "dominant_grid_position": 3,
+                "dominant_log10_nfa": -3.52,
+                "disagreeing_windows": 0,
+                "windows_tested": 1813,
+                "vote_block_size": 4,
+                "nfa_detection_threshold_log10": -10.0,
+                "is_conclusive": true
+              },
+              "Map reduction and calibration": {
+                "raw_score": 0.577787,
+                "reduction_rule": "max",
+                "reduction_percentile": 95.0,
+                "probability": 0.717773,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.2
+              }
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg",
+            "filename": "campic2.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 82589,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.",
+          "processing_time_ms": 5.377125999984855,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.5798567062488624, probability=None, 37 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.",
+          "mathematical_explanation": "Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.",
+              "input_shape": "1200x1599x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": false,
+                "skip_engine": true,
+                "confidence_weight": 0.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "ungated_raw_score": 0.5798567062488624,
+            "ungated_probability": null,
+            "ungated_is_reliable": false,
+            "ungated_note": "No JPEG compression reported, which is the uncompressed condition all quantitative results in the corpus are measured under. 79.4% of blocks were excluded as almost flat or edge-dominated, exceeding the 50% limit. Ferrara et al. state the method 'is less effective in the presence of either almost flat areas or sharp edges', so the surviving blocks are not a representative sample of the scene. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_unusable', so a placeholder logistic curve was used. The SKILL file specifies no calibration function for this statistic and leaves the map reduction rule itself as an engineering recommendation, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score and the per-block map are the trustworthy quantities.",
+            "ungated_flagged_regions": 37,
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 0.0,
+                "is_resized": false,
+                "container_format": "TIFF"
+              },
+              "Channel extraction and texture screening": {
+                "analysis_channel": "green",
+                "feature_block_size": 8,
+                "excluded_block_fraction": 0.7939,
+                "flat_variance_threshold": 4.0,
+                "sharp_edge_gradient_threshold": 40.0
+              },
+              "CFA phase estimation (Pipeline C)": {
+                "configuration": "BGGR",
+                "green_acquired_parity": 1,
+                "estimation_block_size": 512,
+                "was_verified_by_svd": true,
+                "diagonal_scores": [
+                  8.173,
+                  6.115
+                ]
+              },
+              "Prediction error, local variance and mixture fit": {
+                "authentic_component_mean": 0.0063,
+                "authentic_component_variance": 0.0617,
+                "tampered_component_variance": 0.0301,
+                "em_mixing_weight": 0.6311,
+                "em_iterations": 500,
+                "em_converged": false,
+                "valid_block_count": 6153,
+                "eq13_requires_positive_mean": true
+              },
+              "Posterior likelihood map (Pipeline A)": {
+                "output_block_size": 8,
+                "blocks_above_tampering_threshold": 2745,
+                "tampering_threshold": 0.5,
+                "map_filter": "5x5 median",
+                "mean_tampering_probability": 0.5037
+              },
+              "Grid-position consistency (Pipeline B)": {
+                "dominant_grid_position": 1,
+                "dominant_log10_nfa": -21.4,
+                "disagreeing_windows": 0,
+                "windows_tested": 1813,
+                "vote_block_size": 4,
+                "nfa_detection_threshold_log10": -10.0,
+                "is_conclusive": true
+              },
+              "Map reduction and calibration": {
+                "raw_score": 0.579857,
+                "reduction_rule": "max",
+                "reduction_percentile": 95.0,
+                "probability": 0.722777,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.2
+              }
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": null,
+      "score_spread": null,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 2,
+      "case_type": "Case 2 Manipulated",
+      "ground_truth": "FAKE",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg",
+            "filename": "fake .jpeg",
+            "format": "JPEG",
+            "height": 1600,
+            "width": 728,
+            "file_size_bytes": 161570,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.",
+          "processing_time_ms": 1.758227999744122,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.8431018795676763, probability=None, 1 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.",
+          "mathematical_explanation": "Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.",
+              "input_shape": "1600x728x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": false,
+                "skip_engine": true,
+                "confidence_weight": 0.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "ungated_raw_score": 0.8431018795676763,
+            "ungated_probability": null,
+            "ungated_is_reliable": false,
+            "ungated_note": "No JPEG compression reported, which is the uncompressed condition all quantitative results in the corpus are measured under. 83.9% of blocks were excluded as almost flat or edge-dominated, exceeding the 50% limit. Ferrara et al. state the method 'is less effective in the presence of either almost flat areas or sharp edges', so the surviving blocks are not a representative sample of the scene. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_unusable', so a placeholder logistic curve was used. The SKILL file specifies no calibration function for this statistic and leaves the map reduction rule itself as an engineering recommendation, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score and the per-block map are the trustworthy quantities.",
+            "ungated_flagged_regions": 1,
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 0.0,
+                "is_resized": false,
+                "container_format": "TIFF"
+              },
+              "Channel extraction and texture screening": {
+                "analysis_channel": "green",
+                "feature_block_size": 8,
+                "excluded_block_fraction": 0.8393,
+                "flat_variance_threshold": 4.0,
+                "sharp_edge_gradient_threshold": 40.0
+              },
+              "CFA phase estimation (Pipeline C)": {
+                "configuration": "RGGB",
+                "green_acquired_parity": 1,
+                "estimation_block_size": 512,
+                "was_verified_by_svd": true,
+                "diagonal_scores": [
+                  0.0,
+                  0.0
+                ]
+              },
+              "Prediction error, local variance and mixture fit": {
+                "authentic_component_mean": 0.0159,
+                "authentic_component_variance": 0.0807,
+                "tampered_component_variance": 0.0025,
+                "em_mixing_weight": 0.6198,
+                "em_iterations": 59,
+                "em_converged": true,
+                "valid_block_count": 2924,
+                "eq13_requires_positive_mean": true
+              },
+              "Posterior likelihood map (Pipeline A)": {
+                "output_block_size": 8,
+                "blocks_above_tampering_threshold": 48,
+                "tampering_threshold": 0.5,
+                "map_filter": "5x5 median",
+                "mean_tampering_probability": 0.499
+              },
+              "Grid-position consistency (Pipeline B)": {
+                "dominant_grid_position": 2,
+                "dominant_log10_nfa": -2554.18,
+                "disagreeing_windows": 20,
+                "windows_tested": 1100,
+                "vote_block_size": 4,
+                "nfa_detection_threshold_log10": -10.0,
+                "is_conclusive": true
+              },
+              "Map reduction and calibration": {
+                "raw_score": 0.843102,
+                "reduction_rule": "max",
+                "reduction_percentile": 95.0,
+                "probability": 0.983971,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.2
+              }
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg",
+            "filename": "fake.jpeg",
+            "format": "JPEG",
+            "height": 1152,
+            "width": 928,
+            "file_size_bytes": 68990,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.",
+          "processing_time_ms": 3.7061910002194054,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.6514461989547158, probability=None, 50 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.",
+          "mathematical_explanation": "Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.",
+              "input_shape": "1152x928x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": false,
+                "skip_engine": true,
+                "confidence_weight": 0.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "ungated_raw_score": 0.6514461989547158,
+            "ungated_probability": null,
+            "ungated_is_reliable": false,
+            "ungated_note": "No JPEG compression reported, which is the uncompressed condition all quantitative results in the corpus are measured under. 54.5% of blocks were excluded as almost flat or edge-dominated, exceeding the 50% limit. Ferrara et al. state the method 'is less effective in the presence of either almost flat areas or sharp edges', so the surviving blocks are not a representative sample of the scene. No CFA signature was found anywhere in the image: the fitted authentic-component mean is -0.0027, but Eq. 13 requires it to be positive. The image was either not captured through a Bayer colour filter array, or has been resampled or recompressed hard enough to erase the demosaicing correlation entirely. No localisation is meaningful in this state. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_unusable', so a placeholder logistic curve was used. The SKILL file specifies no calibration function for this statistic and leaves the map reduction rule itself as an engineering recommendation, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score and the per-block map are the trustworthy quantities.",
+            "ungated_flagged_regions": 50,
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 0.0,
+                "is_resized": false,
+                "container_format": "TIFF"
+              },
+              "Channel extraction and texture screening": {
+                "analysis_channel": "green",
+                "feature_block_size": 8,
+                "excluded_block_fraction": 0.5448,
+                "flat_variance_threshold": 4.0,
+                "sharp_edge_gradient_threshold": 40.0
+              },
+              "CFA phase estimation (Pipeline C)": {
+                "configuration": "RGGB",
+                "green_acquired_parity": 1,
+                "estimation_block_size": 512,
+                "was_verified_by_svd": true,
+                "diagonal_scores": [
+                  11.338,
+                  6.857
+                ]
+              },
+              "Prediction error, local variance and mixture fit": {
+                "authentic_component_mean": -0.0027,
+                "authentic_component_variance": 0.089,
+                "tampered_component_variance": 0.0235,
+                "em_mixing_weight": 0.5225,
+                "em_iterations": 314,
+                "em_converged": true,
+                "valid_block_count": 7603,
+                "eq13_requires_positive_mean": true
+              },
+              "Posterior likelihood map (Pipeline A)": {
+                "output_block_size": 8,
+                "blocks_above_tampering_threshold": 3166,
+                "tampering_threshold": 0.5,
+                "map_filter": "5x5 median",
+                "mean_tampering_probability": 0.5144
+              },
+              "Grid-position consistency (Pipeline B)": {
+                "dominant_grid_position": 0,
+                "dominant_log10_nfa": -25.55,
+                "disagreeing_windows": 19,
+                "windows_tested": 1044,
+                "vote_block_size": 4,
+                "nfa_detection_threshold_log10": -10.0,
+                "is_conclusive": true
+              },
+              "Map reduction and calibration": {
+                "raw_score": 0.651446,
+                "reduction_rule": "max",
+                "reduction_percentile": 95.0,
+                "probability": 0.860248,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.0
+              }
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": null,
+      "score_spread": null,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 3,
+      "case_type": "Case 3 AI-generated",
+      "ground_truth": "AI-GENERATED",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg",
+            "filename": "gen.jpeg",
+            "format": "JPEG",
+            "height": 1006,
+            "width": 800,
+            "file_size_bytes": 45706,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.",
+          "processing_time_ms": 0.6053229999452014,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.6527924272580977, probability=None, 14 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.",
+          "mathematical_explanation": "Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.",
+              "input_shape": "1006x800x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": false,
+                "skip_engine": true,
+                "confidence_weight": 0.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "ungated_raw_score": 0.6527924272580977,
+            "ungated_probability": null,
+            "ungated_is_reliable": false,
+            "ungated_note": "No JPEG compression reported, which is the uncompressed condition all quantitative results in the corpus are measured under. 76.9% of blocks were excluded as almost flat or edge-dominated, exceeding the 50% limit. Ferrara et al. state the method 'is less effective in the presence of either almost flat areas or sharp edges', so the surviving blocks are not a representative sample of the scene. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_unusable', so a placeholder logistic curve was used. The SKILL file specifies no calibration function for this statistic and leaves the map reduction rule itself as an engineering recommendation, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score and the per-block map are the trustworthy quantities.",
+            "ungated_flagged_regions": 14,
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 0.0,
+                "is_resized": false,
+                "container_format": "TIFF"
+              },
+              "Channel extraction and texture screening": {
+                "analysis_channel": "green",
+                "feature_block_size": 8,
+                "excluded_block_fraction": 0.7687,
+                "flat_variance_threshold": 4.0,
+                "sharp_edge_gradient_threshold": 40.0
+              },
+              "CFA phase estimation (Pipeline C)": {
+                "configuration": "GRBG",
+                "green_acquired_parity": 0,
+                "estimation_block_size": 512,
+                "was_verified_by_svd": true,
+                "diagonal_scores": [
+                  3.944,
+                  6.147
+                ]
+              },
+              "Prediction error, local variance and mixture fit": {
+                "authentic_component_mean": 0.0411,
+                "authentic_component_variance": 0.0763,
+                "tampered_component_variance": 0.0215,
+                "em_mixing_weight": 0.345,
+                "em_iterations": 341,
+                "em_converged": true,
+                "valid_block_count": 2891,
+                "eq13_requires_positive_mean": true
+              },
+              "Posterior likelihood map (Pipeline A)": {
+                "output_block_size": 8,
+                "blocks_above_tampering_threshold": 1498,
+                "tampering_threshold": 0.5,
+                "map_filter": "5x5 median",
+                "mean_tampering_probability": 0.5102
+              },
+              "Grid-position consistency (Pipeline B)": {
+                "dominant_grid_position": 2,
+                "dominant_log10_nfa": -3.39,
+                "disagreeing_windows": 0,
+                "windows_tested": 775,
+                "vote_block_size": 4,
+                "nfa_detection_threshold_log10": -10.0,
+                "is_conclusive": true
+              },
+              "Map reduction and calibration": {
+                "raw_score": 0.652792,
+                "reduction_rule": "max",
+                "reduction_percentile": 95.0,
+                "probability": 0.862179,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.2
+              }
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg",
+            "filename": "genratedimage.jpeg",
+            "format": "JPEG",
+            "height": 1376,
+            "width": 768,
+            "file_size_bytes": 72944,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "Estimated JPEG quality 74 is below 90. Ferrara's AUC is collapsing toward chance through this range and Jeon's phase-estimation accuracy drops to 19.74-34.78%. Engine skipped: estimated JPEG quality factor 74 is at or below 85, where Ferrara et al. state their algorithm 'is unable to discriminate between the presence and absence of CFA artifacts'. Compression has erased the demosaicing correlation this engine measures.",
+          "processing_time_ms": 0.6769680003344547,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (reduction rule 'max' over the per-block tampering map) at confidence 0.0000, is_reliable=False. With the JPEG-quality gate bypassed for diagnosis the same image yields raw_score=0.7361036555760047, probability=None, 29 flagged region(s). Feature stage: {}. Posterior/mixture stage: {}. Grid-consistency layer: {}.",
+          "mathematical_explanation": "Ferrara's pipeline extracts the green channel, forms the bilinear prediction error e(x,y) of Eq. 9, takes its locally-weighted variance over a Gaussian window of standard deviation K/2 restricted to each lattice class (Eq. 10), and reduces each block to L = log(GM_A/GM_I) (Eq. 11-12) - the log ratio of prediction-error variance at acquired versus interpolated Bayer positions. Under M1 (CFA intact) Eq. 13 requires this to be positive; under M2 (CFA destroyed) Eq. 14 fixes its mean at zero. For this image the fitted mixture reported {}. The per-block posterior Pr(M1|L) of Eq. 15-17 is then inverted to a tampering map and reduced to the scalar above. The engine's own gate matters here more than the arithmetic: the SKILL states demosaicing correlation is the dominant casualty of JPEG compression, and this image's estimated quality factor is 74.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated every unreliability condition documented in the SKILL file - JPEG quality against Ferrara's 95% reliability floor and 85% discrimination floor, prior resampling, colour-plane availability, saturation and resolution - before any computation ran.",
+              "input_shape": "1376x768x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": false,
+                "skip_engine": true,
+                "confidence_weight": 0.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "ungated_raw_score": 0.7361036555760047,
+            "ungated_probability": null,
+            "ungated_is_reliable": false,
+            "ungated_note": "No JPEG compression reported, which is the uncompressed condition all quantitative results in the corpus are measured under. 82.5% of blocks were excluded as almost flat or edge-dominated, exceeding the 50% limit. Ferrara et al. state the method 'is less effective in the presence of either almost flat areas or sharp edges', so the surviving blocks are not a representative sample of the scene. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_unusable', so a placeholder logistic curve was used. The SKILL file specifies no calibration function for this statistic and leaves the map reduction rule itself as an engineering recommendation, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score and the per-block map are the trustworthy quantities.",
+            "ungated_flagged_regions": 29,
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 0.0,
+                "is_resized": false,
+                "container_format": "TIFF"
+              },
+              "Channel extraction and texture screening": {
+                "analysis_channel": "green",
+                "feature_block_size": 8,
+                "excluded_block_fraction": 0.8253,
+                "flat_variance_threshold": 4.0,
+                "sharp_edge_gradient_threshold": 40.0
+              },
+              "CFA phase estimation (Pipeline C)": {
+                "configuration": "GRBG",
+                "green_acquired_parity": 0,
+                "estimation_block_size": 512,
+                "was_verified_by_svd": true,
+                "diagonal_scores": [
+                  3.905,
+                  7.148
+                ]
+              },
+              "Prediction error, local variance and mixture fit": {
+                "authentic_component_mean": 0.017,
+                "authentic_component_variance": 0.0622,
+                "tampered_component_variance": 0.0072,
+                "em_mixing_weight": 0.4328,
+                "em_iterations": 81,
+                "em_converged": true,
+                "valid_block_count": 2884,
+                "eq13_requires_positive_mean": true
+              },
+              "Posterior likelihood map (Pipeline A)": {
+                "output_block_size": 8,
+                "blocks_above_tampering_threshold": 728,
+                "tampering_threshold": 0.5,
+                "map_filter": "5x5 median",
+                "mean_tampering_probability": 0.5055
+              },
+              "Grid-position consistency (Pipeline B)": {
+                "dominant_grid_position": 1,
+                "dominant_log10_nfa": -59.98,
+                "disagreeing_windows": 8,
+                "windows_tested": 1032,
+                "vote_block_size": 4,
+                "nfa_detection_threshold_log10": -10.0,
+                "is_conclusive": true
+              },
+              "Map reduction and calibration": {
+                "raw_score": 0.736104,
+                "reduction_rule": "max",
+                "reduction_percentile": 95.0,
+                "probability": 0.944446,
+                "calibration_route": "provisional_sigmoid",
+                "is_calibrated": false,
+                "confidence": 0.2
+              }
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": null,
+      "score_spread": null,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    }
+  ],
+  "statistics": {
+    "total_images": 6,
+    "real_average": null,
+    "fake_average": null,
+    "ai_average": null,
+    "separation": null,
+    "real_raw_average": 0.0,
+    "fake_raw_average": 0.0,
+    "raw_separation": 0.0,
+    "reliable_count": 0,
+    "correct_verdicts": 0,
+    "abstained_count": 6,
+    "wrong_verdicts": 0,
+    "average_time_ms": 3.386915500035078
+  }
+}

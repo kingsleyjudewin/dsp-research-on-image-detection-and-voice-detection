@@ -1,0 +1,81 @@
+PHASE 1 - PRE-TEST EXPECTATIONS (written BEFORE the engine was run)
+===================================================================
+
+STEP 1.1 - CORE ENGINE CAPABILITY (from the SKILL file)
+
+Property measured (Pipeline A, Ferrara 2012 - PRIMARY):
+  A Bayer sensor senses one colour per pixel; the other two are interpolated.
+  Acquired and interpolated pixels therefore sit on two complementary periodic
+  lattices. Demosaicing makes the interpolated ones locally PREDICTABLE from
+  their neighbours, so a bilinear prediction error e(x,y) (Eq. 9) has
+  systematically LOWER variance at interpolated positions than at acquired
+  ones. Per block:
+        L = log( GM_A / GM_I )                            [Eq. 11-12]
+  the log ratio of geometric-mean local prediction-error variance at acquired
+  vs interpolated positions. A two-component Gaussian mixture is fitted by EM:
+        M1 (authentic, CFA present)  : L ~ N(mu1, s1^2), mu1 > 0   [Eq. 13]
+        M2 (tampered, CFA destroyed) : L ~ N(0,   s2^2)            [Eq. 14]
+  Per-block posterior Pr(M1|L) via Bayes with equal priors (Eq. 15-17);
+  tampering map = 1 - Pr(M1|L); reduced to a scalar by max (engineering
+  choice - the SKILL does not specify the reduction).
+
+Signal present in FAKE, absent/weaker in REAL:
+  Splicing, copy-move, smoothing or re-rendering OVERWRITES acquired pixels, so
+  the acquired/interpolated variance imbalance collapses and L falls toward 0.
+  Tampered blocks are the ones near L=0 while the image's authentic population
+  sits at mu1 > 0.
+
+Signal present in REAL:
+  An intact, spatially periodic demosaicing correlation - a positive mu1.
+
+raw_score meaning:
+  0 = every block confidently authentic; 1 = at least one block confidently
+  tampered (max reduction). No corpus threshold exists.
+
+STEP 1.2 - PER-CASE PREDICTIONS
+
+*** DOMINANT PREDICTION, ALL THREE CASES ***
+  Every one of the 6 images is JPEG at an estimated quality factor of 74.
+  The SKILL calls JPEG below ~90-95% "the dominant, universally-reported
+  failure mode" and quotes Ferrara directly: at QF85 "our algorithm is unable
+  to discriminate between the presence and absence of CFA artifacts". Jeon's
+  phase accuracy falls to 19.74-34.78% over QF 70-100. The engine's own
+  constant UNUSABLE_JPEG_QUALITY_FACTOR = 85.0 and its premise check skips
+  whenever 0 < QF <= 85.
+  => I expect ALL SIX images to be SKIPPED: is_reliable=False,
+     probability=None, confidence=0.0, raw_score=0.0.
+  => Separation will be UNDEFINED, not poor. That is the CORRECT behaviour and
+     must not be "fixed" by loosening the gate.
+
+CASE 1 - REAL
+  Expected probability : None (skipped)
+  Expected is_reliable : False - QF74 is below the documented floor
+  Failure mode         : if the gate did NOT fire, expect false positives in
+                         flat and sharp-edge regions (Ferrara's explicit
+                         limitation)
+
+CASE 2 - FAKE
+  Expected probability : None (skipped)
+  Signal PRESENT       : only if the manipulation is a splice AND the CFA phase
+                         mismatches; Bammey states a 1-in-4 chance a copy-paste
+                         preserves phase, in which case phase-based detection
+                         is blind by construction
+  Failure mode         : JPEG at QF74 has almost certainly already erased the
+                         demosaicing correlation for both classes alike
+
+CASE 3 - AI-GENERATED
+  Is AI detection in SKILL scope: NO. The SKILL never mentions synthetic or
+                         GAN imagery anywhere. The four pipelines detect
+                         splicing/copy-paste with mismatched CFA phase, and
+                         LCA inconsistency.
+  Reasoning            : an AI-generated image never passed through a Bayer
+                         sensor at all, so it has NO CFA signature globally.
+                         Ferrara's model cannot express that: M1 vs M2 is a
+                         per-block contrast WITHIN one image. With no authentic
+                         population anywhere, mu1 collapses toward 0 and the
+                         mixture becomes degenerate.
+  Expected behaviour   : the post-computation check assess_global_cfa_presence
+                         should fire (mu1 <= 0) and return is_reliable=False.
+                         That is arguably the RIGHT answer - "this never came
+                         from a camera" - but the engine reports it as
+                         inapplicability, not as evidence.

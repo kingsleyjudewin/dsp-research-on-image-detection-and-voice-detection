@@ -1,0 +1,96 @@
+================================================================
+CFA / DEMOSAICING ENGINE - DIAGNOSTIC SUMMARY  (read this first)
+Tested: 6 supplied images + ground truth with a known Bayer signature
+================================================================
+
+OVERALL HEALTH:  NEEDS INVESTIGATION BEFORE INTEGRATION
+   The primary pipeline is sound and, uncompressed, is close to perfect
+   (authentic 0.0025 vs spliced 0.9975). But its usable window is narrow,
+   it false-alarms inside that window, and the supplied corpus sits
+   entirely outside it.
+
+SEPARATION
+   Six supplied images : UNDEFINED before and after - all six correctly
+                         skipped, because every one is JPEG at QF74 and the
+                         corpus floor is ~QF95. This is not a failure of the
+                         engine; it is the corpus being unmeasurable by it.
+   Ground truth        : raw separation at QF100  +0.567 -> +0.835
+                                          QF98   +0.581 -> +0.678
+                                          QF95   +0.740 -> +0.835
+
+TOP 3 STRENGTHS (evidence-based)
+ 1. Uncompressed, with a real CFA, Pipeline A is essentially exact:
+    authentic raw 0.0000 / prob 0.0025, phase-mismatched splice raw 1.0000 /
+    prob 0.9975, and it also catches a splice whose CFA was destroyed by
+    smoothing (raw 1.0000) which the phase-based layer cannot see.
+ 2. The JPEG gate is correct and well-placed. Measured degradation matches
+    the SKILL: mu1 falls 7.03 (uncompressed) -> 2.60 (QF100) -> 1.49 (QF95)
+    -> 0.65 (QF90), and the engine stops voting at QF90.
+ 3. Localisation works - 41, 37, 50 flagged regions on the diagnostic images
+    and correct spatial hits on ground-truth splices.
+
+TOP 3 WEAKNESSES (honest)
+ 1. FALSE ALARMS INSIDE THE VALIDATED WINDOW. At QF100 an authentic image
+    scores raw 0.9288 / prob 0.9942. Coherence filtering cut the authentic
+    mean from 0.4330 to 0.1652 but the worst case across 6 scenes is still
+    0.9912. One authentic image in six still reads as confidently forged.
+ 2. UNUSABLE ON REAL-WORLD JPEG. Every supplied image was skipped. Anything
+    from a phone, a messaging app or a social platform will be too.
+ 3. NO AI-GENERATION CAPABILITY, and it is not in SKILL scope. An AI image
+    has no CFA at all; the engine now correctly abstains rather than
+    scoring it, but abstention is not detection.
+
+BUGS FOUND
+ 1. NO-CFA IMAGES SCORED AS TAMPERED. An image that never passed through a
+    colour filter array fitted mu1=0.0020 - positive, so the sign test on
+    Eq. 13 passed - and scored prob 0.6733 with is_reliable=True. FIXED by
+    testing mu1/sigma1 >= 1 instead of mu1 > 0. Genuine CFA measures
+    1.9-24.9 on that ratio; no-CFA measures 0.006-0.013.
+ 2. PHASE ESTIMATOR WRONG 4/4, always by an R/B swap. The engine's own
+    "documented correction" of Jeon Eq. 10 had inverted a rule that was
+    already right, on the strength of an R/B-swapped ground truth. FIXED;
+    now 4/4. No score was ever affected - green parity was right either way.
+ 3. max REDUCTION SATURATES UNDER JPEG. Authentic QF100 reached 0.9654.
+    PARTLY FIXED by requiring spatial coherence (>=8 connected blocks).
+ 4. EM NON-CONVERGENCE IGNORED. campic/campic2 ran the full 500 iterations
+    with converged=False and were used at full weight. FIXED - now penalised.
+ 5. PHASE "VERIFIED" FROM ZERO EVIDENCE. fake .jpeg returned diagonal scores
+    (0.0, 0.0) - argmax arbitrary - and was reported as verified RGGB.
+    FIXED - now reported unverified.
+ 6. PRE-EXISTING, NOT FIXED: 4 numeric literals outside constants.py
+    (utils.py:22,23,362 and computer.py:847). Present before this work;
+    left alone as out of scope.
+
+CHANGES TESTED AND REJECTED (do not re-propose)
+  - max -> 95th percentile: max wins 8 of 12 size x quality conditions.
+    The percentile only wins on large forgeries; at QF100 with a 64x64
+    forgery max separates +0.4559 vs the percentile's +0.1112.
+  - max -> fraction_below_threshold: won 0 of 12.
+  - Eq. 18 cumulation by default: authentic saturates to 1.0000 under JPEG.
+  - Promoting Pipeline B's disagreeing-window count into the score: on the
+    six images it looked like the best signal (real 0/0, fake 20/19) but
+    ground truth shows Pipeline B is already blind at QF100, so the QF74
+    reading was an artifact. This one would have scored pure noise.
+
+FUSION WEIGHT RECOMMENDATIONS
+    Uncompressed / TIFF ............... HIGH
+    JPEG QF >= 98 ..................... LOW    (false-alarm risk)
+    JPEG QF 95-98 ..................... MEDIUM
+    JPEG QF < 95 ...................... ZERO   (engine abstains)
+    PNG from an unknown pipeline ...... LOW    (CFA may already be gone)
+    Resized ........................... ZERO   (phase destroyed)
+    AI-generated ...................... ZERO   (no CFA; abstains)
+    Low resolution (<32 px) ........... ZERO
+
+FUSION ONE-LINER
+    cfa: detects phase-mismatched and CFA-destroying splices almost
+    perfectly on uncompressed imagery (0.0025 vs 0.9975) and localises them
+    to 8x8 blocks; blind to everything once JPEG quality drops below ~95,
+    silent on AI-generated content, and still false-alarms on roughly one
+    authentic image in six at QF100. Weight HIGH on uncompressed input,
+    MEDIUM at QF95-98, ZERO below QF95 or on resized/AI input.
+
+PERFORMANCE
+    485-3221 ms per image. The grid-consistency layer (Pipeline B) roughly
+    triples runtime and never contributes to the score - disable it for
+    bulk triage via enable_grid_consistency_layer=False.

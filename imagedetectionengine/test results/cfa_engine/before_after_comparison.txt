@@ -1,0 +1,53 @@
+BEFORE vs AFTER - CFA / DEMOSAICING ENGINE
+==========================================
+
+PART 1 - THE SIX SUPPLIED IMAGES
+Every image is JPEG at estimated QF74. The SKILL calls JPEG below ~90-95%
+"the dominant, universally-reported failure mode" and the engine's gate skips
+at or below QF85. All six are skipped BEFORE and AFTER. This is correct, and
+it means the supplied corpus cannot measure this engine at all.
+
+  Image                 truth          before prob  after prob  change
+  --------------------------------------------------------------------
+  campic.jpeg           REAL                  None        None  = (skipped)
+  campic2.jpeg          REAL                  None        None  = (skipped)
+  fake .jpeg            FAKE                  None        None  = (skipped)
+  fake.jpeg             FAKE                  None        None  = (skipped)
+  gen.jpeg              AI-GENERATED          None        None  = (skipped)
+  genratedimage.jpeg    AI-GENERATED          None        None  = (skipped)
+  separation                                  None        None  = (undefined)
+
+PART 2 - GROUND TRUTH (where the engine can actually be measured)
+Images built by mosaicing a scene onto a known Bayer grid and bilinearly
+demosaicing it; the forgery is a 128x128 region demosaiced at a mismatched
+phase. This is the only place the enhancements are visible.
+
+  condition                      before prob   after prob   change
+  ----------------------------------------------------------------
+  uncompressed authentic              0.0025       0.0025   =
+  uncompressed spliced                0.9975       0.9975   =
+  uncompressed NO CFA AT ALL          0.6733   None (abstains)  FIXED
+  QF100 authentic                     0.9942       0.9942   = (residual defect)
+  QF100 spliced                       0.9975       0.9975   =
+  QF98  authentic                     0.9970       0.0025   FIXED
+  QF98  spliced                       0.9975       0.9975   =
+  QF95  authentic                     0.9350       0.0025   FIXED
+  QF95  spliced                       0.9975       0.9975   =
+
+  raw-score separation (spliced - authentic), 6 scenes x 3 forgery sizes:
+      QF100   +0.567  ->  +0.835
+      QF98    +0.581  ->  +0.678
+      QF95    +0.740  ->  +0.835
+  authentic mean raw score:
+      QF100   0.4330  ->  0.1652
+      QF98    0.4188  ->  0.3215
+      QF95    0.2597  ->  0.1651
+
+PART 3 - PHASE ESTIMATOR (Pipeline C)
+  Configuration accuracy vs hand-built Bayer ground truth:  0/4  ->  4/4
+  Green parity (the only quantity Pipeline A consumes):     4/4  ->  4/4
+
+HONEST RESIDUAL DEFECT
+  Coherence filtering reduces the high-quality false positive but does not
+  remove it. Across 6 authentic scenes the worst case at QF100 is still
+  0.9912. An earlier 3-scene run showed 0.0000 and that was chance.
