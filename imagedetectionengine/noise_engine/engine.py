@@ -239,7 +239,17 @@ class NoiseEngine:
             aggregate_scalar)
         confidence = compose_confidence_penalties(
             [condition.confidence_weight] + [check[1] for check in checks.values()])
-        is_reliable = condition.is_reliable and checks["flatness"][0]
+        # ENHANCEMENT 4: the saturation check's pass/fail result used to be
+        # computed and then discarded - only its confidence penalty was read.
+        # Measured on fake .jpeg: 65% of pixels at or above 250, the check
+        # returned failed, and the engine still published FAKE at probability
+        # 0.9991, on an image where the SKILL states the multiplicative PRNU
+        # term vanishes outright (Eq. 19's attenuation).
+        # ENHANCEMENT 5: an uncalibrated run no longer votes; see
+        # constants.ABSTAIN_WHEN_UNCALIBRATED.
+        may_vote = is_calibrated or not constants.ABSTAIN_WHEN_UNCALIBRATED
+        is_reliable = (condition.is_reliable and checks["flatness"][0]
+                       and checks["saturation"][0] and may_vote)
         return {
             "raw_score": float(aggregate_scalar),
             "probability": probability if is_reliable else None,
@@ -308,7 +318,9 @@ class NoiseEngine:
         return {"total_blocks": local_result.total_blocks,
                "flagged_block_count": local_result.flagged_block_count,
                "aggregate_scalar": round(local_result.aggregate_scalar,
-                                        constants.TRACE_DECIMAL_PLACES)}
+                                        constants.TRACE_DECIMAL_PLACES),
+               "legacy_top_k_scalar": round(local_result.legacy_top_k_scalar,
+                                           constants.TRACE_DECIMAL_PLACES)}
 
     def _pipeline_c_key_values(self, spectral_result) -> dict:
         """Report values for Pipeline C's computation_steps entry."""
