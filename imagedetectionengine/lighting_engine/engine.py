@@ -274,9 +274,13 @@ class LightingEngine:
                                                 is_calibrated,
                                                 calibration_note, confidence))
 
+        # ENHANCEMENT 2: an uncalibrated result is reported but not voted on,
+        # because the provisional curve is a constant over this statistic's
+        # whole operating range. See constants.ABSTAIN_WHEN_UNCALIBRATED.
+        may_vote = is_calibrated or not constants.ABSTAIN_WHEN_UNCALIBRATED
         notes = [report.reliability_note, field_note, calibration_note]
         return (result.ratio, probability, confidence,
-                report.is_reliable and field_ok,
+                report.is_reliable and field_ok and may_vote,
                 " ".join(note for note in notes if note))
 
     @staticmethod

@@ -29,6 +29,24 @@ logger = logging.getLogger(__name__)
 ScoringResult = tuple[float, str, bool, str]
 
 
+UNCALIBRATED_ABSTENTION_NOTE = (
+    "PROVISIONAL CALIBRATION - NO VOTE IS CAST. No known-authentic reference "
+    "ratios were supplied, so a placeholder logistic was evaluated for the "
+    "record only. Measured, that curve is a CONSTANT over this statistic's "
+    "whole operating range: it returned probability 1.0000 on all six test "
+    "photographs, a separation of exactly 0.0, and 0.9996-1.0000 on synthetic "
+    "ground truth. A constant carries no information, so reporting it as a vote "
+    "would add bias to the fusion layer rather than evidence - and it would be "
+    "a confident FAKE on authentic photographs. The engine therefore abstains, "
+    "which the SKILL's own Corpus Gap section names as the more honest option. "
+    "This engine's underlying feature is furthermore an unvalidated generic "
+    "edge-strength heuristic, not a lighting-consistency measurement: on "
+    "Lambertian ground truth where one object was re-lit from a different "
+    "direction, the score changed by EXACTLY 0.0000, while transforms that "
+    "change no lighting at all moved it by up to 14.96."
+)
+
+
 class LightingScorer:
     """Turns the max_grad / median ratio into a capped tampering probability."""
 
@@ -70,19 +88,11 @@ class LightingScorer:
                     f"measurement - see the SKILL file's own Corpus Gap "
                     f"section. Confidence is capped accordingly.")
 
+        # ENHANCEMENT 2: the provisional sigmoid is a CONSTANT over this
+        # statistic's entire observed operating range, so it is reported but
+        # never voted on. See constants.ABSTAIN_WHEN_UNCALIBRATED.
         return (self._provisional_sigmoid(raw_score), "provisional_sigmoid",
-                False,
-                "PROVISIONAL CALIBRATION: no known-authentic reference ratios "
-                "were supplied, so a placeholder logistic curve was used. The "
-                "SKILL file gives no calibration function for this statistic "
-                "at all - unlike the other engines' provisional routes, there "
-                "is no corpus-stated threshold this curve even approximates. "
-                "This engine's underlying feature is furthermore an "
-                "unvalidated generic edge-strength heuristic, not a "
-                "lighting-consistency measurement. The raw score is a weak "
-                "auxiliary signal at best, and both is_reliable and "
-                "confidence should be read with that in mind regardless of "
-                "this route.")
+                False, UNCALIBRATED_ABSTENTION_NOTE)
 
     def _empirical_cdf_percentile(self,
                                   raw_score: float,
