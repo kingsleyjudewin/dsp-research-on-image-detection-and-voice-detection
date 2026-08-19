@@ -1,0 +1,719 @@
+{
+  "tag": "after",
+  "engine": "geometry",
+  "generated_at": "2026-08-18 23:13:17",
+  "pre_run_table": "Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case\n--------------------------------------------------------------------------------\ncampic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real\ncampic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real\nmobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real\nmobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real\nfake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI\nfake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI\nfake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI\ngen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI\ngenratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI",
+  "notices": [
+    "The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified."
+  ],
+  "cases": [
+    {
+      "case_number": 1,
+      "case_type": "Case 1 Real",
+      "ground_truth": "REAL",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg",
+            "filename": "campic.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 81624,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "All documented reliability conditions satisfied. Only 23 of 72 lines (32%) agree on a single vanishing point, below the 50% required. Both source methods assume a single dominant vanishing point; a split consensus indicates a Manhattan-world scene, which the corpus rules inapplicable.",
+          "processing_time_ms": 10815.35690299998,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (1 - C_min from Yao Eq. 8) at confidence 0.0000, is_reliable=False, with 0 flagged region(s). Scene preparation: {'line_segment_count': 65, 'sift_keypoint_count': 543, 'candidate_region_count': 40, 'region_source': 'slic', 'minimum_line_pair_angle_degrees': 5.0}. Vanishing-point stage: {'method': 'A4_recurrence', 'vanishing_line_row': 904.87, 'inlier_count': 23, 'total_line_count': 72, 'inlier_fraction': 0.3194, 'line_fit_residual_pixels': 4.194, 'is_at_infinity': False}. Height-ratio stage: {}.",
+          "mathematical_explanation": "This engine measures whether objects resting on a common ground plane have image-space heights consistent with a single pinhole projection. It estimates the reference plane's vanishing line v0, then for each object pair computes Yao Eq. 7, the real-world height ratio implied by the pair's image coordinates. Eq. 8 turns the gap between that measured ratio and the expected ratio alpha into C = 2*F(-|alpha-beta|; 0, sigma^2) with sigma = 0.1*alpha, and the engine publishes 1 - C_min. For this image the vanishing-point stage reported {'method': 'A4_recurrence', 'vanishing_line_row': 904.87, 'inlier_count': 23, 'total_line_count': 72, 'inlier_fraction': 0.3194, 'line_fit_residual_pixels': 4.194, 'is_at_infinity': False} and the ratio stage {}. The decisive question is not the arithmetic but whether alpha was known: the SKILL requires it from object-class knowledge, and with none available the engine assumes 1.0, meaning it is testing whether every paired region is the same real-world height.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated the pre-computation reliability conditions. Unlike the trace-based engines in this system, JPEG compression carries no penalty here: the corpus validates the perspective constraint as robust to down-sampling and low-quality recompression, which is what makes this vote complementary to theirs. Tilt and vanishing-point confidence cannot be judged yet and are gated after estimation.",
+              "input_shape": "1200x1599x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            },
+            {
+              "step": 2,
+              "name": "Line, keypoint and region extraction",
+              "description": "Extracted straight edges by Canny plus probabilistic Hough transform for the parallel-line module, 128-dimensional SIFT descriptors for the recurrence module, and candidate object regions by SLIC superpixel proposal.",
+              "input_shape": "1200x1599x3",
+              "output_shape": "1200x1599",
+              "key_values": {
+                "line_segment_count": 65,
+                "sift_keypoint_count": 543,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              }
+            },
+            {
+              "step": 3,
+              "name": "Vanishing point and vanishing line",
+              "description": "Estimated the reference plane's vanishing point, preferring Yao et al.'s explicit-line route (Hough segments, 5-degree minimum-pair-angle filter, homogeneous least-squares intersection, Levenberg-Marquardt refinement) and falling back to R-VPD's recurrence route (single-linkage visual words over SIFT descriptors, geometric-consistency scoring, implicit line fitting, weighted RANSAC). Because the camera is assumed level, the vanishing line is the horizontal line through that point, giving v0. Vanishing point estimated by the recurrence route: 7 implicit lines fitted through recurring-pattern feature groups were merged with 65 explicit edge lines, and weighted RANSAC found 23 of 72 in consensus.",
+              "input_shape": "65 line segments, 543 keypoints",
+              "output_shape": "vanishing point and horizon row",
+              "key_values": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 904.87,
+                "inlier_count": 23,
+                "total_line_count": 72,
+                "inlier_fraction": 0.3194,
+                "line_fit_residual_pixels": 4.194,
+                "is_at_infinity": false
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              },
+              "Line, keypoint and region extraction": {
+                "line_segment_count": 65,
+                "sift_keypoint_count": 543,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              },
+              "Vanishing point and vanishing line": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 904.87,
+                "inlier_count": 23,
+                "total_line_count": 72,
+                "inlier_fraction": 0.3194,
+                "line_fit_residual_pixels": 4.194,
+                "is_at_infinity": false
+              }
+            },
+            "flagged_regions": 0
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg",
+            "filename": "campic2.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 82589,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "All documented reliability conditions satisfied. Only 23 of 63 lines (37%) agree on a single vanishing point, below the 50% required. Both source methods assume a single dominant vanishing point; a split consensus indicates a Manhattan-world scene, which the corpus rules inapplicable.",
+          "processing_time_ms": 8637.305525000045,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (1 - C_min from Yao Eq. 8) at confidence 0.0000, is_reliable=False, with 0 flagged region(s). Scene preparation: {'line_segment_count': 60, 'sift_keypoint_count': 534, 'candidate_region_count': 40, 'region_source': 'slic', 'minimum_line_pair_angle_degrees': 5.0}. Vanishing-point stage: {'method': 'A4_recurrence', 'vanishing_line_row': 901.51, 'inlier_count': 23, 'total_line_count': 63, 'inlier_fraction': 0.3651, 'line_fit_residual_pixels': 4.542, 'is_at_infinity': False}. Height-ratio stage: {}.",
+          "mathematical_explanation": "This engine measures whether objects resting on a common ground plane have image-space heights consistent with a single pinhole projection. It estimates the reference plane's vanishing line v0, then for each object pair computes Yao Eq. 7, the real-world height ratio implied by the pair's image coordinates. Eq. 8 turns the gap between that measured ratio and the expected ratio alpha into C = 2*F(-|alpha-beta|; 0, sigma^2) with sigma = 0.1*alpha, and the engine publishes 1 - C_min. For this image the vanishing-point stage reported {'method': 'A4_recurrence', 'vanishing_line_row': 901.51, 'inlier_count': 23, 'total_line_count': 63, 'inlier_fraction': 0.3651, 'line_fit_residual_pixels': 4.542, 'is_at_infinity': False} and the ratio stage {}. The decisive question is not the arithmetic but whether alpha was known: the SKILL requires it from object-class knowledge, and with none available the engine assumes 1.0, meaning it is testing whether every paired region is the same real-world height.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated the pre-computation reliability conditions. Unlike the trace-based engines in this system, JPEG compression carries no penalty here: the corpus validates the perspective constraint as robust to down-sampling and low-quality recompression, which is what makes this vote complementary to theirs. Tilt and vanishing-point confidence cannot be judged yet and are gated after estimation.",
+              "input_shape": "1200x1599x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            },
+            {
+              "step": 2,
+              "name": "Line, keypoint and region extraction",
+              "description": "Extracted straight edges by Canny plus probabilistic Hough transform for the parallel-line module, 128-dimensional SIFT descriptors for the recurrence module, and candidate object regions by SLIC superpixel proposal.",
+              "input_shape": "1200x1599x3",
+              "output_shape": "1200x1599",
+              "key_values": {
+                "line_segment_count": 60,
+                "sift_keypoint_count": 534,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              }
+            },
+            {
+              "step": 3,
+              "name": "Vanishing point and vanishing line",
+              "description": "Estimated the reference plane's vanishing point, preferring Yao et al.'s explicit-line route (Hough segments, 5-degree minimum-pair-angle filter, homogeneous least-squares intersection, Levenberg-Marquardt refinement) and falling back to R-VPD's recurrence route (single-linkage visual words over SIFT descriptors, geometric-consistency scoring, implicit line fitting, weighted RANSAC). Because the camera is assumed level, the vanishing line is the horizontal line through that point, giving v0. Vanishing point estimated by the recurrence route: 3 implicit lines fitted through recurring-pattern feature groups were merged with 60 explicit edge lines, and weighted RANSAC found 23 of 63 in consensus.",
+              "input_shape": "60 line segments, 534 keypoints",
+              "output_shape": "vanishing point and horizon row",
+              "key_values": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 901.51,
+                "inlier_count": 23,
+                "total_line_count": 63,
+                "inlier_fraction": 0.3651,
+                "line_fit_residual_pixels": 4.542,
+                "is_at_infinity": false
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              },
+              "Line, keypoint and region extraction": {
+                "line_segment_count": 60,
+                "sift_keypoint_count": 534,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              },
+              "Vanishing point and vanishing line": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 901.51,
+                "inlier_count": 23,
+                "total_line_count": 63,
+                "inlier_fraction": 0.3651,
+                "line_fit_residual_pixels": 4.542,
+                "is_at_infinity": false
+              }
+            },
+            "flagged_regions": 0
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": null,
+      "score_spread": null,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 2,
+      "case_type": "Case 2 Manipulated",
+      "ground_truth": "FAKE",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg",
+            "filename": "fake .jpeg",
+            "format": "JPEG",
+            "height": 1600,
+            "width": 728,
+            "file_size_bytes": 161570,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "All documented reliability conditions satisfied. Only 52 of 464 lines (11%) agree on a single vanishing point, below the 50% required. Both source methods assume a single dominant vanishing point; a split consensus indicates a Manhattan-world scene, which the corpus rules inapplicable.",
+          "processing_time_ms": 8004.53467899996,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (1 - C_min from Yao Eq. 8) at confidence 0.0000, is_reliable=False, with 0 flagged region(s). Scene preparation: {'line_segment_count': 400, 'sift_keypoint_count': 1200, 'candidate_region_count': 40, 'region_source': 'slic', 'minimum_line_pair_angle_degrees': 5.0}. Vanishing-point stage: {'method': 'A4_recurrence', 'vanishing_line_row': 1034.89, 'inlier_count': 52, 'total_line_count': 464, 'inlier_fraction': 0.1121, 'line_fit_residual_pixels': 4.19, 'is_at_infinity': False}. Height-ratio stage: {}.",
+          "mathematical_explanation": "This engine measures whether objects resting on a common ground plane have image-space heights consistent with a single pinhole projection. It estimates the reference plane's vanishing line v0, then for each object pair computes Yao Eq. 7, the real-world height ratio implied by the pair's image coordinates. Eq. 8 turns the gap between that measured ratio and the expected ratio alpha into C = 2*F(-|alpha-beta|; 0, sigma^2) with sigma = 0.1*alpha, and the engine publishes 1 - C_min. For this image the vanishing-point stage reported {'method': 'A4_recurrence', 'vanishing_line_row': 1034.89, 'inlier_count': 52, 'total_line_count': 464, 'inlier_fraction': 0.1121, 'line_fit_residual_pixels': 4.19, 'is_at_infinity': False} and the ratio stage {}. The decisive question is not the arithmetic but whether alpha was known: the SKILL requires it from object-class knowledge, and with none available the engine assumes 1.0, meaning it is testing whether every paired region is the same real-world height.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated the pre-computation reliability conditions. Unlike the trace-based engines in this system, JPEG compression carries no penalty here: the corpus validates the perspective constraint as robust to down-sampling and low-quality recompression, which is what makes this vote complementary to theirs. Tilt and vanishing-point confidence cannot be judged yet and are gated after estimation.",
+              "input_shape": "1600x728x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            },
+            {
+              "step": 2,
+              "name": "Line, keypoint and region extraction",
+              "description": "Extracted straight edges by Canny plus probabilistic Hough transform for the parallel-line module, 128-dimensional SIFT descriptors for the recurrence module, and candidate object regions by SLIC superpixel proposal.",
+              "input_shape": "1600x728x3",
+              "output_shape": "1600x728",
+              "key_values": {
+                "line_segment_count": 400,
+                "sift_keypoint_count": 1200,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              }
+            },
+            {
+              "step": 3,
+              "name": "Vanishing point and vanishing line",
+              "description": "Estimated the reference plane's vanishing point, preferring Yao et al.'s explicit-line route (Hough segments, 5-degree minimum-pair-angle filter, homogeneous least-squares intersection, Levenberg-Marquardt refinement) and falling back to R-VPD's recurrence route (single-linkage visual words over SIFT descriptors, geometric-consistency scoring, implicit line fitting, weighted RANSAC). Because the camera is assumed level, the vanishing line is the horizontal line through that point, giving v0. Vanishing point estimated by the recurrence route: 64 implicit lines fitted through recurring-pattern feature groups were merged with 400 explicit edge lines, and weighted RANSAC found 52 of 464 in consensus.",
+              "input_shape": "400 line segments, 1200 keypoints",
+              "output_shape": "vanishing point and horizon row",
+              "key_values": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 1034.89,
+                "inlier_count": 52,
+                "total_line_count": 464,
+                "inlier_fraction": 0.1121,
+                "line_fit_residual_pixels": 4.19,
+                "is_at_infinity": false
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              },
+              "Line, keypoint and region extraction": {
+                "line_segment_count": 400,
+                "sift_keypoint_count": 1200,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              },
+              "Vanishing point and vanishing line": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 1034.89,
+                "inlier_count": 52,
+                "total_line_count": 464,
+                "inlier_fraction": 0.1121,
+                "line_fit_residual_pixels": 4.19,
+                "is_at_infinity": false
+              }
+            },
+            "flagged_regions": 0
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg",
+            "filename": "fake.jpeg",
+            "format": "JPEG",
+            "height": 1152,
+            "width": 928,
+            "file_size_bytes": 68990,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "All documented reliability conditions satisfied. Only 33 of 170 lines (19%) agree on a single vanishing point, below the 50% required. Both source methods assume a single dominant vanishing point; a split consensus indicates a Manhattan-world scene, which the corpus rules inapplicable.",
+          "processing_time_ms": 5295.846844999971,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (1 - C_min from Yao Eq. 8) at confidence 0.0000, is_reliable=False, with 0 flagged region(s). Scene preparation: {'line_segment_count': 163, 'sift_keypoint_count': 727, 'candidate_region_count': 40, 'region_source': 'slic', 'minimum_line_pair_angle_degrees': 5.0}. Vanishing-point stage: {'method': 'A4_recurrence', 'vanishing_line_row': 429.82, 'inlier_count': 33, 'total_line_count': 170, 'inlier_fraction': 0.1941, 'line_fit_residual_pixels': 3.807, 'is_at_infinity': False}. Height-ratio stage: {}.",
+          "mathematical_explanation": "This engine measures whether objects resting on a common ground plane have image-space heights consistent with a single pinhole projection. It estimates the reference plane's vanishing line v0, then for each object pair computes Yao Eq. 7, the real-world height ratio implied by the pair's image coordinates. Eq. 8 turns the gap between that measured ratio and the expected ratio alpha into C = 2*F(-|alpha-beta|; 0, sigma^2) with sigma = 0.1*alpha, and the engine publishes 1 - C_min. For this image the vanishing-point stage reported {'method': 'A4_recurrence', 'vanishing_line_row': 429.82, 'inlier_count': 33, 'total_line_count': 170, 'inlier_fraction': 0.1941, 'line_fit_residual_pixels': 3.807, 'is_at_infinity': False} and the ratio stage {}. The decisive question is not the arithmetic but whether alpha was known: the SKILL requires it from object-class knowledge, and with none available the engine assumes 1.0, meaning it is testing whether every paired region is the same real-world height.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated the pre-computation reliability conditions. Unlike the trace-based engines in this system, JPEG compression carries no penalty here: the corpus validates the perspective constraint as robust to down-sampling and low-quality recompression, which is what makes this vote complementary to theirs. Tilt and vanishing-point confidence cannot be judged yet and are gated after estimation.",
+              "input_shape": "1152x928x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            },
+            {
+              "step": 2,
+              "name": "Line, keypoint and region extraction",
+              "description": "Extracted straight edges by Canny plus probabilistic Hough transform for the parallel-line module, 128-dimensional SIFT descriptors for the recurrence module, and candidate object regions by SLIC superpixel proposal.",
+              "input_shape": "1152x928x3",
+              "output_shape": "1152x928",
+              "key_values": {
+                "line_segment_count": 163,
+                "sift_keypoint_count": 727,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              }
+            },
+            {
+              "step": 3,
+              "name": "Vanishing point and vanishing line",
+              "description": "Estimated the reference plane's vanishing point, preferring Yao et al.'s explicit-line route (Hough segments, 5-degree minimum-pair-angle filter, homogeneous least-squares intersection, Levenberg-Marquardt refinement) and falling back to R-VPD's recurrence route (single-linkage visual words over SIFT descriptors, geometric-consistency scoring, implicit line fitting, weighted RANSAC). Because the camera is assumed level, the vanishing line is the horizontal line through that point, giving v0. Vanishing point estimated by the recurrence route: 7 implicit lines fitted through recurring-pattern feature groups were merged with 163 explicit edge lines, and weighted RANSAC found 33 of 170 in consensus.",
+              "input_shape": "163 line segments, 727 keypoints",
+              "output_shape": "vanishing point and horizon row",
+              "key_values": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 429.82,
+                "inlier_count": 33,
+                "total_line_count": 170,
+                "inlier_fraction": 0.1941,
+                "line_fit_residual_pixels": 3.807,
+                "is_at_infinity": false
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              },
+              "Line, keypoint and region extraction": {
+                "line_segment_count": 163,
+                "sift_keypoint_count": 727,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              },
+              "Vanishing point and vanishing line": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 429.82,
+                "inlier_count": 33,
+                "total_line_count": 170,
+                "inlier_fraction": 0.1941,
+                "line_fit_residual_pixels": 3.807,
+                "is_at_infinity": false
+              }
+            },
+            "flagged_regions": 0
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": null,
+      "score_spread": null,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 3,
+      "case_type": "Case 3 AI-generated",
+      "ground_truth": "AI-GENERATED",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg",
+            "filename": "gen.jpeg",
+            "format": "JPEG",
+            "height": 1006,
+            "width": 800,
+            "file_size_bytes": 45706,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "All documented reliability conditions satisfied. Only 18 of 71 lines (25%) agree on a single vanishing point, below the 50% required. Both source methods assume a single dominant vanishing point; a split consensus indicates a Manhattan-world scene, which the corpus rules inapplicable.",
+          "processing_time_ms": 3663.684269999976,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (1 - C_min from Yao Eq. 8) at confidence 0.0000, is_reliable=False, with 0 flagged region(s). Scene preparation: {'line_segment_count': 69, 'sift_keypoint_count': 378, 'candidate_region_count': 40, 'region_source': 'slic', 'minimum_line_pair_angle_degrees': 5.0}. Vanishing-point stage: {'method': 'A4_recurrence', 'vanishing_line_row': 375.26, 'inlier_count': 18, 'total_line_count': 71, 'inlier_fraction': 0.2535, 'line_fit_residual_pixels': 4.601, 'is_at_infinity': False}. Height-ratio stage: {}.",
+          "mathematical_explanation": "This engine measures whether objects resting on a common ground plane have image-space heights consistent with a single pinhole projection. It estimates the reference plane's vanishing line v0, then for each object pair computes Yao Eq. 7, the real-world height ratio implied by the pair's image coordinates. Eq. 8 turns the gap between that measured ratio and the expected ratio alpha into C = 2*F(-|alpha-beta|; 0, sigma^2) with sigma = 0.1*alpha, and the engine publishes 1 - C_min. For this image the vanishing-point stage reported {'method': 'A4_recurrence', 'vanishing_line_row': 375.26, 'inlier_count': 18, 'total_line_count': 71, 'inlier_fraction': 0.2535, 'line_fit_residual_pixels': 4.601, 'is_at_infinity': False} and the ratio stage {}. The decisive question is not the arithmetic but whether alpha was known: the SKILL requires it from object-class knowledge, and with none available the engine assumes 1.0, meaning it is testing whether every paired region is the same real-world height.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated the pre-computation reliability conditions. Unlike the trace-based engines in this system, JPEG compression carries no penalty here: the corpus validates the perspective constraint as robust to down-sampling and low-quality recompression, which is what makes this vote complementary to theirs. Tilt and vanishing-point confidence cannot be judged yet and are gated after estimation.",
+              "input_shape": "1006x800x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            },
+            {
+              "step": 2,
+              "name": "Line, keypoint and region extraction",
+              "description": "Extracted straight edges by Canny plus probabilistic Hough transform for the parallel-line module, 128-dimensional SIFT descriptors for the recurrence module, and candidate object regions by SLIC superpixel proposal.",
+              "input_shape": "1006x800x3",
+              "output_shape": "1006x800",
+              "key_values": {
+                "line_segment_count": 69,
+                "sift_keypoint_count": 378,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              }
+            },
+            {
+              "step": 3,
+              "name": "Vanishing point and vanishing line",
+              "description": "Estimated the reference plane's vanishing point, preferring Yao et al.'s explicit-line route (Hough segments, 5-degree minimum-pair-angle filter, homogeneous least-squares intersection, Levenberg-Marquardt refinement) and falling back to R-VPD's recurrence route (single-linkage visual words over SIFT descriptors, geometric-consistency scoring, implicit line fitting, weighted RANSAC). Because the camera is assumed level, the vanishing line is the horizontal line through that point, giving v0. Vanishing point estimated by the recurrence route: 2 implicit lines fitted through recurring-pattern feature groups were merged with 69 explicit edge lines, and weighted RANSAC found 18 of 71 in consensus.",
+              "input_shape": "69 line segments, 378 keypoints",
+              "output_shape": "vanishing point and horizon row",
+              "key_values": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 375.26,
+                "inlier_count": 18,
+                "total_line_count": 71,
+                "inlier_fraction": 0.2535,
+                "line_fit_residual_pixels": 4.601,
+                "is_at_infinity": false
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              },
+              "Line, keypoint and region extraction": {
+                "line_segment_count": 69,
+                "sift_keypoint_count": 378,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              },
+              "Vanishing point and vanishing line": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 375.26,
+                "inlier_count": 18,
+                "total_line_count": 71,
+                "inlier_fraction": 0.2535,
+                "line_fit_residual_pixels": 4.601,
+                "is_at_infinity": false
+              }
+            },
+            "flagged_regions": 0
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg",
+            "filename": "genratedimage.jpeg",
+            "format": "JPEG",
+            "height": 1376,
+            "width": 768,
+            "file_size_bytes": 72944,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 0.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "All documented reliability conditions satisfied. Only 46 of 278 lines (17%) agree on a single vanishing point, below the 50% required. Both source methods assume a single dominant vanishing point; a split consensus indicates a Manhattan-world scene, which the corpus rules inapplicable. The estimated vanishing line sits at row 1412, outside the image's 0 to 1375 range. Yao et al. state their simplified projection holds only 'as long as the tilt is small enough that the vanishing line is inside the image', so the camera is tilted or rolled beyond what this method supports.",
+          "processing_time_ms": 5661.714411999981,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=0.000000 (1 - C_min from Yao Eq. 8) at confidence 0.0000, is_reliable=False, with 0 flagged region(s). Scene preparation: {'line_segment_count': 266, 'sift_keypoint_count': 763, 'candidate_region_count': 40, 'region_source': 'slic', 'minimum_line_pair_angle_degrees': 5.0}. Vanishing-point stage: {'method': 'A4_recurrence', 'vanishing_line_row': 1411.74, 'inlier_count': 46, 'total_line_count': 278, 'inlier_fraction': 0.1655, 'line_fit_residual_pixels': 1.851, 'is_at_infinity': False}. Height-ratio stage: {}.",
+          "mathematical_explanation": "This engine measures whether objects resting on a common ground plane have image-space heights consistent with a single pinhole projection. It estimates the reference plane's vanishing line v0, then for each object pair computes Yao Eq. 7, the real-world height ratio implied by the pair's image coordinates. Eq. 8 turns the gap between that measured ratio and the expected ratio alpha into C = 2*F(-|alpha-beta|; 0, sigma^2) with sigma = 0.1*alpha, and the engine publishes 1 - C_min. For this image the vanishing-point stage reported {'method': 'A4_recurrence', 'vanishing_line_row': 1411.74, 'inlier_count': 46, 'total_line_count': 278, 'inlier_fraction': 0.1655, 'line_fit_residual_pixels': 1.851, 'is_at_infinity': False} and the ratio stage {}. The decisive question is not the arithmetic but whether alpha was known: the SKILL requires it from object-class knowledge, and with none available the engine assumes 1.0, meaning it is testing whether every paired region is the same real-world height.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Condition check",
+              "description": "Evaluated the pre-computation reliability conditions. Unlike the trace-based engines in this system, JPEG compression carries no penalty here: the corpus validates the perspective constraint as robust to down-sampling and low-quality recompression, which is what makes this vote complementary to theirs. Tilt and vanishing-point confidence cannot be judged yet and are gated after estimation.",
+              "input_shape": "1376x768x3",
+              "output_shape": "condition report",
+              "key_values": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              }
+            },
+            {
+              "step": 2,
+              "name": "Line, keypoint and region extraction",
+              "description": "Extracted straight edges by Canny plus probabilistic Hough transform for the parallel-line module, 128-dimensional SIFT descriptors for the recurrence module, and candidate object regions by SLIC superpixel proposal.",
+              "input_shape": "1376x768x3",
+              "output_shape": "1376x768",
+              "key_values": {
+                "line_segment_count": 266,
+                "sift_keypoint_count": 763,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              }
+            },
+            {
+              "step": 3,
+              "name": "Vanishing point and vanishing line",
+              "description": "Estimated the reference plane's vanishing point, preferring Yao et al.'s explicit-line route (Hough segments, 5-degree minimum-pair-angle filter, homogeneous least-squares intersection, Levenberg-Marquardt refinement) and falling back to R-VPD's recurrence route (single-linkage visual words over SIFT descriptors, geometric-consistency scoring, implicit line fitting, weighted RANSAC). Because the camera is assumed level, the vanishing line is the horizontal line through that point, giving v0. Vanishing point estimated by the recurrence route: 12 implicit lines fitted through recurring-pattern feature groups were merged with 266 explicit edge lines, and weighted RANSAC found 46 of 278 in consensus.",
+              "input_shape": "266 line segments, 763 keypoints",
+              "output_shape": "vanishing point and horizon row",
+              "key_values": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 1411.74,
+                "inlier_count": 46,
+                "total_line_count": 278,
+                "inlier_fraction": 0.1655,
+                "line_fit_residual_pixels": 1.851,
+                "is_at_infinity": false
+              }
+            }
+          ],
+          "evidence_map_path": "",
+          "evidence_map_colour_path": "",
+          "deep_probe": {
+            "steps": {
+              "Condition check": {
+                "is_reliable": true,
+                "skip_engine": false,
+                "confidence_weight": 1.0,
+                "estimated_jpeg_quality": 74.0,
+                "is_resized": false,
+                "container_format": "JPEG"
+              },
+              "Line, keypoint and region extraction": {
+                "line_segment_count": 266,
+                "sift_keypoint_count": 763,
+                "candidate_region_count": 40,
+                "region_source": "slic",
+                "minimum_line_pair_angle_degrees": 5.0
+              },
+              "Vanishing point and vanishing line": {
+                "method": "A4_recurrence",
+                "vanishing_line_row": 1411.74,
+                "inlier_count": 46,
+                "total_line_count": 278,
+                "inlier_fraction": 0.1655,
+                "line_fit_residual_pixels": 1.851,
+                "is_at_infinity": false
+              }
+            },
+            "flagged_regions": 0
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": null,
+      "score_spread": null,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    }
+  ],
+  "statistics": {
+    "total_images": 6,
+    "real_average": null,
+    "fake_average": null,
+    "ai_average": null,
+    "separation": null,
+    "real_raw_average": 0.0,
+    "fake_raw_average": 0.0,
+    "raw_separation": 0.0,
+    "reliable_count": 0,
+    "correct_verdicts": 0,
+    "abstained_count": 6,
+    "wrong_verdicts": 0,
+    "average_time_ms": 7013.073772333319
+  }
+}

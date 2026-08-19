@@ -1,0 +1,62 @@
+BEFORE vs AFTER - GEOMETRIC CONSISTENCY ENGINE
+==============================================
+
+PART 1 - THE SIX SUPPLIED IMAGES
+All six abstain BEFORE and AFTER, at the vanishing-point confidence gate:
+only 11-37% of detected lines agree on any single vanishing point, against
+the 50% the engine requires. These are ordinary photographs without the
+single dominant vanishing structure Yao's method needs. The height-ratio
+stage never executed on any of them, so Eq. 7/8 was never exercised here.
+
+  Image                 truth          before prob  after prob  inlier frac
+  ------------------------------------------------------------------------
+  campic.jpeg           REAL                  None        None  0.319
+  campic2.jpeg          REAL                  None        None  0.365
+  fake .jpeg            FAKE                  None        None  0.112
+  fake.jpeg             FAKE                  None        None  0.194
+  gen.jpeg              AI-GENERATED          None        None  0.254
+  genratedimage.jpeg    AI-GENERATED          None        None  0.166
+  separation                                  None        None  undefined
+
+PART 2 - GROUND TRUTH (where the engine can actually be measured)
+Scene built from an exact pinhole model: horizon at row 300, five vertical
+poles of equal real height at known depths. A forgery is one pole rendered
+at the wrong size for its depth. Estimated v0 came back at 300.3-301.1
+against a true 300.0, and Eq. 7 recovered ratios to about 1% (1.4602
+measured for a 1.45x forgery, 2.0087 for 2.0x).
+
+  condition                    before raw   after raw   change
+  ------------------------------------------------------------
+  authentic, clean boxes           0.0065      0.0042   =
+  forgery x1.15                    0.8680      0.8371   = (still detected)
+  forgery x1.20                    0.9559      0.9293   = (still detected)
+  forgery x1.45                    1.0000      0.9990   = (still detected)
+  forgery x2.0                     1.0000      1.0000   =
+
+  FALSE ALARMS on authentic scenes under region-localisation error
+  (the defect the enhancement targets):
+      jitter 2px      5/10   ->   2/10     IMPROVED
+      jitter 3px      6/10   ->   5/10     improved
+      jitter 5px     10/10   ->   8/10     improved
+
+  Realistic combination, 1.45x forgery WITH 2px jitter, 10 scenes each:
+      pair minimum   : separation +0.534, false alarms 5/10
+      corroborated   : separation +0.645, false alarms 2/10
+
+PART 3 - JPEG ROBUSTNESS (the SKILL's headline claim, verified)
+  uncompressed  authentic 0.0042  forged 0.9990  separation +0.9948
+  QF95          authentic 0.0072  forged 0.9990  separation +0.9918
+  QF85          authentic 0.0037  forged 0.9990  separation +0.9954
+  QF74          authentic 0.0058  forged 0.9990  separation +0.9932
+  QF30          authentic 0.0097  forged 0.9990  separation +0.9893
+  Yao et al.'s robustness claim holds: separation is essentially unchanged
+  from uncompressed down to QF30, the regime that disables every other
+  engine in this system.
+
+HONEST RESIDUAL DEFECTS
+  - False alarms are reduced, not removed: 8 of 10 authentic scenes still
+    false-alarm at 5px region-localisation error.
+  - The 0.5 inlier gate is a hard cliff on a scene-sensitive quantity. A
+    1.1x forgery measured 0.4691 and abstained entirely while its 1.15x
+    neighbour measured 0.5358 and voted 0.8371. Not loosened, because the
+    SKILL's abstain instruction is explicit.

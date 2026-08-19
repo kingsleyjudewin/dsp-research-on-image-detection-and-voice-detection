@@ -1,0 +1,82 @@
+================================================================
+GEOMETRIC CONSISTENCY ENGINE - DIAGNOSTIC SUMMARY
+Tested: 6 supplied images + ground truth from an exact pinhole model
+================================================================
+
+OVERALL HEALTH:  NEEDS INVESTIGATION BEFORE INTEGRATION
+   The mathematics is the most accurate of any engine tested in this
+   system, and it is the only one that survives heavy JPEG. But it cannot
+   run without caller-supplied object regions, and it abstained on all six
+   supplied photographs.
+
+SEPARATION
+   Six supplied images : UNDEFINED before and after. All six abstain at
+                         the vanishing-point gate (11-37% line consensus
+                         against the 50% required). Ordinary photographs
+                         do not contain the single dominant vanishing
+                         structure Yao's method requires.
+   Ground truth        : +0.9948 uncompressed, +0.9893 at QF30.
+                         False alarms under 2px region error: 5/10 -> 2/10.
+
+TOP 3 STRENGTHS (evidence-based)
+ 1. The geometry is excellent. Vanishing line recovered at 300.3-301.1
+    against a true 300.0 (sub-pixel), and Eq. 7 recovers height ratios to
+    about 1%: 1.4602 measured for a 1.45x forgery, 2.0087 for 2.0x.
+ 2. JPEG robustness is real and is this engine's unique value. Separation
+    +0.9948 uncompressed and +0.9893 at QF30 - the regime where the
+    Benford and CFA engines are already gated off entirely.
+ 3. Detection reaches a ~10-15% scale error (x1.15 scores 0.8371),
+    consistent with the 6.7% threshold derivable from Eq. 8.
+
+TOP 3 WEAKNESSES (honest)
+ 1. INERT ON REAL PHOTOGRAPHS. All six supplied images abstained, and the
+    height-ratio stage never executed on any of them.
+ 2. CANNOT PROPOSE ITS OWN OBJECTS. With SLIC regions and an assumed ratio
+    of 1.0 it scores raw 1.0000 on a scene that is authentic by
+    construction - identical to the forged version - because 778 arbitrary
+    superpixel pairs guarantee some pair looks impossible. The engine
+    already gates this path correctly; the consequence is that it can only
+    vote when a caller supplies object regions.
+ 3. FRAGILE TO REGION LOCALISATION. A 2-pixel error on box tops/bottoms
+    still false-alarms on 2 of 10 authentic scenes (was 5 of 10); at 5px,
+    8 of 10.
+
+BUGS FOUND
+  None. No crash, no contract violation, no non-determinism (the same
+  image analysed 10 times gave identical verdicts - RANSAC is seeded). The
+  behaviours above are design limits, not defects, and the engine's own
+  notes already anticipated the alpha=1.0 problem.
+  PRE-EXISTING, NOT FIXED: 3 numeric literals outside constants.py
+  (utils.py:29, 284, 346). Present before this work; out of scope.
+
+CHANGES TESTED AND REJECTED (do not re-propose)
+  - Propagating region-localisation uncertainty into Eq. 8's sigma: false
+    alarms moved only 3/8 -> 3/8 at 2px and 8/8 -> 6/8 at 5px, because the
+    propagated term is small beside the paper's 0.1*alpha.
+  - Relaxing the 0.5 inlier gate: brittle but corpus-mandated. A 1.1x
+    forgery abstained at 0.4691 while 1.15x voted at 0.5358. Reported as a
+    limitation rather than loosened.
+  - Scoring the SLIC path: already gated, and testing confirmed the gate
+    is right.
+
+FUSION WEIGHT RECOMMENDATIONS
+    Caller supplies object regions + expected ratios .... HIGH
+    Caller supplies regions only (alpha assumed 1.0) .... MEDIUM
+    No supplied regions (SLIC path) .................... ZERO (abstains)
+    Heavy JPEG, QF30-95, with supplied regions ......... HIGH
+    Resized image ...................................... MEDIUM
+    AI-generated ....................................... ZERO (abstains)
+    Scene without one dominant vanishing point ......... ZERO (abstains)
+
+FUSION ONE-LINER
+    geometry: catches scale/perspective-inconsistent splices with near
+    perfect separation (+0.99) and, uniquely in this system, keeps that
+    performance down to QF30 where every trace-based engine is already
+    disabled; but it needs caller-supplied object regions, abstains on
+    ordinary photographs lacking a single dominant vanishing point, and is
+    blind to same-scale composites. Weight HIGH when regions are supplied
+    at any JPEG quality, ZERO otherwise.
+
+PERFORMANCE
+    3.5-10.7 s per image on the supplied photographs, dominated by the
+    O(n^2) SIFT recurrence clustering of pipeline A4.

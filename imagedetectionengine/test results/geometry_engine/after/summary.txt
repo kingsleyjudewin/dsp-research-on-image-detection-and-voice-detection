@@ -1,0 +1,31 @@
+GEOMETRY ENGINE - DIAGNOSTIC SUMMARY
+run tag       : after
+generated     : 2026-08-18 23:13:17
+
+images tested : 6
+reliable      : 0 / 6
+correct       : 0 / 6
+wrong         : 0 / 6
+abstained     : 6 / 6
+
+PROBABILITY BY CASE
+  real        : None
+  manipulated : None
+  ai-generated: None
+  separation  : None
+
+RAW SCORE BY CASE
+  real        : 0.0
+  manipulated : 0.0
+  separation  : 0.0
+
+NOTICES
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+
+PER-IMAGE
+  campic.jpeg            truth=REAL          raw=0.0000 prob=None conf=0.000 verdict=NO VOTE (unreliable)
+  campic2.jpeg           truth=REAL          raw=0.0000 prob=None conf=0.000 verdict=NO VOTE (unreliable)
+  fake .jpeg             truth=FAKE          raw=0.0000 prob=None conf=0.000 verdict=NO VOTE (unreliable)
+  fake.jpeg              truth=FAKE          raw=0.0000 prob=None conf=0.000 verdict=NO VOTE (unreliable)
+  gen.jpeg               truth=AI-GENERATED  raw=0.0000 prob=None conf=0.000 verdict=NO VOTE (unreliable)
+  genratedimage.jpeg     truth=AI-GENERATED  raw=0.0000 prob=None conf=0.000 verdict=NO VOTE (unreliable)

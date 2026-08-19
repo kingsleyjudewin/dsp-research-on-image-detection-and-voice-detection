@@ -1,0 +1,86 @@
+PHASE 1 - PRE-TEST EXPECTATIONS (written BEFORE the engine was run)
+===================================================================
+
+STEP 1.1 - CORE ENGINE CAPABILITY (from the SKILL file)
+
+Property measured:
+  Under a pinhole camera, every object resting on a common reference plane
+  obeys a fixed projective relation to that plane's VANISHING LINE v0. Given
+  v0, the real-world height ratio of two such objects follows from their image
+  coordinates alone - no intrinsics, no EXIF (Yao et al. Eq. 7):
+       beta = (v1'-v2')(v0-v2) / ((v1-v2)(v0-v2'))
+  Consistency with an EXPECTED ratio alpha (Eq. 8):
+       C = 2*F(-|alpha-beta|; 0, sigma^2),  sigma = 0.1*alpha,  T = 0.5
+  Published tampering score = 1 - C_min across evaluated pairs.
+
+Signal present in FAKE, absent in REAL:
+  An object spliced from another photo carries its source camera's geometry.
+  Resized by eye, it lands at the wrong apparent size for its position on the
+  ground plane, so beta departs from alpha and C collapses.
+
+Signal present in REAL:
+  Every object pair agrees with one single vanishing line.
+
+raw_score meaning:
+  0 = every pair consistent. 1 = at least one pair maximally inconsistent.
+  Unusually for this system the score is ALREADY paper-calibrated; T=0.5 is
+  Yao's own threshold, so raw_score > 0.5 is the paper's "forged" call.
+
+STEP 1.2 - PER-CASE PREDICTIONS
+
+*** DOMINANT PREDICTION - THE ALPHA PROBLEM ***
+  Eq. 8 needs alpha, the EXPECTED height ratio, which the SKILL says must come
+  "from general prior knowledge about the object classes (e.g. typical relative
+  human heights) or from a trusted reference pair". The engine gets an image
+  and nothing else - no classifier, no annotations - and its constants.py
+  concedes this, defaulting DEFAULT_EXPECTED_HEIGHT_RATIO = 1.0 and calling it
+  "THE MOST CONSEQUENTIAL ASSUMPTION IN THIS ENGINE".
+  alpha = 1.0 means "these two regions are the same real-world height".
+  => On ordinary photographs containing objects of genuinely different sizes,
+     beta will legitimately differ from 1.0 and C will collapse for reasons
+     that have nothing to do with tampering. I expect FALSE POSITIVES on
+     authentic images, gated only by whatever the appearance screen rejects.
+  => The counter-force is the abstention machinery: the SKILL insists a
+     low-confidence vanishing point "should cause the module to abstain".
+
+  Second prediction: these are ordinary photographs, not the man-made
+  parallel-line scenes Yao's method wants. If Hough finds no usable line
+  family and SIFT finds no recurring pattern, the VP confidence gate should
+  fire and the engine should abstain outright. I expect a mix of abstentions
+  and alpha-driven false positives.
+
+CASE 1 - REAL
+  Expected probability : 0.0 - 0.3 IF the engine abstains or the scenes are
+                         geometrically clean; but I genuinely expect some
+                         false positives from the alpha=1.0 assumption
+  Expected is_reliable : False for images with no usable geometry
+  Failure mode         : alpha=1.0 applied to unlike objects
+
+CASE 2 - FAKE
+  Expected probability : 0.6 - 1.0 only if the manipulation is a
+                         scale/perspective-inconsistent splice. The SKILL is
+                         explicit that this method is "blind to same-scale,
+                         same-plane, geometrically-consistent composites".
+  Failure mode         : if these are local retouches, colour edits or
+                         face swaps rather than scale-wrong splices, the
+                         engine SHOULD miss them - and that miss is correct
+                         behaviour, not a bug
+
+CASE 3 - AI-GENERATED
+  Is AI detection in SKILL scope: NO. The SKILL never mentions synthetic or
+                         generative imagery. Its four pipelines detect
+                         scale/perspective-inconsistent splicing only.
+  Reasoning            : an AI image has no camera and no true vanishing
+                         geometry, but diffusion models reproduce plausible
+                         perspective well enough that there may be no gross
+                         height-ratio violation. Alternatively their geometry
+                         is subtly incoherent and this engine is one of the
+                         few here that could in principle notice.
+  Expected             : genuinely uncertain. This is the one case where I
+                         cannot predict the direction with confidence.
+
+CROSS-CUTTING
+  This engine is the only one in the system that survives heavy JPEG
+  recompression - Yao et al. explicitly validate robustness to downsampling
+  and low-quality JPEG. So unlike the Benford and CFA engines, QF74 is NOT
+  disqualifying here, and I expect NO compression-driven abstention.
