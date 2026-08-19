@@ -367,14 +367,90 @@ class ConditionChecker:
         Returns:
             CheckResult reflecting whether the engine's premise held.
         """
-        if mixture.authentic_mean > constants.MIXTURE_TAMPERED_MEAN:
+        # ENHANCEMENT 2: the test is on the SEPARATION of the two components,
+        # not merely the sign of mu1. mu2 is fixed at 0 by Eq. 14, so
+        # mu1/sigma1 is the standardised distance between them. Testing showed
+        # the sign test passes an image that never went through a colour filter
+        # array at all (mu1 = 0.0020, scored 0.6733 as reliable). Measurements
+        # behind the threshold are recorded in constants.
+        separation = ConditionChecker._mixture_separation(mixture)
+        if (mixture.authentic_mean > constants.MIXTURE_TAMPERED_MEAN
+                and separation >= constants.MINIMUM_MIXTURE_SEPARATION_RATIO):
             return True, constants.FULL_CONFIDENCE, ""
 
         return (False, constants.ZERO_CONFIDENCE,
-                f"No CFA signature was found anywhere in the image: the fitted "
-                f"authentic-component mean is {mixture.authentic_mean:.4f}, "
-                f"but Eq. 13 requires it to be positive. The image was either "
-                f"not captured through a Bayer colour filter array, or has been "
+                ConditionChecker._describe_absent_cfa(mixture, separation))
+
+    @staticmethod
+    def _describe_absent_cfa(mixture: GaussianMixtureFit,
+                             separation: float) -> str:
+        """Word the "no usable CFA signature" finding for the report.
+
+        Args:
+            mixture: The fitted Gaussian mixture.
+            separation: Standardised distance between its components.
+
+        Returns:
+            Human-readable explanation.
+        """
+        deviation = float(np.sqrt(max(mixture.authentic_variance, 0.0)))
+        return (f"No usable CFA signature was found anywhere in the image. The "
+                f"fitted authentic-component mean is "
+                f"{mixture.authentic_mean:.4f} against a component standard "
+                f"deviation of {deviation:.4f}, a separation of "
+                f"{separation:.3f} where Eq. 13 requires a positive mean and "
+                f"this engine requires at least "
+                f"{constants.MINIMUM_MIXTURE_SEPARATION_RATIO:.1f} standard "
+                f"deviations before the two hypotheses can be told apart. "
+                f"Genuine Bayer imagery measures 1.9 to 24.9 here; imagery "
+                f"that never passed a colour filter array measures 0.006 to "
+                f"0.013. The image was either not captured through a Bayer CFA "
+                f"- which includes synthetic and AI-generated imagery - or was "
                 f"resampled or recompressed hard enough to erase the "
-                f"demosaicing correlation entirely. No localisation is "
-                f"meaningful in this state.")
+                f"demosaicing correlation. A high score here would be noise.")
+
+    @staticmethod
+    def _mixture_separation(mixture: GaussianMixtureFit) -> float:
+        """Standardised distance between the two mixture components.
+
+        Eq. 14 fixes the tampered component's mean at zero, so this is simply
+        mu1 / sigma1.
+
+        Args:
+            mixture: The fitted Gaussian mixture.
+
+        Returns:
+            The ratio, or 0.0 when the component variance is degenerate.
+        """
+        variance = float(max(mixture.authentic_variance, 0.0))
+        if variance <= 0.0:
+            return 0.0
+        return float(mixture.authentic_mean) / float(np.sqrt(variance))
+
+    @staticmethod
+    def assess_mixture_convergence(mixture: GaussianMixtureFit) -> CheckResult:
+        """Penalise a mixture fit that never converged.
+
+        ENHANCEMENT 4. The SKILL's Pipeline A step 6 sets convergence at a
+        log-likelihood increase below 1e-3 or 500 iterations, whichever comes
+        first. Hitting the cap means the second condition stopped the fit, not
+        the first. Two of the six diagnostic images (campic.jpeg, campic2.jpeg)
+        ran the full 500 iterations with converged=False and their posteriors
+        were used at full weight.
+
+        Args:
+            mixture: The fitted Gaussian mixture.
+
+        Returns:
+            CheckResult; always passes, carrying a penalty when unconverged.
+        """
+        if getattr(mixture, "converged", True):
+            return True, constants.FULL_CONFIDENCE, ""
+
+        return (True, constants.CONFIDENCE_PENALTY_EM_NOT_CONVERGED,
+                f"The Gaussian-mixture fit reached its "
+                f"{constants.EM_MAXIMUM_ITERATIONS}-iteration cap without the "
+                f"log-likelihood settling below "
+                f"{constants.EM_LOG_LIKELIHOOD_TOLERANCE}. The parameters used "
+                f"for every per-block posterior are therefore the last iterate "
+                f"rather than a converged estimate.")

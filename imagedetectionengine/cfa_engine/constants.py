@@ -303,6 +303,105 @@ MAP_REDUCTION_RULE: str = "max"
 # the three candidate reductions.
 MAP_REDUCTION_PERCENTILE: float = 95.0
 
+# ENHANCEMENT 1 - spatial-coherence floor on the SCORED map.
+#
+# Testing found the engine's dominant false-positive mode, and it sits INSIDE
+# the quality window the corpus says is reliable. Against ground truth built by
+# mosaicing a scene onto a known Bayer grid and bilinearly demosaicing it, an
+# AUTHENTIC image at QF100 reached raw_score 0.9654 under the plain max, because
+# max is an extreme-value statistic over thousands of blocks and a handful of
+# compression-perturbed blocks fall confidently into M2.
+#
+# A genuine splice is contiguous; a compression outlier is not. Requiring the
+# scored block to belong to a connected component of at least this many blocks
+# separates the two. Measured over 6 scenes x 3 forgery sizes, separation
+# (spliced minus authentic), plain max versus coherence-filtered:
+#     QF100 : +0.567 -> +0.835      authentic mean 0.4330 -> 0.1652
+#     QF98  : +0.581 -> +0.678      authentic mean 0.4188 -> 0.3215
+#     QF95  : +0.740 -> +0.835      authentic mean 0.2597 -> 0.1651
+#
+# Value: 8. Chosen as the largest floor that does not degrade the smallest
+# forgery tested. A 32x32 forgery spans 16 blocks at B=8; requiring 8 means half
+# of it must survive as one component. At 10 and 12 the 32x32 case collapses
+# (separation +0.835 -> +0.496 -> +0.330 at QF100), and at 4 the false positive
+# is untouched (authentic mean 0.4317).
+#
+# HONEST LIMIT, measured: this reduces the false positive, it does not remove
+# it. Across 6 authentic scenes the WORST case at QF100 is still 0.9912 - one
+# authentic image in six produces a coherent 8-block cluster that scores as
+# confidently tampered. An earlier 3-scene run showed the worst case falling to
+# 0.0000 and that was chance; the wider run is the honest number.
+# Distinct from MINIMUM_FLAGGED_REGION_BLOCK_COUNT, which governs what is
+# REPORTED as a region; this one governs what is SCORED.
+MINIMUM_SCORED_REGION_BLOCK_COUNT: int = 8
+
+# ENHANCEMENT 5 - refuse to name a CFA phase that was not actually resolved.
+# Jeon's Eq. 9 picks the R/B diagonal by argmax over two scores. The diagnostic
+# image "fake .jpeg" produced diagonal_scores of exactly (0.0, 0.0) - the centre
+# block carried no colour-difference structure at all - and the argmax silently
+# returned index 0, which was then reported as a VERIFIED RGGB phase. Below this
+# floor the two diagonals are indistinguishable and the estimate is marked
+# unverified instead. [ENGINEERING] The floor is a numerical-degeneracy guard,
+# not a forensic threshold; genuine estimates measured 244 to 18060 on this
+# quantity, so it is nowhere near any real value.
+DEGENERATE_DIAGONAL_SCORE_FLOOR: float = 1e-9
+
+# ENHANCEMENT 3 - evidence behind restoring Jeon's Eq. 10 comparison direction.
+# Measured against a Bayer ground truth built by hand: a scene mosaiced onto an
+# explicit grid with red placed at a known cell, bilinearly demosaiced, with the
+# red sample sites asserted to survive unchanged - no reliance on OpenCV's Bayer
+# naming, which is what the engine's previous (inverted) correction was built
+# on. S_D within the winning diagonal pair, true red position first:
+#     true RGGB (red idx 0): S_D[0]=44839.54  S_D[3]=37216.71
+#     true GRBG (red idx 1): S_D[1]=44120.88  S_D[2]=37722.18
+#     true GBRG (red idx 2): S_D[2]=44355.01  S_D[1]=36998.90
+#     true BGGR (red idx 3): S_D[3]=44327.99  S_D[0]=37181.64
+# The true red position is the LARGER S_D in all four. Confirmed independently
+# of Jeon's statistic: the red plane's bilinear prediction-error variance is
+# maximal at the true red site (76.24) and near zero at the diagonal opposite
+# (0.08) - Ferrara's own model, acquired pixels carrying high prediction error.
+# Configuration accuracy went 0/4 to 4/4; green parity was 4/4 either way.
+JEON_WITHIN_PAIR_SELECTION_EVIDENCE: str = (
+    "larger S_D within the winning diagonal identifies the red sensel; "
+    "measured 4/4 against hand-built Bayer ground truth, against 0/4 for the "
+    "reversed comparison this engine previously used"
+)
+
+# Sentinel returned by the diagonal selection when no diagonal wins.
+# [STRUCTURAL]
+UNRESOLVED_DIAGONAL_LEADER: int = -1
+
+# ENHANCEMENT 2 - the mixture must actually be separated, not merely positive.
+#
+# Ferrara Eq. 13 requires mu1 > 0 under M1. The engine tested only the SIGN, and
+# testing showed that is far too weak: an image that never passed through a
+# colour filter array at all (the raw scene, before any mosaicing) fitted
+# mu1 = 0.0020 - positive, so the check passed - and was scored raw 0.5603,
+# probability 0.6733, is_reliable=True. The engine confidently reported a
+# never-photographed image as probably tampered.
+#
+# mu2 is fixed at 0 by Eq. 14, so mu1/sigma1 IS the standardised separation
+# between the two components. Below 1 the components overlap so heavily that
+# Pr(M1|L) cannot be decisive for any block. Measured mu1/sigma1:
+#     genuine CFA, uncompressed : 15.105 - 24.907
+#     genuine CFA, QF100 / QF98 :  6.775 -  7.659
+#     genuine CFA, QF95         :  4.008 -  4.238
+#     genuine CFA, QF90         :  1.861 -  1.879
+#     NO CFA at all             :  0.006 -  0.013
+#     the six diagnostic images : -0.009 -  0.149
+# The gap between "has a CFA" (min 1.861) and "has none" (max 0.013) is over two
+# orders of magnitude, so the threshold is not delicately placed. Value 1.0 is
+# the principled reading - one standard deviation - and sits inside the measured
+# empty gap rather than being tuned to it.
+MINIMUM_MIXTURE_SEPARATION_RATIO: float = 1.0
+
+# Applied when the EM fit hit its iteration cap without converging.
+# [ENGINEERING] Two of the six diagnostic images (campic.jpeg, campic2.jpeg)
+# ran the full 500 iterations with em_converged=False, and their posteriors were
+# used anyway. Set to the same 0.5 as the other "the estimate exists but is not
+# a population estimate" penalties in this file.
+CONFIDENCE_PENALTY_EM_NOT_CONVERGED: float = 0.5
+
 # Value: 0.5. [ENGINEERING] Threshold on the per-block tampering probability
 # used by the "fraction_below_threshold" reduction and to populate
 # flagged_regions. 0.5 is the neutral decision point of a posterior computed
@@ -642,6 +741,47 @@ EVIDENCE_COLOUR_EXCLUDED: tuple = (110, 110, 110)
 # reviewer checking this engine against the corpus only has to argue with these.
 # Everything else is quoted, or derived from something quoted with the
 # derivation shown inline above.
+# Changes made in response to diagnostic testing rather than to the SKILL file.
+TEST_DERIVED_ENHANCEMENTS: tuple = (
+    ("spatial-coherence floor on the scored map",
+     "authentic ground-truth image at QF100 scored 0.9654 under the plain max"),
+    ("mixture-separation test replacing the sign test on mu1",
+     "an image with no CFA at all scored 0.6733 with is_reliable=True"),
+    ("Jeon Eq. 10 within-pair selection reverted to the larger S_D",
+     "0/4 against hand-built Bayer ground truth; the larger-S_D rule is 4/4"),
+    ("confidence penalty when EM does not converge",
+     "2 of 6 diagnostic images ran 500 iterations without converging"),
+    ("degenerate-diagonal guard on the phase estimator",
+     "fake .jpeg returned diagonal_scores [0.0, 0.0] yet was_verified_by_svd"),
+)
+
+# Changes implemented, measured, and REJECTED. Recorded so they are not
+# proposed again.
+REJECTED_ENHANCEMENTS: tuple = (
+    ("replace the max reduction with the 95th percentile",
+     "rejected. A single 6.25%-area forgery favours the percentile, but "
+     "sweeping forgery size against quality over 12 conditions, max wins 8 and "
+     "the percentile 4 - and the percentile only wins where the forgery is "
+     "large. At QF100 with a 64x64 forgery max separates by +0.4559 against "
+     "the percentile's +0.1112. The engine's original choice is correct"),
+    ("replace the max reduction with fraction_below_threshold",
+     "rejected. Won 0 of 12 conditions; its dynamic range is bounded by the "
+     "forgery's area fraction, giving +0.0029 separation on a 32x32 forgery"),
+    ("enable Eq. 18 cumulation (SKILL step 8) by default",
+     "rejected. It helps uncompressed fine-grained detection, lifting the "
+     "32x32 case from +0.333 to +1.000, but is catastrophic under JPEG: "
+     "authentic images saturate to raw 1.0000 at QF100 and QF95, collapsing "
+     "separation to 0.000, because multiplying likelihood ratios across "
+     "neighbouring blocks makes every block a confident classification"),
+    ("promote Pipeline B's disagreeing-window count into the score",
+     "rejected. On the six diagnostic images it looked like the best signal "
+     "available (real 0/0 disagreeing windows, fake 20/19), but ground truth "
+     "shows Pipeline B detects a phase-mismatched splice only while "
+     "uncompressed (16/256 windows) and already reads 0/256 at QF100. It "
+     "cannot be producing a genuine phase signal at QF74, so the corpus "
+     "reading was an artifact and promoting it would have scored noise"),
+)
+
 KNOWN_UNSOURCED_PARAMETERS: tuple = (
     "LOCAL_VARIANCE_WINDOW_HALF_WIDTH",
     "LOCAL_VARIANCE_FLOOR",
@@ -650,6 +790,9 @@ KNOWN_UNSOURCED_PARAMETERS: tuple = (
     "MAP_REDUCTION_RULE",
     "TAMPERED_BLOCK_PROBABILITY_THRESHOLD",
     "MINIMUM_FLAGGED_REGION_BLOCK_COUNT",
+    "MINIMUM_SCORED_REGION_BLOCK_COUNT",
+    "MINIMUM_MIXTURE_SEPARATION_RATIO",
+    "CONFIDENCE_PENALTY_EM_NOT_CONVERGED",
     "GRID_FILTER_SUPPORT_SIZE",
     "GRID_FILTER_RIDGE_FRACTION",
     "MAX_ACCEPTABLE_SATURATION_FRACTION",
