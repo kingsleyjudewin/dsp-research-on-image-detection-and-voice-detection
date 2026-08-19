@@ -123,43 +123,123 @@ class BenfordComputer:
 
         Args:
             blocks: Float array of shape (block_count, 8, 8).
-            estimated_quality_factor: The image's own quality factor, used to
-                pick which swept chi-square value is the comparable one.
+            estimated_quality_factor: The image's own quality factor. Used both
+                to pick the comparable chi-square and, per ENHANCEMENT 2, to
+                add the image's own quantization to the sweep.
 
         Returns:
             BenfordComputation holding every grid sample and the aggregates.
         """
         dct_coefficients = self._forward_dct(blocks)
-        samples, clamp_events = self._sweep_grid(dct_coefficients)
+        native = self._native_quality_factor(estimated_quality_factor)
+        sweep = self._effective_sweep(native)
+        samples, clamp_events = self._sweep_grid(dct_coefficients, sweep,
+                                                 native)
 
+        scored = [sample for sample in samples if not sample.is_finer_than_native]
         result = BenfordComputation(
             samples=samples,
             total_block_count=int(blocks.shape[0]),
             digit_clamp_event_count=clamp_events,
-            skipped_configuration_count=self._grid_size() - len(samples),
+            skipped_configuration_count=self._grid_size(sweep) - len(samples),
+            excluded_configuration_count=len(samples) - len(scored),
+            residual_lattice_configuration_count=sum(
+                1 for sample in scored if sample.has_residual_lattice),
+            scored_configuration_count=len(scored),
+            native_quality_factor=native,
         )
-        if not samples:
-            logger.warning("no sweep configuration produced a usable histogram")
+        if not scored:
+            logger.warning("every sweep configuration applied a step finer than "
+                           "the image's own quantization (%d cells); nothing "
+                           "could be scored", len(samples))
             return result
+        return self._aggregate(result, scored, estimated_quality_factor)
 
-        divergences = np.array([sample.divergence for sample in samples])
+    def _aggregate(self,
+                   result: BenfordComputation,
+                   scored: list[DivergenceSample],
+                   estimated_quality_factor: Optional[float]
+                   ) -> BenfordComputation:
+        """Reduce the scored cells to the grid aggregates, in place.
+
+        Args:
+            result: Computation being filled in.
+            scored: Cells that survived exclusion.
+            estimated_quality_factor: Selects the comparable chi-square.
+
+        Returns:
+            The same result, with its aggregate fields populated.
+        """
+        divergences = np.array([sample.divergence for sample in scored])
         result.mean_divergence = float(np.mean(divergences))
         result.max_divergence = float(np.max(divergences))
         result.overall_zero_coefficient_rate = float(
-            np.mean([sample.zero_coefficient_rate for sample in samples])
+            np.mean([sample.zero_coefficient_rate for sample in scored])
         )
         result.representative_chi_square = self._select_representative_chi_square(
-            samples, estimated_quality_factor
+            scored, estimated_quality_factor
         )
         return result
 
+    @staticmethod
+    def _native_quality_factor(
+            estimated_quality_factor: Optional[float]) -> Optional[int]:
+        """Round the metadata quality factor into an encoder-valid integer.
+
+        Args:
+            estimated_quality_factor: Quality factor from metadata, or None.
+
+        Returns:
+            Integer quality factor inside the encoder's range, or None.
+        """
+        if estimated_quality_factor is None or \
+                not np.isfinite(estimated_quality_factor):
+            return None
+        rounded = int(round(float(estimated_quality_factor)))
+        if not (constants.MINIMUM_JPEG_QUALITY_FACTOR <= rounded
+                <= constants.MAXIMUM_JPEG_QUALITY_FACTOR):
+            return None
+        return rounded
+
+    def _effective_sweep(self, native: Optional[int]) -> tuple[int, ...]:
+        """Add the image's own quality factor to the corpus sweep.
+
+        ENHANCEMENT 2, forced by diagnostic testing. The corpus sweep
+        {80, 85, 90, 95, 100} is Bonettini et al.'s, chosen for a corpus of
+        UNCOMPRESSED images where that quantization is the image's first. On an
+        image that is already JPEG, every one of those factors is a SECOND
+        quantization at a mismatched step. Measured on campic.jpeg: divergence
+        0.1143 at its own native QF74 against 2.60-3.83 at every swept factor.
+        Including the native factor guarantees the sweep contains at least one
+        cell where the engine is reading the codec's own coefficients.
+
+        This is what the SKILL's "Quality-factor conditioning" note asks for:
+        "any deployed threshold must be conditioned on the image's estimated
+        background quality factor ... rather than applied as one fixed global
+        cutoff."
+
+        Args:
+            native: The image's own quality factor, or None when unknown.
+
+        Returns:
+            Sweep quality factors in ascending order.
+        """
+        if native is None:
+            return tuple(sorted(self.quality_factor_sweep))
+        return tuple(sorted(set(self.quality_factor_sweep) | {native}))
+
     def _sweep_grid(self,
-                    dct_coefficients: np.ndarray
+                    dct_coefficients: np.ndarray,
+                    quality_factor_sweep: tuple[int, ...],
+                    native_quality_factor: Optional[int]
                     ) -> tuple[list[DivergenceSample], int]:
         """Evaluate every (quality factor, base, frequency) cell of the grid.
 
         Args:
             dct_coefficients: Float array of shape (block_count, 8, 8).
+            quality_factor_sweep: Quality factors to apply.
+            native_quality_factor: The image's own quality factor, used to
+                attribute any lattice found in a cell.
 
         Returns:
             Tuple of the successful samples and the total digit-clamp count.
@@ -167,14 +247,9 @@ class BenfordComputer:
         samples: list[DivergenceSample] = []
         clamp_events = 0
 
-        for quality_factor in self.quality_factor_sweep:
-            quantization_table = np.asarray(
-                load_standard_jpeg_quantization_table(int(quality_factor),
-                                                      constants.DCT_BLOCK_SIZE),
-                dtype=np.float64,
-            )
-            quantized = self._quantize(dct_coefficients, quantization_table)
-
+        for quality_factor in quality_factor_sweep:
+            quantized = self._quantize_at_quality(dct_coefficients,
+                                                  int(quality_factor))
             for frequency_index in self.zigzag_frequency_indices:
                 row, column = self.zigzag_coordinates[frequency_index]
                 coefficients_at_frequency = quantized[:, row, column]
@@ -182,7 +257,8 @@ class BenfordComputer:
                 for digit_base in self.digit_bases:
                     sample, clamped = self._evaluate_configuration(
                         coefficients_at_frequency, digit_base,
-                        frequency_index, int(quality_factor)
+                        frequency_index, int(quality_factor),
+                        native_quality_factor
                     )
                     clamp_events += clamped
                     if sample is not None:
@@ -190,11 +266,31 @@ class BenfordComputer:
 
         return samples, clamp_events
 
+    def _quantize_at_quality(self,
+                             dct_coefficients: np.ndarray,
+                             quality_factor: int) -> np.ndarray:
+        """Quantize the whole block stack with the table at one quality factor.
+
+        Args:
+            dct_coefficients: Float array of shape (block_count, 8, 8).
+            quality_factor: JPEG quality factor selecting the standard table.
+
+        Returns:
+            Quantized coefficients of the same shape.
+        """
+        quantization_table = np.asarray(
+            load_standard_jpeg_quantization_table(quality_factor,
+                                                  constants.DCT_BLOCK_SIZE),
+            dtype=np.float64,
+        )
+        return self._quantize(dct_coefficients, quantization_table)
+
     def _evaluate_configuration(self,
                                 coefficients: np.ndarray,
                                 digit_base: int,
                                 frequency_index: int,
-                                quality_factor: int
+                                quality_factor: int,
+                                native_quality_factor: Optional[int] = None
                                 ) -> tuple[Optional[DivergenceSample], int]:
         """Turn one frequency's coefficients into a divergence measurement.
 
@@ -203,10 +299,11 @@ class BenfordComputer:
             digit_base: Digit base for extraction.
             frequency_index: Zig-zag index these coefficients came from.
             quality_factor: Quality factor whose table was applied.
+            native_quality_factor: The image's own quality factor.
 
         Returns:
             The sample (or None when too few coefficients survived) and the
-            number of floating-point digit clamps that occurred.
+            digit-clamp count.
         """
         empirical_pmf, sample_count, zero_rate, clamp_events = \
             self._empirical_pmf(coefficients, digit_base)
@@ -214,20 +311,119 @@ class BenfordComputer:
         if sample_count < constants.MINIMUM_DIGIT_SAMPLE_COUNT:
             return None, clamp_events
 
+        cell = (digit_base, frequency_index, quality_factor,
+                native_quality_factor)
+        histogram = (empirical_pmf, sample_count, zero_rate)
+        return self._build_sample(coefficients, histogram, cell), clamp_events
+
+    def _build_sample(self,
+                      coefficients: np.ndarray,
+                      histogram: tuple,
+                      cell: tuple) -> DivergenceSample:
+        """Fit the curve and assemble one grid cell's result record.
+
+        Args:
+            coefficients: Quantized coefficients, one per block.
+            histogram: (empirical pmf, non-zero sample count, zero fraction).
+            cell: (digit base, zig-zag frequency index, applied quality factor,
+                the image's own quality factor).
+
+        Returns:
+            The populated DivergenceSample.
+        """
+        empirical_pmf, sample_count, zero_rate = histogram
+        digit_base, frequency_index, quality_factor, native_quality_factor = cell
+        excess = self._sublattice_excess(coefficients, digit_base)
         fitted_pmf, fit_parameters = self._fit_generalized_benford(empirical_pmf,
                                                                   digit_base)
         return DivergenceSample(
             digit_base=digit_base,
             zigzag_frequency_index=frequency_index,
             quality_factor=quality_factor,
-            divergence=self._symmetric_kl_divergence(empirical_pmf, fitted_pmf),
+            divergence=self._symmetric_kl_divergence(empirical_pmf, fitted_pmf,
+                                                     sample_count),
             chi_square=self._chi_square_divergence(empirical_pmf, digit_base),
             sample_count=sample_count,
             zero_coefficient_rate=zero_rate,
             empirical_pmf=empirical_pmf,
             fitted_pmf=fitted_pmf,
             fit_parameters=fit_parameters,
-        ), clamp_events
+            sublattice_excess=excess,
+            is_finer_than_native=self._is_finer_than_native(
+                quality_factor, native_quality_factor),
+            has_residual_lattice=excess >= constants.SUBLATTICE_EXCESS_TOLERANCE,
+        )
+
+    @staticmethod
+    def _is_finer_than_native(quality_factor: int,
+                              native_quality_factor: Optional[int]) -> bool:
+        """Decide whether this cell re-quantized the image more finely than its
+        own encoder did, which makes its digit histogram unusable.
+
+        Quantizing an already-JPEG image more finely than its own encoder did
+        cannot recover discarded information; it only re-expresses the surviving
+        lattice, distorting the digit histogram. Excluding on the ratio's
+        DIRECTION catches every such case without a threshold, and leaves cells
+        at or below the native factor alone - which is where Singh et al.'s
+        genuine double-compression evidence lives. Full derivation and the four
+        controlled cases are in constants.py.
+
+        Args:
+            quality_factor: Quality factor whose table was applied here.
+            native_quality_factor: The image's own quality factor, or None.
+
+        Returns:
+            True when this cell must be excluded from the score.
+        """
+        if not constants.CONTAMINATION_REQUIRES_FINER_THAN_NATIVE:
+            return False
+        # With no native factor nothing can be attributed, so every cell is kept
+        # and the ambiguity is reported rather than silently resolved.
+        if native_quality_factor is None:
+            return False
+        return quality_factor > native_quality_factor
+
+    @staticmethod
+    def _sublattice_excess(coefficients: np.ndarray, digit_base: int) -> float:
+        """Measure how strongly the quantized coefficients lie on a sublattice.
+
+        ENHANCEMENT 1, forced by diagnostic testing. This is NOT a forensic
+        statistic and never contributes to a score - it detects an artifact
+        this engine creates itself.
+
+        SKILL family A step 1 quantizes with a standard JPEG table at a chosen
+        quality factor. For Bonettini et al.'s uncompressed corpus that is the
+        image's FIRST quantization. For an image that is already JPEG it is a
+        SECOND one, and when the applied step is a rational fraction of the step
+        already in the image the coefficients are forced onto a sublattice.
+        Measured on the authentic photo campic.jpeg: embedded step 6, applied
+        step 3 at QF85, so every quantized value became even and digit 2 took
+        0.674 of the mass against Benford's 0.176.
+
+        Under any population NOT confined to a sublattice, a fraction 1/m of
+        integers is divisible by m, so (observed fraction) x m is about 1. On a
+        lattice of period m the product approaches m.
+
+        Args:
+            coefficients: Quantized coefficients, one per block.
+            digit_base: Digit base; sets how far the divisor search runs.
+
+        Returns:
+            Largest divisibility excess over divisors 2..base-1; 1.0 means no
+            sublattice was detected.
+        """
+        magnitudes = np.abs(np.asarray(coefficients)).astype(np.int64).ravel()
+        magnitudes = magnitudes[magnitudes > 0]
+        if magnitudes.size < constants.SUBLATTICE_MINIMUM_SAMPLE_COUNT:
+            return constants.SUBLATTICE_NEUTRAL_EXCESS
+
+        largest_divisor = digit_base - constants.SUBLATTICE_MAXIMUM_DIVISOR_OFFSET
+        excesses = [
+            (float(np.count_nonzero(magnitudes % divisor == 0))
+             / float(magnitudes.size)) * float(divisor)
+            for divisor in range(2, largest_divisor + 1)
+        ]
+        return max(excesses + [constants.SUBLATTICE_NEUTRAL_EXCESS])
 
     def _forward_dct(self, blocks: np.ndarray) -> np.ndarray:
         """Apply the JPEG-normalized two-dimensional DCT to every block.
@@ -440,12 +636,15 @@ class BenfordComputer:
 
     def _symmetric_kl_divergence(self,
                                  empirical_pmf: np.ndarray,
-                                 fitted_pmf: np.ndarray) -> float:
+                                 fitted_pmf: np.ndarray,
+                                 sample_count: int) -> float:
         """Measure divergence between the observed histogram and its fit.
 
         Args:
             empirical_pmf: Observed pmf.
             fitted_pmf: Fitted generalized-Benford curve.
+            sample_count: Number of coefficients the pmf was estimated from,
+                which sets the smallest probability the sample can resolve.
 
         Returns:
             Non-negative divergence; 0.0 indicates perfect agreement.
@@ -463,12 +662,10 @@ class BenfordComputer:
         #            different normalisation - implement their exact unaveraged
         #            form if reproducing their reported numbers". The two KL
         #            terms are SUMMED, with no 0.5 and no midpoint distribution.
-        # Flooring: the fitted curve has a free scale beta so does not sum to 1,
-        #            and an empty histogram bin would make the reverse KL term
-        #            infinite; scipy.stats.entropy renormalises its inputs and
-        #            the explicit floor keeps every term finite.
+        # Flooring: see _probability_floor - both inputs are floored and
+        #            renormalised so no term can be infinite.
         # ────────────────────────────────────────────────────
-        floor = constants.DIVERGENCE_PROBABILITY_FLOOR
+        floor = self._probability_floor(sample_count)
         safe_empirical = safe_normalise_distribution(empirical_pmf, floor)
         safe_fitted = safe_normalise_distribution(fitted_pmf, floor)
 
@@ -477,6 +674,34 @@ class BenfordComputer:
         divergence = forward + reverse
 
         return divergence if np.isfinite(divergence) else 0.0
+
+    @staticmethod
+    def _probability_floor(sample_count: int) -> float:
+        """Smallest probability the sample can resolve, for KL flooring.
+
+        The fitted curve has a free scale beta so does not sum to 1, and an
+        empty histogram bin would make the reverse KL term infinite, so both
+        distributions are floored and renormalised before the logarithms.
+
+        ENHANCEMENT 3: the floor is 1/K rather than a fixed 1e-12. The step-4
+        least-squares fit can collapse to numerically zero on digits that still
+        carry real empirical mass, and under the old floor those bins supplied
+        97% of the reported divergence at a magnitude set by log(1/1e-12)
+        rather than by anything in the image. A probability below 1/K is not
+        distinguishable from zero given K draws. Full measurement in
+        constants.USE_RESOLVABLE_PROBABILITY_FLOOR.
+
+        Args:
+            sample_count: Number of coefficients contributing to the pmf.
+
+        Returns:
+            1/K when the resolvable floor is enabled and K is positive, else
+            the fixed absolute floor.
+        """
+        if not constants.USE_RESOLVABLE_PROBABILITY_FLOOR or sample_count <= 0:
+            return constants.DIVERGENCE_PROBABILITY_FLOOR
+        return max(1.0 / float(sample_count),
+                   constants.DIVERGENCE_PROBABILITY_FLOOR)
 
     def _chi_square_divergence(self,
                                empirical_pmf: np.ndarray,
@@ -562,15 +787,19 @@ class BenfordComputer:
                     if sample.quality_factor == nearest]
         return float(np.mean(matching))
 
-    def _grid_size(self) -> int:
-        """Total number of cells in the configured sweep grid.
+    def _grid_size(self, quality_factor_sweep: tuple[int, ...]) -> int:
+        """Total number of cells in the sweep grid actually evaluated.
+
+        Args:
+            quality_factor_sweep: Quality factors that were applied, which may
+                include the image's own factor as well as the corpus set.
 
         Returns:
             Product of the three grid axis lengths.
         """
         return (len(self.digit_bases) *
                 len(self.zigzag_frequency_indices) *
-                len(self.quality_factor_sweep))
+                len(quality_factor_sweep))
 
     @staticmethod
     def _validate_grid(digit_bases: tuple[int, ...],
