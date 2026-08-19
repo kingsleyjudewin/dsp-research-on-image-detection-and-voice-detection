@@ -54,6 +54,20 @@ STANDING_LIMITATIONS_NOTE = (
 )
 
 
+NULL_GHOST_RESULT_NOTE = (
+    "No ghost candidate survived validation across any of the {total} swept "
+    "combinations - no region behaved like a separately-quantized paste. Read "
+    "this as an absence of detectable ghost evidence, NOT as evidence of "
+    "authenticity: the method is blind by construction to a paste whose "
+    "original quality exceeded the re-save quality, and faint when the two "
+    "are close. Ground truth confirms the ambiguity is structural rather than "
+    "incidental - an authentic single-compression image and a genuine splice "
+    "of higher-quality content into a lower-quality host both return exactly "
+    f"this null result, so its confidence is weighted at "
+    f"{constants.NULL_GHOST_RESULT_CONFIDENCE}."
+)
+
+
 class ConditionChecker:
     """Decides whether the ghost engine may run, and at what confidence."""
 
@@ -190,14 +204,11 @@ class ConditionChecker:
 
         if result.degenerate_segmentation_count < total:
             return True, constants.FULL_CONFIDENCE, ""
-        return (True, constants.FULL_CONFIDENCE,
-                f"No ghost candidate survived validation across any of the "
-                f"{total} swept combinations - no region behaved like a "
-                f"separately-quantized paste. Read this as an absence of "
-                f"detectable ghost evidence, NOT as evidence of "
-                f"authenticity: the method is blind by construction to a "
-                f"paste whose original quality exceeded the re-save quality, "
-                f"and faint when the two are close.")
+        # ENHANCEMENT 3: a null result still votes, but not at full weight -
+        # an authentic image and a reverse-direction splice produce the same
+        # null. See constants.NULL_GHOST_RESULT_CONFIDENCE.
+        return (True, constants.NULL_GHOST_RESULT_CONFIDENCE,
+                NULL_GHOST_RESULT_NOTE.format(total=total))
 
     @staticmethod
     def assess_sweep_coverage(result: GhostResult) -> CheckResult:

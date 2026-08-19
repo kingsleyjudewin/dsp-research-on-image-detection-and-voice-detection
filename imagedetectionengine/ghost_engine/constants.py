@@ -116,6 +116,10 @@ RELIABLE_QUALITY_FACTOR_GAP = 22
 # full 6400-combination sweep. [ENGINEERING] within a [CORPUS] sanction.
 DEFAULT_QUALITY_FACTOR_STEP = 5  # top of the SKILL's stated 2-5 range
 DEFAULT_GRID_SHIFT_STEP = 2  # {0,2,4,6}^2 = 16 of the 64 shifts
+#
+# BOTH VALUES ARE UNCHANGED FROM THE BUILD, AND THAT IS A TESTED RESULT
+# RATHER THAN AN UNTESTED DEFAULT. A finer quality sweep was implemented,
+# measured and reverted; see REJECTED_ENHANCEMENTS for the numbers.
 
 # ── Pipeline B segmentation (SE-MinCut substitute) ─────────────────────────
 # SKILL Step 2 calls for SE-MinCut (Estrada & Jepson), "chosen specifically
@@ -136,6 +140,27 @@ DEFAULT_GRID_SHIFT_STEP = 2  # {0,2,4,6}^2 = 16 of the 64 shifts
 SEGMENTATION_SUPERPIXEL_COUNT = 150
 SEGMENTATION_COMPACTNESS = 0.1  # low: follow value, not spatial squareness
 SEGMENTATION_START_LABEL = 0
+
+# ENHANCEMENT 1 (test-derived): the split is taken over THREE classes, not
+# two, and the ghost is the lowest band.
+#
+# A normalised difference map holds three populations, not two: the ghost
+# (near zero at its own original quality), flat background (low at every
+# quality because it has little detail to lose), and textured background
+# (high). Two-class Otsu spends its single cut separating the textured tail,
+# which leaves the ghost buried inside a majority class. Measured on the six
+# supplied photographs before this change, class-0 held a median 0.607 to
+# 0.781 of the frame and 18-20 of every 20 candidates were thrown out by the
+# area test as "too large" - so the only candidates that ever survived were
+# the degenerate ones at the extreme low-quality end of the sweep, and the
+# engine's winning q2 was 1 or 6 on all six images.
+#
+# On ground truth the effect is direct. For a q0=50 splice at its true ghost
+# quality q2=51, the two-class split returned class-0 covering 0.740 of the
+# frame with IoU 0.320 against the real paste; the three-class split returned
+# 0.265 of the frame with IoU 0.858, and the area test then passes instead of
+# rejecting it.
+SEGMENTATION_CLASS_COUNT = 3
 
 # WHY A VALIDITY TEST ON THE SEGMENTED CANDIDATE IS NOT OPTIONAL.
 #
@@ -188,6 +213,30 @@ MAXIMUM_GHOST_AREA_FRACTION = 0.4
 # test forgeries are 200x200 pastes into UCID frames, around 20% of the
 # image; the splice used to validate this engine is 14%). [DERIVED]
 MINIMUM_GHOST_AREA_FRACTION = 0.02
+
+# ENHANCEMENT 2 (test-derived): the candidate must sit at an interior LOCAL
+# MINIMUM of its own class-0 q2 profile.
+#
+# This implements a sentence of the SKILL the engine did not previously act
+# on. SKILL B1, verbatim: "A genuinely double-quantized region shows a LOCAL
+# MINIMUM in d at q2 equal to its true original quality q0." The engine
+# segmented d and measured class separability at each q2 independently, never
+# checking that the candidate was at a turning point at all.
+#
+# Without the check, an authentic-by-construction image still fired at
+# q2 = 1, 6 and 11 with B up to 1.0287 after ENHANCEMENT 1 - higher than the
+# 0.9684 a genuine q0=50 splice produced at its true ghost quality. At those
+# extreme qualities the recompression error is dominated by image content and
+# the profile is monotonically falling, so nothing there is a turning point.
+# With the check in force both authentic ground-truth images return D_max
+# exactly 0.0000 while the q0=50 and q0=70 splices are still found, at q2=51
+# and q2=71 against true qualities of 50 and 70.
+#
+# The interior requirement also disposes of the sweep endpoints, where a
+# local minimum is undefined for want of a neighbour on one side, and where
+# both of the artefacts above happened to live.
+REQUIRE_GHOST_LOCAL_MINIMUM = True
+LOCAL_MINIMUM_NEIGHBOUR_OFFSET = 1
 
 CONNECTED_COMPONENT_CONNECTIVITY = 8
 
@@ -311,6 +360,27 @@ RESAMPLING_MAXIMUM_COMPRESSION_LEVEL = 95.0
 # Smallest image Pipeline B can smooth at all: one w x w window. [DERIVED]
 MINIMUM_IMAGE_DIMENSION = GHOST_SMOOTHING_WINDOW
 
+# ENHANCEMENT 4 (test-derived): a null ghost result does not deserve full
+# confidence in the "authentic" reading it produces.
+#
+# When no candidate survives validation the engine reports raw_score 0.0,
+# which the scorer maps to probability 0.0 - a confident REAL vote. Ground
+# truth shows that vote is ambiguous by construction. An authentic image
+# compressed once at q1=90 and a genuine splice of q0=95 content into a q1=70
+# host returned byte-identical output: D_max exactly 0.0000, every candidate
+# rejected. The second is a forgery, and the SKILL states plainly that the
+# method "does not resolve the reverse case", so the two are indistinguishable
+# here in principle rather than by accident.
+#
+# The weight is 0.5 because a null result is consistent with exactly two of
+# the SKILL's own documented scenarios - a single-compression image and a
+# reverse-direction splice - and the corpus supplies no basis for preferring
+# either, so they are carried at equal weight. is_reliable is deliberately
+# NOT set False: the measurement is sound and the fusion layer should still
+# receive it, at a weight reflecting what it can actually distinguish.
+# [DERIVED]
+NULL_GHOST_RESULT_CONFIDENCE = 0.5
+
 # ── Scorer constants ────────────────────────────────────────────────────────
 # SKILL Output: "For fusion: (not specified in corpus) - engineering
 # recommendation: score = clip(D_max / Th, 0, 1)". The ratio route is the
@@ -371,6 +441,74 @@ KNOWN_SKILL_AMBIGUITIES = (
     "Eq. 18's nu_{m_s}^{-1}(i) is the linear-index-to-2-D-coordinate map "
     "for the analysis window; it is implemented as the pixel coordinate "
     "grid of that window.",
+)
+
+TEST_DERIVED_ENHANCEMENTS = (
+    "ENHANCEMENT 1 - SEGMENTATION_CLASS_COUNT = 3. The two-class Otsu cut "
+    "spends itself separating the textured-background tail, leaving class-0 "
+    "at a median 0.607-0.781 of the frame on all six supplied photographs, "
+    "so 18-20 of every 20 candidates were discarded by the area test and "
+    "only degenerate extreme-quality candidates ever survived. On ground "
+    "truth at the true ghost quality the three-class cut moves class-0 from "
+    "0.740 of the frame at IoU 0.320 to 0.265 at IoU 0.858.",
+    "ENHANCEMENT 2 - REQUIRE_GHOST_LOCAL_MINIMUM. Implements the SKILL's own "
+    "sentence 'a genuinely double-quantized region shows a local minimum in "
+    "d at q2 equal to its true original quality q0', which the engine did "
+    "not act on. Without it an authentic-by-construction image fired at "
+    "q2=1/6/11 with B up to 1.0287, above the 0.9684 a real q0=50 splice "
+    "produced at its true quality.",
+    "ENHANCEMENT 3 - NULL_GHOST_RESULT_CONFIDENCE. An authentic image and a "
+    "reverse-direction splice both return D_max exactly 0.0000, so the "
+    "'authentic' reading of a null result is carried at half weight rather "
+    "than full.",
+)
+
+REJECTED_ENHANCEMENTS = (
+    "Segmenting a local-minimum DEPTH map, min(d_{q-1}, d_{q+1}) - d_q, in "
+    "place of d itself. Tested across all nine ground-truth cases: every one "
+    "still saturated, and the winning quality moved only from q2=6 to q2=16 "
+    "with mask IoU falling to 0.000. The q2 profile oscillates strongly at "
+    "low quality from quantization-table resonance, and those oscillations "
+    "are far deeper than the ghost dip, so a depth map amplifies the "
+    "artefact rather than removing it.",
+    "Re-fitting BHATTACHARYYA_THRESHOLD away from the corpus value of 0.19. "
+    "Th was fitted at FP=FN on 1000 original + 1000 tampered UCID images; "
+    "nine self-built ground-truth cases are not a basis for replacing it, "
+    "and doing so would be fitting the decision threshold to the test set.",
+    "DEFAULT_QUALITY_FACTOR_STEP 5 -> 1 (a finer quality sweep). Implemented "
+    "and reverted. The finer sweep genuinely finds more forgeries: with the "
+    "corpus threshold held at 0.19 it detects 5 of 6 ground-truth splices at "
+    "the correct quality, including the q0=60 and q0=80 pastes that a step of "
+    "5 misses outright, and it locates them well - q2=60 exactly, mask IoU "
+    "0.923. But it also fires on both authentic-by-construction images, at "
+    "B=0.6683 (q2=12) and B=0.5928 (q2=21), three times the threshold. "
+    "Scoring all nine cases with Th fixed: step 5 is right 6 times, step 3 "
+    "four, step 1 five, step 2 three. Finer sweeps give the extreme-value "
+    "maximisation more candidates to find a spurious minimum among, and a "
+    "confident FAKE on an authentic photograph is the failure this engine "
+    "already had. The recall cost is real and is reported as a limitation.",
+    "DEFAULT_GRID_SHIFT_STEP 2 -> 4 (fewer grid shifts). Reverted, though the "
+    "measurement is two-sided and worth keeping. The shift sweep never once "
+    "improved a genuine detection: across 1, 4 and 16 shifts all five "
+    "detectable ground-truth splices returned byte-identical D_max at an "
+    "identical q2, every winner sitting at shift (0,0), a deliberately "
+    "block-misaligned paste included. What extra shifts did change was the "
+    "spurious maximum on images with no detectable ghost, which rose "
+    "monotonically with the number of shifts - 0.7150 to 0.7150 to 1.1457 on "
+    "the reverse-direction splice, 0.5977 to 0.7855 to 1.0227 at a quality "
+    "gap of 2. More shifts are therefore a pure false-positive amplifier "
+    "here. It is still reverted, for two reasons: in the shipped "
+    "configuration (quality step 5) every one of those non-detections is "
+    "already 0.0000 with the full 16 shifts, so there is no false-positive "
+    "pressure to relieve; and the SKILL sanctions this pruning only when the "
+    "paste 'is already known/suspected to be block-aligned', which an engine "
+    "seeing a single image cannot know.",
+    "Replacing raw_score's clip(D_max/Th, 0, 1) with an unsaturating map. "
+    "Measured D_max values run 0.6-1.8, three to ten times Th, so every "
+    "positive reports exactly 1.0 and the fusion layer sees no magnitude. "
+    "The saturation is real and is reported as a limitation, but the "
+    "normalisation is the SKILL's own stated recommendation and the corpus "
+    "offers no alternative, so it is left alone rather than invented.",
 )
 
 KNOWN_UNIMPLEMENTED_MODULES = (
