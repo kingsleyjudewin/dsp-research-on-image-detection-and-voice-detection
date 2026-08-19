@@ -1,0 +1,151 @@
+PHASE 7.4 - BEFORE / AFTER COMPARISON  (noise_engine)
+Both runs are on the same six files, through the same harness
+(test_noise_engine_diagnostic.py --tag before | after). Nothing below is
+estimated; every number came out of a run that is saved on disk beside this
+file.
+
+================================================================================
+PART 1 - THE SIX CORPUS IMAGES
+================================================================================
+
++-------------------+--------------+--------------+--------------+----------+
+| Image             | Before prob  | After prob   | Before raw   | After raw|
++-------------------+--------------+--------------+--------------+----------+
+| campic.jpeg       | None (gated) | None         | 1.000000     | 0.046296 |
+| campic2.jpeg      | None (gated) | None         | 1.000000     | 0.083333 |
+| fake .jpeg        | 0.999089     | None         | 1.000000     | 0.036765 |
+| fake.jpeg         | 0.999089     | None         | 1.000000     | 0.027778 |
+| gen.jpeg          | None (gated) | None         | 1.000000     | 0.150000 |
+| genratedimage.jpeg| None (gated) | None         | 1.000000     | 0.071429 |
++-------------------+--------------+--------------+--------------+----------+
+| raw score spread  | 0.000000     | 0.122222     |                         |
+| raw separation    | 0.000000     | -0.032544    |                         |
+| (fake avg - real) |              | INVERTED     |                         |
++-------------------+--------------+--------------+--------------+----------+
+
+Read that table honestly. The probability column did not improve - it went
+from two confident wrong-in-principle votes and four gate-driven abstentions
+to six deliberate abstentions. What changed is the raw score underneath: it
+stopped being the constant 1.000000 and acquired 0.122 of dynamic range. On
+THIS corpus that range still does not separate the classes; it ranks the two
+"real" images ABOVE the two "fake" ones. That is reported, not hidden.
+
+Why the before column shows four Nones: the pre-enhancement flat-content gate
+misfired on campic, campic2, gen and genratedimage (62.0%, 62.0%, 61.3% and
+55.4% of their blocks fell below a degeneracy floor set ten times too high).
+So before the enhancement the engine voted on exactly the two images it should
+have been most cautious about and abstained on the two authentic photographs.
+
+Gate status after the fix, measured directly:
+  image                saturated-px  sat gate   flat blocks  flat gate
+  campic.jpeg                  0.0%      pass         15.7%       pass
+  campic2.jpeg                 0.0%      pass         16.7%       pass
+  fake .jpeg                  65.0%      FAIL          8.8%       pass
+  fake.jpeg                    7.7%      pass          0.0%       pass
+  gen.jpeg                     0.1%      pass         22.5%       pass
+  genratedimage.jpeg           1.2%      pass         49.1%       pass
+Five of six now abstain solely because no calibration was supplied. The sixth,
+fake .jpeg, is additionally and correctly blocked by the saturation gate whose
+verdict the engine used to throw away.
+
+================================================================================
+PART 2 - GROUND TRUTH: DOES THE SCORE RESPOND TO A REAL NOISE MANIPULATION?
+================================================================================
+
+campic.jpeg (camera) is the host. mobilepic.jpeg comes from a different
+physical camera, so pasting a region of it into campic is a genuine
+cross-sensor splice - what the SKILL names as the manipulation Pipeline B
+"detects best" and that Pipeline A is the blind substitute for. Every edit was
+verified to change only the pasted rectangle: 65,535 / 63,297 / 65,523 pixels
+changed, 3.42% / 3.30% / 3.41% of the frame, ZERO changed pixels outside the
+rectangle in all three cases.
+
+  variant                              BEFORE raw   delta    AFTER raw   delta
+  authentic host                         1.000000      -      0.046296      -
+  cross-sensor splice 256x256            1.000000  +0.000000  0.120370  +0.074074
+  region denoised 256x256                1.000000  +0.000000  0.037037  -0.009259
+  region given foreign noise 256x256     1.000000  +0.000000  0.129630  +0.083333
+
+Over 18 trials (6 paste locations x 3 manipulation types), measured through the
+shipped engine:
+
+  manipulation     BEFORE          AFTER
+                   peak  inside    peak   inside   mean delta   delta>0
+  splice           -     -         1/6    0.212    +0.04167     6/6
+  denoise          -     -         3/6    0.273    +0.03395     5/6
+  foreign-noise    -     -         2/6    0.318    +0.07716     6/6
+  ALL              0/12  0.083     6/18   0.268    -            17/18
+  chance rate            0.083            0.083
+
+Before: the heatmap peak fell inside the known pasted region 0 times out of 12,
+and the top-10% of blocks overlapped the paste 0.083 of the time against a
+chance rate of 0.083. The evidence map carried no information about where the
+manipulation was - it was exactly chance.
+
+After: 6 of 18 peaks land inside the paste (4x chance), overlap runs at 0.268
+against 0.083 chance (3.2x), and the global scalar moves in the correct
+direction on 17 of 18 trials. The one trial that moves the wrong way is a
+denoise at row 512 col 640 (-0.009259).
+
+The ceiling on this is set by physics, not code: the corpus images are JPEG
+QF74 and all nine share one byte-identical quantization table (luminance row 0
+= 6,6,6,7,10,15,22,34), so they passed through a common re-encoder. The SKILL
+states that Chen et al.'s own FRR tables degrade "by orders of magnitude" from
+RAW to JPEG90 to JPEG75. Measured directly: the median per-block residual
+variance of campic is 0.1358 against a 1-LSB quantization-error variance of
+0.0833, so what survives in the residual is barely above the container's own
+rounding error.
+
+================================================================================
+PART 3 - WHY EACH HALF OF THE FIX WAS NECESSARY (neither works alone)
+================================================================================
+
+Measured across the corpus and the 18 ground-truth trials:
+
+  statistic          scalar                 corpus spread   splice/denoise/foreign
+                                                            trials moving correctly
+  var(W)   [old]     top-k% mean [old]         0.0000        0/6   0/6   0/6
+  var(W)             flagged fraction          0.1255        5/6   2/6   3/6
+  texture-conditioned top-k% mean [old]        0.1875        0/6   0/6   0/6
+  texture-conditioned flagged fraction         0.1222        6/6   5/6   6/6   <- shipped
+
+Conditioning on texture alone leaves the scalar pinned at 1.0. Changing the
+scalar alone recovers dynamic range but only half the sensitivity, and it makes
+denoising detection worse than chance. Both changes are load-bearing.
+
+================================================================================
+PART 4 - CALIBRATED ROUTE
+================================================================================
+
+The empirical-CDF route was never exercised by the corpus. Verified working
+with 12 supplied authentic reference scores:
+
+  campic.jpeg authentic          probability 0.4167   is_reliable True
+  campic.jpeg + cross-sensor splice  probability 1.0000   is_reliable True
+
+Before the enhancement both of those images had raw_score exactly 1.000000, so
+any empirical CDF would have returned the SAME probability for the authentic
+photograph and its spliced copy. That is the concrete difference the change
+buys: a calibrated deployment can now tell those two apart, where previously it
+provably could not.
+
+================================================================================
+PHASE 7.5 - ENHANCEMENT VERDICT
+================================================================================
+
+  Did enhancement improve separation?  ON GROUND TRUTH YES (0/18 -> 17/18
+    correct-direction responses; localization 0/12 -> 6/18 peak hits, overlap
+    0.083 -> 0.268 against a 0.083 chance rate).
+    ON THE SUPPLIED CORPUS NO - raw separation went 0.000000 -> -0.032544,
+    which is inverted. The corpus contains no verified splice and all nine
+    files share one re-encoder, so it cannot measure this engine either way.
+  Did enhancement break anything?      NO. Four fixed contracts unchanged
+    field-for-field, 3 EngineOutput construction sites x 11 kwargs,
+    probability None iff not reliable across every input class tested, all
+    methods within 40 lines, SKILL VERIFICATION blocks 10 -> 12 (two added,
+    none removed), no numeric literals outside constants.py.
+  Net result:                          BETTER, with the separation claim
+    restricted to ground truth.
+  Final engine health:                 NEEDS MORE WORK - specifically, it
+    needs a labelled calibration set. The mathematics now responds to the
+    right thing; what is missing is any basis for a threshold.

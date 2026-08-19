@@ -1,0 +1,33 @@
+NOISE-PATTERN (PRNU) ENGINE - DIAGNOSTIC SUMMARY
+run tag       : after
+generated     : 2026-08-19 22:59:16
+
+images tested : 6
+reliable      : 0 / 6
+correct       : 0 / 6
+wrong         : 0 / 6
+abstained     : 6 / 6
+
+PROBABILITY BY CASE
+  real        : None
+  manipulated : None
+  ai-generated: None
+  separation  : None
+
+RAW SCORE BY CASE
+  real        : 0.06481481481481481
+  manipulated : 0.032271241830065356
+  separation  : -0.032543572984749455
+
+NOTICES
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+  - Engine configuration: Pipeline A only is scored: W = I - F(I) with F a single-level 'haar' DWT reconstructed from the LL subband, tiled into resolution-scaled blocks (target 8 cells per axis, clamped to [64, 128] px); per-block residual variance compared against its 3x3 neighbourhood median, |log2 ratio| rescaled by log2(2.0) and clipped to [0,1]; raw_score = mean of the top 10% of that heatmap; probability via a PROVISIONAL logistic (midpoint 0.3, slope 10.0) that approximates no corpus threshold. Pipeline C runs unscored; Pipelines B and D are calibration-gated and skipped.
+  - The SKILL states Pipeline A - the only scored pipeline here - is an 'engineering synthesis' that is 'not validated end-to-end as one integrated pipeline in either source paper', and that its calibration is 'not specified in corpus'. Every probability below is a provisional logistic, not a validated likelihood.
+
+PER-IMAGE
+  campic.jpeg            truth=REAL          raw=0.0463 prob=None conf=0.000 verdict=NO VOTE (unreliable)
+  campic2.jpeg           truth=REAL          raw=0.0833 prob=None conf=0.000 verdict=NO VOTE (unreliable)
+  fake .jpeg             truth=FAKE          raw=0.0368 prob=None conf=0.000 verdict=NO VOTE (unreliable)
+  fake.jpeg              truth=FAKE          raw=0.0278 prob=None conf=0.000 verdict=NO VOTE (unreliable)
+  gen.jpeg               truth=AI-GENERATED  raw=0.1500 prob=None conf=0.000 verdict=NO VOTE (unreliable)
+  genratedimage.jpeg     truth=AI-GENERATED  raw=0.0714 prob=None conf=0.000 verdict=NO VOTE (unreliable)

@@ -1,0 +1,426 @@
+==========================================================================
+NOISE-PATTERN ENGINE DIAGNOSTIC REPORT  [after]
+Generated: 2026-08-19 22:59:16
+==========================================================================
+
+Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case
+--------------------------------------------------------------------------------
+campic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real
+campic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real
+mobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real
+mobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real
+fake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI
+fake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI
+fake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI
+gen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI
+genratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI
+
+NOTICES:
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+  - Engine configuration: Pipeline A only is scored: W = I - F(I) with F a single-level 'haar' DWT reconstructed from the LL subband, tiled into resolution-scaled blocks (target 8 cells per axis, clamped to [64, 128] px); per-block residual variance compared against its 3x3 neighbourhood median, |log2 ratio| rescaled by log2(2.0) and clipped to [0,1]; raw_score = mean of the top 10% of that heatmap; probability via a PROVISIONAL logistic (midpoint 0.3, slope 10.0) that approximates no corpus threshold. Pipeline C runs unscored; Pipelines B and D are calibration-gated and skipped.
+  - The SKILL states Pipeline A - the only scored pipeline here - is an 'engineering synthesis' that is 'not validated end-to-end as one integrated pipeline in either source paper', and that its calibration is 'not specified in corpus'. Every probability below is a provisional logistic, not a validated likelihood.
+
+
+##########################################################################
+CASE 1: Case 1 Real (ground truth REAL)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images
+##########################################################################
+
+==========================================================================
+IMAGE: campic.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 79.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.046296
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 260.5 ms
+  Reliability  : Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value. Diagnostic testing measured the aggregate scalar moving +0.0340 to +0.0772 under a real local noise manipulation while six untampered images spanned 0.1222 - the between-image spread exceeds the manipulation effect, so no fixed cutoff on this scalar separates tampered from authentic. This engine therefore publishes no probability on the uncalibrated route; supply authentic_reference_scores to enable the empirical-CDF route. The raw_score, heatmap and flagged_regions are still published.
+
+  COMPUTATION TRACE:
+    Step 1: Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)
+      Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.
+      in=  out=
+        total_blocks = 108
+        flagged_block_count = 5
+        aggregate_scalar = 0.0463
+        legacy_top_k_scalar = 0.9034
+    Step 2: Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)
+      Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.
+      in=  out=
+        grid_cells = 8
+        S_mean_P_val = 26.1562
+        S_rms_P_val = 31.5803
+    Step 3: Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)
+      ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).
+      in=  out=
+        ran = False
+        note = No same-camera reference images supplied; Pipeline B skipped.
+    Step 4: Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)
+      Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.
+      in=  out=
+        ran = False
+        note = No training-set baseline magnitude supplied; Pipeline D skipped.
+    Step 5: Scoring
+      Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=0.046296 at confidence 0.0000, is_reliable=False. Pipeline A reported {'total_blocks': 108, 'flagged_block_count': 5, 'aggregate_scalar': 0.0463, 'legacy_top_k_scalar': 0.9034}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 26.1562, 'S_rms_P_val': 31.5803}. The image tiled into 108 blocks of 128x128 px on a [9, 12] grid. Per-block residual variance ran from 0.0437 to 39.1981 (median 0.1358), a max/min ratio of 896.33. After dividing by the neighbourhood median and rescaling, 5 of 108 heatmap cells (0.0463) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 11 cells with values [0.7538, 0.7656, 0.789, 0.7925, 0.8446, 0.9918, 1.0, 1.0, 1.0, 1.0, 1.0] (all saturated: False). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.9753 against Laplacian energy and 0.9433 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 0.0463, 'downscale_0.5x': 0.1, 'gaussian_blur_3': 0.0556, 'brightness_plus_20': 0.0463, 'jpeg_q90': 0.037, 'jpeg_q40': 0.0093, 'spread_max_minus_min': 0.0907}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.9753 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 896.33, so the |log2| deviation exceeds log2(2.0) across 0.0463 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-11 mean is taken, which is why raw_score lands at 0.046296.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/after/noise_case1_img1_campic_heatmap.png
+
+==========================================================================
+IMAGE: campic2.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 80.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.083333
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 260.1 ms
+  Reliability  : Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value. Diagnostic testing measured the aggregate scalar moving +0.0340 to +0.0772 under a real local noise manipulation while six untampered images spanned 0.1222 - the between-image spread exceeds the manipulation effect, so no fixed cutoff on this scalar separates tampered from authentic. This engine therefore publishes no probability on the uncalibrated route; supply authentic_reference_scores to enable the empirical-CDF route. The raw_score, heatmap and flagged_regions are still published.
+
+  COMPUTATION TRACE:
+    Step 1: Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)
+      Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.
+      in=  out=
+        total_blocks = 108
+        flagged_block_count = 9
+        aggregate_scalar = 0.0833
+        legacy_top_k_scalar = 0.9921
+    Step 2: Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)
+      Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.
+      in=  out=
+        grid_cells = 8
+        S_mean_P_val = 25.7812
+        S_rms_P_val = 31.4712
+    Step 3: Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)
+      ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).
+      in=  out=
+        ran = False
+        note = No same-camera reference images supplied; Pipeline B skipped.
+    Step 4: Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)
+      Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.
+      in=  out=
+        ran = False
+        note = No training-set baseline magnitude supplied; Pipeline D skipped.
+    Step 5: Scoring
+      Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=0.083333 at confidence 0.0000, is_reliable=False. Pipeline A reported {'total_blocks': 108, 'flagged_block_count': 9, 'aggregate_scalar': 0.0833, 'legacy_top_k_scalar': 0.9921}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 25.7812, 'S_rms_P_val': 31.4712}. The image tiled into 108 blocks of 128x128 px on a [9, 12] grid. Per-block residual variance ran from 0.0462 to 36.2881 (median 0.141), a max/min ratio of 785.14. After dividing by the neighbourhood median and rescaling, 9 of 108 heatmap cells (0.0833) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 11 cells with values [0.9509, 0.9623, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] (all saturated: False). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.9768 against Laplacian energy and 0.9265 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 0.0833, 'downscale_0.5x': 0.1125, 'gaussian_blur_3': 0.0463, 'brightness_plus_20': 0.0833, 'jpeg_q90': 0.0833, 'jpeg_q40': 0.0, 'spread_max_minus_min': 0.1125}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.9768 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 785.14, so the |log2| deviation exceeds log2(2.0) across 0.0833 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-11 mean is taken, which is why raw_score lands at 0.083333.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/after/noise_case1_img2_campic2_heatmap.png
+
+  CASE 1 SUMMARY
+    average probability : n/a
+    score spread        : n/a
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 2: Case 2 Manipulated (ground truth FAKE)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: fake .jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg
+==========================================================================
+  Resolution   : 728x1600
+  Format       : JPEG
+  File size    : 157.8 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.036765
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 157.5 ms
+  Reliability  : Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. 65.0% of pixels are at or above 250.0; the multiplicative PRNU term vanishes near sensor saturation (Eq. 19). Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value. Diagnostic testing measured the aggregate scalar moving +0.0340 to +0.0772 under a real local noise manipulation while six untampered images spanned 0.1222 - the between-image spread exceeds the manipulation effect, so no fixed cutoff on this scalar separates tampered from authentic. This engine therefore publishes no probability on the uncalibrated route; supply authentic_reference_scores to enable the empirical-CDF route. The raw_score, heatmap and flagged_regions are still published.
+
+  COMPUTATION TRACE:
+    Step 1: Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)
+      Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.
+      in=  out=
+        total_blocks = 136
+        flagged_block_count = 5
+        aggregate_scalar = 0.0368
+        legacy_top_k_scalar = 0.9047
+    Step 2: Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)
+      Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.
+      in=  out=
+        grid_cells = 8
+        S_mean_P_val = 6.5781
+        S_rms_P_val = 24.323
+    Step 3: Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)
+      ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).
+      in=  out=
+        ran = False
+        note = No same-camera reference images supplied; Pipeline B skipped.
+    Step 4: Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)
+      Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.
+      in=  out=
+        ran = False
+        note = No training-set baseline magnitude supplied; Pipeline D skipped.
+    Step 5: Scoring
+      Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=0.036765 at confidence 0.0000, is_reliable=False. Pipeline A reported {'total_blocks': 136, 'flagged_block_count': 5, 'aggregate_scalar': 0.0368, 'legacy_top_k_scalar': 0.9047}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 6.5781, 'S_rms_P_val': 24.323}. The image tiled into 136 blocks of 91x91 px on a [17, 8] grid. Per-block residual variance ran from 0.0068 to 2466.8915 (median 269.9687), a max/min ratio of 362365.22. After dividing by the neighbourhood median and rescaling, 5 of 136 heatmap cells (0.0368) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 14 cells with values [0.7934, 0.8056, 0.8454, 0.8627, 0.8636, 0.8686, 0.8716, 0.8758, 0.8786, 1.0, 1.0, 1.0, 1.0, 1.0] (all saturated: False). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.9635 against Laplacian energy and 0.598 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 0.0368, 'downscale_0.5x': 0.0667, 'gaussian_blur_3': 0.0294, 'brightness_plus_20': 0.1029, 'jpeg_q90': 0.0294, 'jpeg_q40': 0.0735, 'spread_max_minus_min': 0.0735}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.9635 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 362365.22, so the |log2| deviation exceeds log2(2.0) across 0.0368 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-14 mean is taken, which is why raw_score lands at 0.036765.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : FAKE
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/after/noise_case2_img1_fake__heatmap.png
+
+==========================================================================
+IMAGE: fake.jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg
+==========================================================================
+  Resolution   : 928x1152
+  Format       : JPEG
+  File size    : 67.4 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.027778
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 160.3 ms
+  Reliability  : Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value. Diagnostic testing measured the aggregate scalar moving +0.0340 to +0.0772 under a real local noise manipulation while six untampered images spanned 0.1222 - the between-image spread exceeds the manipulation effect, so no fixed cutoff on this scalar separates tampered from authentic. This engine therefore publishes no probability on the uncalibrated route; supply authentic_reference_scores to enable the empirical-CDF route. The raw_score, heatmap and flagged_regions are still published.
+
+  COMPUTATION TRACE:
+    Step 1: Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)
+      Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.
+      in=  out=
+        total_blocks = 72
+        flagged_block_count = 2
+        aggregate_scalar = 0.0278
+        legacy_top_k_scalar = 0.7339
+    Step 2: Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)
+      Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.
+      in=  out=
+        grid_cells = 8
+        S_mean_P_val = 25.25
+        S_rms_P_val = 39.9613
+    Step 3: Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)
+      ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).
+      in=  out=
+        ran = False
+        note = No same-camera reference images supplied; Pipeline B skipped.
+    Step 4: Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)
+      Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.
+      in=  out=
+        ran = False
+        note = No training-set baseline magnitude supplied; Pipeline D skipped.
+    Step 5: Scoring
+      Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=0.027778 at confidence 0.0000, is_reliable=False. Pipeline A reported {'total_blocks': 72, 'flagged_block_count': 2, 'aggregate_scalar': 0.0278, 'legacy_top_k_scalar': 0.7339}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 25.25, 'S_rms_P_val': 39.9613}. The image tiled into 72 blocks of 116x116 px on a [9, 8] grid. Per-block residual variance ran from 0.1642 to 89.293 (median 5.3082), a max/min ratio of 543.74. After dividing by the neighbourhood median and rescaling, 2 of 72 heatmap cells (0.0278) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 8 cells with values [0.5527, 0.5868, 0.6484, 0.6495, 0.7017, 0.7324, 1.0, 1.0] (all saturated: False). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.7726 against Laplacian energy and 0.7617 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 0.0278, 'downscale_0.5x': 0.0159, 'gaussian_blur_3': 0.0278, 'brightness_plus_20': 0.0278, 'jpeg_q90': 0.0278, 'jpeg_q40': 0.0, 'spread_max_minus_min': 0.0278}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.7726 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 543.74, so the |log2| deviation exceeds log2(2.0) across 0.0278 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-8 mean is taken, which is why raw_score lands at 0.027778.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : FAKE
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/after/noise_case2_img2_fake_heatmap.png
+
+  CASE 2 SUMMARY
+    average probability : n/a
+    score spread        : n/a
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 3: Case 3 AI-generated (ground truth AI-GENERATED)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: gen.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg
+==========================================================================
+  Resolution   : 800x1006
+  Format       : JPEG
+  File size    : 44.6 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.150000
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 109.7 ms
+  Reliability  : Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value. Diagnostic testing measured the aggregate scalar moving +0.0340 to +0.0772 under a real local noise manipulation while six untampered images spanned 0.1222 - the between-image spread exceeds the manipulation effect, so no fixed cutoff on this scalar separates tampered from authentic. This engine therefore publishes no probability on the uncalibrated route; supply authentic_reference_scores to enable the empirical-CDF route. The raw_score, heatmap and flagged_regions are still published.
+
+  COMPUTATION TRACE:
+    Step 1: Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)
+      Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.
+      in=  out=
+        total_blocks = 80
+        flagged_block_count = 12
+        aggregate_scalar = 0.15
+        legacy_top_k_scalar = 1.0
+    Step 2: Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)
+      Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.
+      in=  out=
+        grid_cells = 8
+        S_mean_P_val = 30.8281
+        S_rms_P_val = 41.4919
+    Step 3: Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)
+      ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).
+      in=  out=
+        ran = False
+        note = No same-camera reference images supplied; Pipeline B skipped.
+    Step 4: Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)
+      Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.
+      in=  out=
+        ran = False
+        note = No training-set baseline magnitude supplied; Pipeline D skipped.
+    Step 5: Scoring
+      Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=0.150000 at confidence 0.0000, is_reliable=False. Pipeline A reported {'total_blocks': 80, 'flagged_block_count': 12, 'aggregate_scalar': 0.15, 'legacy_top_k_scalar': 1.0}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 30.8281, 'S_rms_P_val': 41.4919}. The image tiled into 80 blocks of 100x100 px on a [10, 8] grid. Per-block residual variance ran from 0.0167 to 277.5038 (median 0.1957), a max/min ratio of 16592.16. After dividing by the neighbourhood median and rescaling, 12 of 80 heatmap cells (0.15) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 8 cells with values [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] (all saturated: True). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.9604 against Laplacian energy and 0.9254 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 0.15, 'downscale_0.5x': 0.119, 'gaussian_blur_3': 0.1125, 'brightness_plus_20': 0.1375, 'jpeg_q90': 0.15, 'jpeg_q40': 0.0875, 'spread_max_minus_min': 0.0625}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.9604 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 16592.16, so the |log2| deviation exceeds log2(2.0) across 0.15 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-8 mean is taken, which is why raw_score lands at 0.150000.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : AI-GENERATED
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/after/noise_case3_img1_gen_heatmap.png
+
+==========================================================================
+IMAGE: genratedimage.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg
+==========================================================================
+  Resolution   : 768x1376
+  Format       : JPEG
+  File size    : 71.2 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.071429
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 190.1 ms
+  Reliability  : Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value. Diagnostic testing measured the aggregate scalar moving +0.0340 to +0.0772 under a real local noise manipulation while six untampered images spanned 0.1222 - the between-image spread exceeds the manipulation effect, so no fixed cutoff on this scalar separates tampered from authentic. This engine therefore publishes no probability on the uncalibrated route; supply authentic_reference_scores to enable the empirical-CDF route. The raw_score, heatmap and flagged_regions are still published.
+
+  COMPUTATION TRACE:
+    Step 1: Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)
+      Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.
+      in=  out=
+        total_blocks = 112
+        flagged_block_count = 8
+        aggregate_scalar = 0.0714
+        legacy_top_k_scalar = 0.9874
+    Step 2: Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)
+      Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.
+      in=  out=
+        grid_cells = 8
+        S_mean_P_val = 76.4531
+        S_rms_P_val = 122.3874
+    Step 3: Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)
+      ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).
+      in=  out=
+        ran = False
+        note = No same-camera reference images supplied; Pipeline B skipped.
+    Step 4: Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)
+      Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.
+      in=  out=
+        ran = False
+        note = No training-set baseline magnitude supplied; Pipeline D skipped.
+    Step 5: Scoring
+      Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=0.071429 at confidence 0.0000, is_reliable=False. Pipeline A reported {'total_blocks': 112, 'flagged_block_count': 8, 'aggregate_scalar': 0.0714, 'legacy_top_k_scalar': 0.9874}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 76.4531, 'S_rms_P_val': 122.3874}. The image tiled into 112 blocks of 96x96 px on a [14, 8] grid. Per-block residual variance ran from 0.0056 to 313.8121 (median 0.0954), a max/min ratio of 55617.17. After dividing by the neighbourhood median and rescaling, 8 of 112 heatmap cells (0.0714) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 12 cells with values [0.9324, 0.9545, 0.9762, 0.9851, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] (all saturated: False). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.9912 against Laplacian energy and 0.8864 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 0.0714, 'downscale_0.5x': 0.0667, 'gaussian_blur_3': 0.1696, 'brightness_plus_20': 0.1071, 'jpeg_q90': 0.0804, 'jpeg_q40': 0.125, 'spread_max_minus_min': 0.1029}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.9912 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 55617.17, so the |log2| deviation exceeds log2(2.0) across 0.0714 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-12 mean is taken, which is why raw_score lands at 0.071429.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : AI-GENERATED
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/after/noise_case3_img2_genratedimage_heatmap.png
+
+  CASE 3 SUMMARY
+    average probability : n/a
+    score spread        : n/a
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+==========================================================================
+OVERALL
+==========================================================================
+  real average probability     : None
+  manipulated average          : None
+  ai-generated average         : None
+  separation (fake - real)     : None
+  raw-score separation         : -0.032543572984749455
+  reliable results             : 0 / 6
+  average processing time (ms) : 189.68512450002586

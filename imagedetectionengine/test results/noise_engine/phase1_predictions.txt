@@ -1,0 +1,133 @@
+PHASE 1 - PRE-TEST EXPECTATIONS  (noise_engine / Noise-Pattern Forgery Detection)
+Written BEFORE the engine was run on any image. Nothing below is edited after
+the fact; Phase 4/5/6 grade the run against exactly this text.
+
+================================================================================
+STEP 1.1 - CORE ENGINE CAPABILITY, AS STATED BY THE SKILL
+================================================================================
+
+Exact mathematical property measured
+  Photo-Response Non-Uniformity (PRNU). The SKILL's Eq. 1 gives the sensor
+  output model I = g^gamma * [(1+K)Y + Lambda]^gamma + Theta_q, Taylor-expanded
+  into the working linear model Eq. 2: I ~= I0 + I0*K + Theta. K is a fixed,
+  zero-mean, content-independent multiplicative fingerprint of one physical
+  sensor. The forensic claim is that any region whose noise residual fails to
+  behave like the rest of the frame's did not come from that sensor.
+
+  This engine is scoped to Pipeline A - the SKILL's own "recommended PRIMARY
+  for this engine's single-suspect-image, no-reference use case". Pipeline A
+  is BLIND: it never estimates K. It compares local noise-level statistics
+  across regions of the SAME image.
+
+Signal present in FAKE, absent/weaker in REAL
+  A spliced region carries a different sensor's noise (or none at all, for a
+  synthetic paste), so its local residual variance differs from the host's. A
+  denoised or smoothed region has LOWER residual variance than its
+  surroundings. Either way the tampered block's statistic departs from its
+  neighbourhood.
+
+Signal present in REAL, different in FAKE
+  A single-sensor image should have a spatially smooth noise-level field: every
+  block's residual variance close to its neighbours', so the log-ratio field is
+  near zero everywhere and no block is flagged.
+
+Exact computation producing raw_score
+  1. grayscale = BGR2GRAY, float64.
+  2. W = I - F(I), F = single-level Haar DWT reconstructed from the LL subband
+     only (all detail subbands zeroed). The SKILL names "the Mihcak
+     wavelet-based denoising filter" but prints no formula for it anywhere, so
+     this is the engine's own [ENGINEERING] instantiation of F's stated role.
+  3. block_size = clamp(min(H,W)//8, 64, 128); non-overlapping tiling.
+  4. statistic[r,c] = var(W within block).
+  5. m[r,c] = median of the 3x3 block neighbourhood EXCLUDING the centre.
+  6. heatmap[r,c] = clip( |log2(statistic/m)| / log2(2.0), 0, 1 ).
+  7. raw_score = mean of the largest 10% of heatmap cells.
+  8. probability = 1/(1+exp(-10*(raw_score-0.3)))   [PROVISIONAL, uncalibrated]
+
+raw_score range meaning
+  0.0 = every block sits exactly at its neighbourhood median (perfectly uniform
+  noise field, REAL). 1.0 = the top decile of blocks each deviate by a factor
+  of >=2 from their neighbours (FAKE). Probability crosses 0.5 at raw=0.30 and
+  is >0.99 by raw=0.76.
+
+================================================================================
+STEP 1.2 - PER-CASE PREDICTIONS
+================================================================================
+
+The predictions below follow from one structural reading of the code made
+before running it: F is a plain high-pass, therefore var(W) is an edge/texture
+energy, therefore it varies between adjacent blocks of a NATURAL scene by far
+more than the factor of 2 that the heatmap treats as full-scale deviation.
+
+CASE 1 - REAL IMAGES  (campic.jpeg, campic2.jpeg)
+  Expected probability range   : 0.95 - 1.00      (NOT the 0.0-0.3 a working
+                                 detector should give - I predict this engine
+                                 gets both real images WRONG)
+  Expected raw_score range     : 0.95 - 1.00, most likely exactly 1.0000
+  Expected is_reliable         : True. The only gate that can flip it is
+                                 flatness (>=50% of blocks with residual
+                                 variance < 1.0), which no textured photograph
+                                 will trip.
+  Expected evidence_map        : NOT uniform. Bright wherever the scene has an
+                                 edge or a texture boundary, dark in sky/wall.
+                                 Hotspots will track content, not tampering.
+  Signal that should be ABSENT : a spatially non-uniform noise-level field.
+                                 I predict it will be present anyway, because
+                                 what is being measured is texture.
+  Most likely failure mode     : saturation. If >10% of blocks clip at the 1.0
+                                 ceiling then the top-10% mean is 1.0 exactly
+                                 and the statistic has no dynamic range left.
+
+CASE 2 - FAKE IMAGES  (fake .jpeg, fake.jpeg)
+  Expected probability range   : 0.95 - 1.00
+  Expected raw_score range     : 0.95 - 1.00, most likely exactly 1.0000
+  Expected is_reliable         : True, same reasoning.
+  Expected evidence_map        : hotspots at scene edges, NOT specifically at
+                                 the manipulated region.
+  Signal that should be PRESENT: a local noise-level discontinuity at the
+                                 splice boundary. It may well be there, but I
+                                 predict it will be indistinguishable from the
+                                 texture response saturating everything.
+  Most likely failure mode     : right answer for the wrong reason. A verdict
+                                 of FAKE here is worth nothing if the engine
+                                 also says FAKE to both authentic photographs.
+
+CASE 3 - AI-GENERATED IMAGES  (gen.jpeg, genratedimage.jpeg)
+  Expected probability range   : 0.95 - 1.00, i.e. the same as everything else.
+  Expected is_reliable         : True.
+  Is AI detection in SKILL scope: NO, not as a named task. The closest the
+                                 SKILL comes is one clause in Core mathematical
+                                 principle - a region "synthetically generated
+                                 with no sensor noise at all" is evidence of
+                                 tampering. That is a genuine physical
+                                 prediction (a diffusion render has no PRNU),
+                                 but no pipeline, threshold or benchmark in the
+                                 SKILL addresses whole-image synthetic
+                                 provenance; Pipeline C's validated task is
+                                 face morphing.
+  What the engine will likely do: score them on texture like everything else.
+  Most likely failure mode     : the engine is not designed for this case, and
+                                 a blind LOCAL-inconsistency test is
+                                 structurally incapable of flagging a GLOBALLY
+                                 synthetic image - if the whole frame lacks
+                                 PRNU equally, every block agrees with its
+                                 neighbours and the image looks maximally
+                                 authentic to Pipeline A.
+
+================================================================================
+OVERALL PRE-RUN PREDICTION
+================================================================================
+  Separation (fake avg - real avg) : ~0.00. I expect near-zero because I expect
+                                     saturation at the ceiling for all six.
+  Reliable results                 : 6/6.
+  Predicted correct verdicts       : 4/6 - and all four "correct" by accident,
+                                     since a constant FAKE answer scores 4/6 on
+                                     a corpus that is 2 real and 4 not.
+  Confidence                       : 1.0000 on all six (condition weight 1.0,
+                                     saturation and flatness both passing,
+                                     Pipeline D skipped so no triage penalty).
+                                     If that is what appears, note that this
+                                     engine has NO confidence ceiling of the
+                                     kind lighting_engine carries - it will
+                                     present an uncalibrated provisional
+                                     sigmoid at FULL confidence.

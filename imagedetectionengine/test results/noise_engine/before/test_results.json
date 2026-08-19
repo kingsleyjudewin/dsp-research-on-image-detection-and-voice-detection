@@ -1,0 +1,1097 @@
+{
+  "tag": "before",
+  "engine": "noise_pattern_forgery",
+  "generated_at": "2026-08-19 22:43:48",
+  "pre_run_table": "Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case\n--------------------------------------------------------------------------------\ncampic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real\ncampic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real\nmobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real\nmobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real\nfake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI\nfake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI\nfake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI\ngen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI\ngenratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI",
+  "notices": [
+    "The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.",
+    "Engine configuration: Pipeline A only is scored: W = I - F(I) with F a single-level 'haar' DWT reconstructed from the LL subband, tiled into resolution-scaled blocks (target 8 cells per axis, clamped to [64, 128] px); per-block residual variance compared against its 3x3 neighbourhood median, |log2 ratio| rescaled by log2(2.0) and clipped to [0,1]; raw_score = mean of the top 10% of that heatmap; probability via a PROVISIONAL logistic (midpoint 0.3, slope 10.0) that approximates no corpus threshold. Pipeline C runs unscored; Pipelines B and D are calibration-gated and skipped.",
+    "The SKILL states Pipeline A - the only scored pipeline here - is an 'engineering synthesis' that is 'not validated end-to-end as one integrated pipeline in either source paper', and that its calibration is 'not specified in corpus'. Every probability below is a provisional logistic, not a validated likelihood."
+  ],
+  "cases": [
+    {
+      "case_number": 1,
+      "case_type": "Case 1 Real",
+      "ground_truth": "REAL",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg",
+            "filename": "campic.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 81624,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 1.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. 67/108 blocks have residual variance below 1.0; local noise-level comparison is unreliable on flat content. Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 301.3610840000638,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=1.000000 at confidence 0.0000, is_reliable=False. Pipeline A reported {'total_blocks': 108, 'flagged_block_count': 29, 'aggregate_scalar': 1.0}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 26.1562, 'S_rms_P_val': 31.5803}. The image tiled into 108 blocks of 128x128 px on a [9, 12] grid. Per-block residual variance ran from 0.0437 to 39.1981 (median 0.1358), a max/min ratio of 896.33. After dividing by the neighbourhood median and rescaling, 29 of 108 heatmap cells (0.2685) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 11 cells with values [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] (all saturated: True). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.9753 against Laplacian energy and 0.9433 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 1.0, 'downscale_0.5x': 1.0, 'gaussian_blur_3': 1.0, 'brightness_plus_20': 1.0, 'jpeg_q90': 1.0, 'jpeg_q40': 1.0, 'spread_max_minus_min': 0.0}.",
+          "mathematical_explanation": "Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.9753 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 896.33, so the |log2| deviation exceeds log2(2.0) across 0.2685 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-11 mean is taken, which is why raw_score lands at 1.000000.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)",
+              "description": "Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 108,
+                "flagged_block_count": 29,
+                "aggregate_scalar": 1.0
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)",
+              "description": "Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "grid_cells": 8,
+                "S_mean_P_val": 26.1562,
+                "S_rms_P_val": 31.5803
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)",
+              "description": "ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)",
+              "description": "Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case1_img1_campic_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case1_img1_campic_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)": {
+                "total_blocks": 108,
+                "flagged_block_count": 29,
+                "aggregate_scalar": 1.0
+              },
+              "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)": {
+                "grid_cells": 8,
+                "S_mean_P_val": 26.1562,
+                "S_rms_P_val": 31.5803
+              },
+              "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              },
+              "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "grid_anatomy": {
+              "block_size_px": 128,
+              "grid_shape": [
+                9,
+                12
+              ],
+              "total_blocks": 108,
+              "variance_min": 0.0437,
+              "variance_p50": 0.1358,
+              "variance_max": 39.1981,
+              "variance_max_over_min": 896.33,
+              "log2_ratio_absmax": 7.6038,
+              "log2_ratio_p50": 0.5183,
+              "heatmap_cells_at_1.0": 29,
+              "heatmap_fraction_at_1.0": 0.2685,
+              "heatmap_p50": 0.5183,
+              "top_k_count": 11,
+              "top_k_values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "top_k_all_saturated": true,
+              "aggregate_scalar": 1.0
+            },
+            "content_coupling": {
+              "blocks": 108,
+              "spearman_resvar_vs_intensity_var": 0.9433,
+              "spearman_resvar_vs_laplacian_energy": 0.9753,
+              "pearson_log_resvar_vs_log_laplacian": 0.9625,
+              "residual_variance_range": [
+                0.0437,
+                39.1981
+              ],
+              "laplacian_energy_range": [
+                0.5128,
+                7.0359
+              ]
+            },
+            "nuisance_sensitivity": {
+              "original": 1.0,
+              "downscale_0.5x": 1.0,
+              "gaussian_blur_3": 1.0,
+              "brightness_plus_20": 1.0,
+              "jpeg_q90": 1.0,
+              "jpeg_q40": 1.0,
+              "spread_max_minus_min": 0.0
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg",
+            "filename": "campic2.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 82589,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 1.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. 67/108 blocks have residual variance below 1.0; local noise-level comparison is unreliable on flat content. Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 375.33196399999724,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=1.000000 at confidence 0.0000, is_reliable=False. Pipeline A reported {'total_blocks': 108, 'flagged_block_count': 26, 'aggregate_scalar': 1.0}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 25.7812, 'S_rms_P_val': 31.4712}. The image tiled into 108 blocks of 128x128 px on a [9, 12] grid. Per-block residual variance ran from 0.0462 to 36.2881 (median 0.141), a max/min ratio of 785.14. After dividing by the neighbourhood median and rescaling, 26 of 108 heatmap cells (0.2407) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 11 cells with values [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] (all saturated: True). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.9768 against Laplacian energy and 0.9265 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 1.0, 'downscale_0.5x': 1.0, 'gaussian_blur_3': 1.0, 'brightness_plus_20': 1.0, 'jpeg_q90': 1.0, 'jpeg_q40': 1.0, 'spread_max_minus_min': 0.0}.",
+          "mathematical_explanation": "Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.9768 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 785.14, so the |log2| deviation exceeds log2(2.0) across 0.2407 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-11 mean is taken, which is why raw_score lands at 1.000000.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)",
+              "description": "Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 108,
+                "flagged_block_count": 26,
+                "aggregate_scalar": 1.0
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)",
+              "description": "Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "grid_cells": 8,
+                "S_mean_P_val": 25.7812,
+                "S_rms_P_val": 31.4712
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)",
+              "description": "ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)",
+              "description": "Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case1_img2_campic2_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case1_img2_campic2_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)": {
+                "total_blocks": 108,
+                "flagged_block_count": 26,
+                "aggregate_scalar": 1.0
+              },
+              "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)": {
+                "grid_cells": 8,
+                "S_mean_P_val": 25.7812,
+                "S_rms_P_val": 31.4712
+              },
+              "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              },
+              "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "grid_anatomy": {
+              "block_size_px": 128,
+              "grid_shape": [
+                9,
+                12
+              ],
+              "total_blocks": 108,
+              "variance_min": 0.0462,
+              "variance_p50": 0.141,
+              "variance_max": 36.2881,
+              "variance_max_over_min": 785.14,
+              "log2_ratio_absmax": 6.5782,
+              "log2_ratio_p50": 0.4192,
+              "heatmap_cells_at_1.0": 26,
+              "heatmap_fraction_at_1.0": 0.2407,
+              "heatmap_p50": 0.4192,
+              "top_k_count": 11,
+              "top_k_values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "top_k_all_saturated": true,
+              "aggregate_scalar": 1.0
+            },
+            "content_coupling": {
+              "blocks": 108,
+              "spearman_resvar_vs_intensity_var": 0.9265,
+              "spearman_resvar_vs_laplacian_energy": 0.9768,
+              "pearson_log_resvar_vs_log_laplacian": 0.9611,
+              "residual_variance_range": [
+                0.0462,
+                36.2881
+              ],
+              "laplacian_energy_range": [
+                0.5193,
+                6.7141
+              ]
+            },
+            "nuisance_sensitivity": {
+              "original": 1.0,
+              "downscale_0.5x": 1.0,
+              "gaussian_blur_3": 1.0,
+              "brightness_plus_20": 1.0,
+              "jpeg_q90": 1.0,
+              "jpeg_q40": 1.0,
+              "spread_max_minus_min": 0.0
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": null,
+      "score_spread": null,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 2,
+      "case_type": "Case 2 Manipulated",
+      "ground_truth": "FAKE",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg",
+            "filename": "fake .jpeg",
+            "format": "JPEG",
+            "height": 1600,
+            "width": 728,
+            "file_size_bytes": 161570,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 1.0,
+          "probability": 0.9990889488055994,
+          "confidence": 0.3496824765409122,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. 65.0% of pixels are at or above 250.0; the multiplicative PRNU term vanishes near sensor saturation (Eq. 19). Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 239.24125100006677,
+          "engine_verdict": "FAKE",
+          "verdict_correct": true,
+          "surprise_level": "EXPECTED",
+          "reasoning": "Engine reported raw_score=1.000000 at confidence 0.3497, is_reliable=True. Pipeline A reported {'total_blocks': 136, 'flagged_block_count': 49, 'aggregate_scalar': 1.0}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 6.5781, 'S_rms_P_val': 24.323}. The image tiled into 136 blocks of 91x91 px on a [17, 8] grid. Per-block residual variance ran from 0.0068 to 2466.8915 (median 269.9687), a max/min ratio of 362365.22. After dividing by the neighbourhood median and rescaling, 49 of 136 heatmap cells (0.3603) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 14 cells with values [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] (all saturated: True). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.9635 against Laplacian energy and 0.598 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 1.0, 'downscale_0.5x': 1.0, 'gaussian_blur_3': 1.0, 'brightness_plus_20': 1.0, 'jpeg_q90': 1.0, 'jpeg_q40': 1.0, 'spread_max_minus_min': 0.0}.",
+          "mathematical_explanation": "Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.9635 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 362365.22, so the |log2| deviation exceeds log2(2.0) across 0.3603 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-14 mean is taken, which is why raw_score lands at 1.000000.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)",
+              "description": "Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 136,
+                "flagged_block_count": 49,
+                "aggregate_scalar": 1.0
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)",
+              "description": "Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "grid_cells": 8,
+                "S_mean_P_val": 6.5781,
+                "S_rms_P_val": 24.323
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)",
+              "description": "ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)",
+              "description": "Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case2_img1_fake__heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case2_img1_fake__heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)": {
+                "total_blocks": 136,
+                "flagged_block_count": 49,
+                "aggregate_scalar": 1.0
+              },
+              "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)": {
+                "grid_cells": 8,
+                "S_mean_P_val": 6.5781,
+                "S_rms_P_val": 24.323
+              },
+              "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              },
+              "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "grid_anatomy": {
+              "block_size_px": 91,
+              "grid_shape": [
+                17,
+                8
+              ],
+              "total_blocks": 136,
+              "variance_min": 0.0068,
+              "variance_p50": 269.9687,
+              "variance_max": 2466.8915,
+              "variance_max_over_min": 362365.22,
+              "log2_ratio_absmax": 15.2582,
+              "log2_ratio_p50": 0.7016,
+              "heatmap_cells_at_1.0": 49,
+              "heatmap_fraction_at_1.0": 0.3603,
+              "heatmap_p50": 0.7016,
+              "top_k_count": 14,
+              "top_k_values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "top_k_all_saturated": true,
+              "aggregate_scalar": 1.0
+            },
+            "content_coupling": {
+              "blocks": 136,
+              "spearman_resvar_vs_intensity_var": 0.598,
+              "spearman_resvar_vs_laplacian_energy": 0.9635,
+              "pearson_log_resvar_vs_log_laplacian": 0.9591,
+              "residual_variance_range": [
+                0.0068,
+                2466.8915
+              ],
+              "laplacian_energy_range": [
+                0.1324,
+                132.9807
+              ]
+            },
+            "nuisance_sensitivity": {
+              "original": 1.0,
+              "downscale_0.5x": 1.0,
+              "gaussian_blur_3": 1.0,
+              "brightness_plus_20": 1.0,
+              "jpeg_q90": 1.0,
+              "jpeg_q40": 1.0,
+              "spread_max_minus_min": 0.0
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg",
+            "filename": "fake.jpeg",
+            "format": "JPEG",
+            "height": 1152,
+            "width": 928,
+            "file_size_bytes": 68990,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 1.0,
+          "probability": 0.9990889488055994,
+          "confidence": 1.0,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 149.54231599995182,
+          "engine_verdict": "FAKE",
+          "verdict_correct": true,
+          "surprise_level": "EXPECTED",
+          "reasoning": "Engine reported raw_score=1.000000 at confidence 1.0000, is_reliable=True. Pipeline A reported {'total_blocks': 72, 'flagged_block_count': 27, 'aggregate_scalar': 1.0}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 25.25, 'S_rms_P_val': 39.9613}. The image tiled into 72 blocks of 116x116 px on a [9, 8] grid. Per-block residual variance ran from 0.1642 to 89.293 (median 5.3082), a max/min ratio of 543.74. After dividing by the neighbourhood median and rescaling, 27 of 72 heatmap cells (0.375) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 8 cells with values [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] (all saturated: True). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.7726 against Laplacian energy and 0.7617 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 1.0, 'downscale_0.5x': 1.0, 'gaussian_blur_3': 1.0, 'brightness_plus_20': 1.0, 'jpeg_q90': 1.0, 'jpeg_q40': 1.0, 'spread_max_minus_min': 0.0}.",
+          "mathematical_explanation": "Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.7726 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 543.74, so the |log2| deviation exceeds log2(2.0) across 0.375 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-8 mean is taken, which is why raw_score lands at 1.000000.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)",
+              "description": "Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 72,
+                "flagged_block_count": 27,
+                "aggregate_scalar": 1.0
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)",
+              "description": "Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "grid_cells": 8,
+                "S_mean_P_val": 25.25,
+                "S_rms_P_val": 39.9613
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)",
+              "description": "ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)",
+              "description": "Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case2_img2_fake_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case2_img2_fake_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)": {
+                "total_blocks": 72,
+                "flagged_block_count": 27,
+                "aggregate_scalar": 1.0
+              },
+              "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)": {
+                "grid_cells": 8,
+                "S_mean_P_val": 25.25,
+                "S_rms_P_val": 39.9613
+              },
+              "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              },
+              "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "grid_anatomy": {
+              "block_size_px": 116,
+              "grid_shape": [
+                9,
+                8
+              ],
+              "total_blocks": 72,
+              "variance_min": 0.1642,
+              "variance_p50": 5.3082,
+              "variance_max": 89.293,
+              "variance_max_over_min": 543.74,
+              "log2_ratio_absmax": 4.8959,
+              "log2_ratio_p50": 0.7725,
+              "heatmap_cells_at_1.0": 27,
+              "heatmap_fraction_at_1.0": 0.375,
+              "heatmap_p50": 0.7725,
+              "top_k_count": 8,
+              "top_k_values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "top_k_all_saturated": true,
+              "aggregate_scalar": 1.0
+            },
+            "content_coupling": {
+              "blocks": 72,
+              "spearman_resvar_vs_intensity_var": 0.7617,
+              "spearman_resvar_vs_laplacian_energy": 0.7726,
+              "pearson_log_resvar_vs_log_laplacian": 0.8058,
+              "residual_variance_range": [
+                0.1642,
+                89.293
+              ],
+              "laplacian_energy_range": [
+                0.5462,
+                15.8545
+              ]
+            },
+            "nuisance_sensitivity": {
+              "original": 1.0,
+              "downscale_0.5x": 1.0,
+              "gaussian_blur_3": 1.0,
+              "brightness_plus_20": 1.0,
+              "jpeg_q90": 1.0,
+              "jpeg_q40": 1.0,
+              "spread_max_minus_min": 0.0
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": 0.9990889488055994,
+      "score_spread": 0.0,
+      "correct_verdicts": 2,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 3,
+      "case_type": "Case 3 AI-generated",
+      "ground_truth": "AI-GENERATED",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg",
+            "filename": "gen.jpeg",
+            "format": "JPEG",
+            "height": 1006,
+            "width": 800,
+            "file_size_bytes": 45706,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 1.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. 49/80 blocks have residual variance below 1.0; local noise-level comparison is unreliable on flat content. Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 192.57630800007064,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=1.000000 at confidence 0.0000, is_reliable=False. Pipeline A reported {'total_blocks': 80, 'flagged_block_count': 24, 'aggregate_scalar': 1.0}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 30.8281, 'S_rms_P_val': 41.4919}. The image tiled into 80 blocks of 100x100 px on a [10, 8] grid. Per-block residual variance ran from 0.0167 to 277.5038 (median 0.1957), a max/min ratio of 16592.16. After dividing by the neighbourhood median and rescaling, 24 of 80 heatmap cells (0.3) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 8 cells with values [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] (all saturated: True). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.9604 against Laplacian energy and 0.9254 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 1.0, 'downscale_0.5x': 1.0, 'gaussian_blur_3': 1.0, 'brightness_plus_20': 1.0, 'jpeg_q90': 1.0, 'jpeg_q40': 1.0, 'spread_max_minus_min': 0.0}.",
+          "mathematical_explanation": "Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.9604 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 16592.16, so the |log2| deviation exceeds log2(2.0) across 0.3 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-8 mean is taken, which is why raw_score lands at 1.000000.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)",
+              "description": "Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 80,
+                "flagged_block_count": 24,
+                "aggregate_scalar": 1.0
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)",
+              "description": "Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "grid_cells": 8,
+                "S_mean_P_val": 30.8281,
+                "S_rms_P_val": 41.4919
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)",
+              "description": "ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)",
+              "description": "Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case3_img1_gen_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case3_img1_gen_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)": {
+                "total_blocks": 80,
+                "flagged_block_count": 24,
+                "aggregate_scalar": 1.0
+              },
+              "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)": {
+                "grid_cells": 8,
+                "S_mean_P_val": 30.8281,
+                "S_rms_P_val": 41.4919
+              },
+              "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              },
+              "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "grid_anatomy": {
+              "block_size_px": 100,
+              "grid_shape": [
+                10,
+                8
+              ],
+              "total_blocks": 80,
+              "variance_min": 0.0167,
+              "variance_p50": 0.1957,
+              "variance_max": 277.5038,
+              "variance_max_over_min": 16592.16,
+              "log2_ratio_absmax": 9.8654,
+              "log2_ratio_p50": 0.4926,
+              "heatmap_cells_at_1.0": 24,
+              "heatmap_fraction_at_1.0": 0.3,
+              "heatmap_p50": 0.4926,
+              "top_k_count": 8,
+              "top_k_values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "top_k_all_saturated": true,
+              "aggregate_scalar": 1.0
+            },
+            "content_coupling": {
+              "blocks": 80,
+              "spearman_resvar_vs_intensity_var": 0.9254,
+              "spearman_resvar_vs_laplacian_energy": 0.9604,
+              "pearson_log_resvar_vs_log_laplacian": 0.9776,
+              "residual_variance_range": [
+                0.0167,
+                277.5038
+              ],
+              "laplacian_energy_range": [
+                0.3344,
+                31.6182
+              ]
+            },
+            "nuisance_sensitivity": {
+              "original": 1.0,
+              "downscale_0.5x": 1.0,
+              "gaussian_blur_3": 1.0,
+              "brightness_plus_20": 1.0,
+              "jpeg_q90": 1.0,
+              "jpeg_q40": 1.0,
+              "spread_max_minus_min": 0.0
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg",
+            "filename": "genratedimage.jpeg",
+            "format": "JPEG",
+            "height": 1376,
+            "width": 768,
+            "file_size_bytes": 72944,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 1.0,
+          "probability": null,
+          "confidence": 0.0,
+          "is_reliable": false,
+          "reliability_note": "Standing SKILL caveats: PRNU-based detection is fundamentally blind to content-preserving edits that don't disturb the sensor-noise layer (e.g. recoloring a stain); the single largest documented failure mode is a denoising/smoothing attack on the tampered region, which removes the very signal being measured and is not detectable from metadata alone unless Pipeline D's triage classifier was run. 62/112 blocks have residual variance below 1.0; local noise-level comparison is unreliable on flat content. Pipeline B: No same-camera reference images supplied; Pipeline B skipped. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states Pipeline A's aggregation and calibration are an engineering recommendation, not a corpus value - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 204.70474200010358,
+          "engine_verdict": "NO VOTE (unreliable)",
+          "verdict_correct": false,
+          "surprise_level": "ABSTAINED",
+          "reasoning": "Engine reported raw_score=1.000000 at confidence 0.0000, is_reliable=False. Pipeline A reported {'total_blocks': 112, 'flagged_block_count': 47, 'aggregate_scalar': 1.0}; Pipeline C (unscored) reported {'grid_cells': 8, 'S_mean_P_val': 76.4531, 'S_rms_P_val': 122.3874}. The image tiled into 112 blocks of 96x96 px on a [14, 8] grid. Per-block residual variance ran from 0.0056 to 313.8121 (median 0.0954), a max/min ratio of 55617.17. After dividing by the neighbourhood median and rescaling, 47 of 112 heatmap cells (0.4196) were already clipped at the 1.0 ceiling, and the top-k average that becomes raw_score was taken over 12 cells with values [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] (all saturated: True). The block statistic's rank correlation with scene texture measured independently from the intensity plane is 0.9912 against Laplacian energy and 0.8864 against intensity variance. Under global transforms that splice nothing the same score moves to {'original': 1.0, 'downscale_0.5x': 1.0, 'gaussian_blur_3': 1.0, 'brightness_plus_20': 1.0, 'jpeg_q90': 1.0, 'jpeg_q40': 1.0, 'spread_max_minus_min': 0.0}.",
+          "mathematical_explanation": "Pipeline A's premise, from the SKILL's Core mathematical principle, is that PRNU is a multiplicative, content-independent sensor fingerprint, so a region whose noise residual departs from its neighbours came from somewhere else. The engine instantiates the residual as W = I - F(I) with F a single-level Haar low-pass - the SKILL names Mihcak's filter but prints no formula for it anywhere - which makes W a plain high-pass of the image rather than a content-suppressing denoiser. For this image the consequence is measurable: block residual variance rank-correlates 0.9912 with the block's Laplacian energy, meaning the statistic being compared against the neighbourhood median is largely scene texture. The variance field then spans a factor of 55617.17, so the |log2| deviation exceeds log2(2.0) across 0.4196 of the frame and the clip at 1.0 destroys the ordering between those cells before the top-12 mean is taken, which is why raw_score lands at 1.000000.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)",
+              "description": "Wavelet residual extraction, block-wise variance, comparison against local neighbourhood median.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 112,
+                "flagged_block_count": 47,
+                "aggregate_scalar": 1.0
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)",
+              "description": "Cell-wise DFT-magnitude-histogram peak features, aggregated via S_mean/S_rms.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "grid_cells": 8,
+                "S_mean_P_val": 76.4531,
+                "S_rms_P_val": 122.3874
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)",
+              "description": "ML PRNU estimation + ZM/Wiener preprocessing; only the camera-agnostic pieces are implemented (see KNOWN_UNIMPLEMENTED_MODULES).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)",
+              "description": "Categorical gate only, per the SKILL's own instruction - never contributes to raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Aggregate anomaly scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case3_img2_genratedimage_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/noise_engine/before/noise_case3_img2_genratedimage_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Pipeline A: blind local noise-level inconsistency (PRIMARY, SCORED)": {
+                "total_blocks": 112,
+                "flagged_block_count": 47,
+                "aggregate_scalar": 1.0
+              },
+              "Pipeline C: blind cell-based PRNU spectral analysis (AUXILIARY, NOT SCORED)": {
+                "grid_cells": 8,
+                "S_mean_P_val": 76.4531,
+                "S_rms_P_val": 122.3874
+              },
+              "Pipeline B: reference-based PRNU (AUXILIARY, NOT SCORED)": {
+                "ran": false,
+                "note": "No same-camera reference images supplied; Pipeline B skipped."
+              },
+              "Pipeline D: FFT-spectrum noise-type triage (AUXILIARY, CONFIDENCE-ONLY)": {
+                "ran": false,
+                "note": "No training-set baseline magnitude supplied; Pipeline D skipped."
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "grid_anatomy": {
+              "block_size_px": 96,
+              "grid_shape": [
+                14,
+                8
+              ],
+              "total_blocks": 112,
+              "variance_min": 0.0056,
+              "variance_p50": 0.0954,
+              "variance_max": 313.8121,
+              "variance_max_over_min": 55617.17,
+              "log2_ratio_absmax": 11.1133,
+              "log2_ratio_p50": 0.7226,
+              "heatmap_cells_at_1.0": 47,
+              "heatmap_fraction_at_1.0": 0.4196,
+              "heatmap_p50": 0.7226,
+              "top_k_count": 12,
+              "top_k_values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "top_k_all_saturated": true,
+              "aggregate_scalar": 1.0
+            },
+            "content_coupling": {
+              "blocks": 112,
+              "spearman_resvar_vs_intensity_var": 0.8864,
+              "spearman_resvar_vs_laplacian_energy": 0.9912,
+              "pearson_log_resvar_vs_log_laplacian": 0.983,
+              "residual_variance_range": [
+                0.0056,
+                313.8121
+              ],
+              "laplacian_energy_range": [
+                0.2174,
+                36.6043
+              ]
+            },
+            "nuisance_sensitivity": {
+              "original": 1.0,
+              "downscale_0.5x": 1.0,
+              "gaussian_blur_3": 1.0,
+              "brightness_plus_20": 1.0,
+              "jpeg_q90": 1.0,
+              "jpeg_q40": 1.0,
+              "spread_max_minus_min": 0.0
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": null,
+      "score_spread": null,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    }
+  ],
+  "statistics": {
+    "total_images": 6,
+    "real_average": null,
+    "fake_average": 0.9990889488055994,
+    "ai_average": null,
+    "separation": null,
+    "real_raw_average": 1.0,
+    "fake_raw_average": 1.0,
+    "raw_separation": 0.0,
+    "reliable_count": 2,
+    "correct_verdicts": 2,
+    "abstained_count": 4,
+    "wrong_verdicts": 0,
+    "average_time_ms": 243.79294416670896
+  }
+}

@@ -1,0 +1,142 @@
+NOISE-PATTERN (PRNU) ENGINE - ONE-PAGE SUMMARY
+Read this first next time you open noise_engine.
+
+ENGINE            noise_pattern_forgery   (skill_version 1.0.0)
+SCORED PIPELINE   A only - blind local noise-level inconsistency. C runs
+                  unscored; B and D are calibration-gated and never ran.
+
+OVERALL HEALTH    NEEDS INVESTIGATION BEFORE INTEGRATION
+                  Not because the mathematics is wrong - after the fixes it
+                  demonstrably responds to real noise manipulations - but
+                  because nothing anchors a threshold, and the supplied corpus
+                  cannot measure it.
+
+SEPARATION SCORE
+  before   probability separation: undefined (4 of 6 images gated out; the two
+           that voted both returned 0.999089)
+           raw separation: 0.000000 - raw_score was exactly 1.000000 on all six
+  after    probability separation: undefined (all six abstain by design)
+           raw separation: -0.032544  (INVERTED on this corpus)
+  ground truth, 18 trials on a real photograph with verified local edits:
+           before 0/18 correct-direction responses, all deltas +0.000000
+           after  17/18 correct-direction responses
+
+TOP 3 STRENGTHS
+  1. The core mechanism is sound and provably works when content is not a
+     confound. On a flat synthetic field with uniform noise the engine scores
+     0.0383; add one 256x256 patch at 3x noise and it scores 0.5924; make the
+     same patch 0.2x noise (a denoised region) and it still scores 0.5924. It
+     detects noise-level inconsistency in BOTH directions, which matters
+     because the SKILL names denoising as the single largest failure mode.
+  2. Honest scope discipline in the original build. Pipeline B's correlation
+     predictor is deliberately not implemented because I_crit, tau and c are
+     camera-specific and the SKILL says so; Pipeline D modulates confidence
+     only, never raw_score, exactly as the SKILL instructs. Four audit tuples
+     record every unsourced parameter and unimplemented module.
+  3. After the fix the evidence map carries real localization information:
+     heatmap peak inside a known pasted region 6/18 times and top-10% overlap
+     0.268 against a 0.083 chance rate. Before, it was exactly chance.
+
+TOP 3 WEAKNESSES
+  1. The score has no absolute meaning. A real manipulation moves the scalar
+     +0.034 to +0.077; six untampered images span 0.122. The between-image
+     spread is larger than the manipulation effect, so no fixed cutoff works.
+     This is why the engine now abstains without calibration.
+  2. On this corpus it ranks the two authentic photographs ABOVE the two fake
+     ones (raw separation -0.0325). The corpus cannot support the engine and
+     the engine cannot score the corpus.
+  3. The residual filter is not the one the SKILL names. F is instantiated as a
+     single-level Haar LL reconstruction because the SKILL names "the Mihcak
+     wavelet-based denoising filter" but prints no formula for it anywhere.
+     That plain high-pass is the origin of the texture coupling that had to be
+     regressed out downstream, and Lin et al.'s FDR enhancement is absent for
+     the same reason.
+
+BUGS FOUND (all fixed)
+  1. raw_score was a constant. Exactly 1.000000 on all six corpus images, on
+     all six global nuisance transforms of each, and on all 18 ground-truth
+     manipulations - a cross-sensor splice, a denoised region and a foreign-
+     noise region each moved it by +0.000000. Cause: 24%-42% of every image's
+     heatmap cells were already clipped at the 1.0 ceiling, so the top-10%
+     window lay entirely inside the saturated set.
+  2. The flat-content gate misfired on ordinary photographs. Its degeneracy
+     floor of 1.0 is about ten times the median per-block residual variance of
+     a JPEG photo, so 62.0% / 62.0% / 61.3% / 55.4% of the blocks of campic,
+     campic2, gen and genratedimage counted as "flat" and the engine abstained
+     on four of six images including both authentic ones. Floor is now 1/12,
+     the variance of 1-LSB quantization error; a constant-grey frame still
+     trips the gate at 100%.
+  3. The saturation check's verdict was computed and discarded. On fake .jpeg,
+     65% of pixels sit at or above 250, the check returned failed, and the
+     engine published FAKE at probability 0.999089 - on an image where the
+     SKILL states the multiplicative PRNU term vanishes outright (Eq. 19).
+     Only the confidence penalty was ever read; the boolean now gates the vote.
+  No crashes, no exceptions, no non-finite values in any run.
+
+FUSION LAYER WEIGHT TABLE
+  +---------------------+-------------------+
+  | Input condition     | Recommended weight|
+  +---------------------+-------------------+
+  | JPEG original       | LOW               |
+  | JPEG recompressed   | ZERO              |
+  | PNG lossless        | MEDIUM            |
+  | Resized image       | ZERO              |
+  | AI-generated        | ZERO              |
+  | Low resolution      | ZERO              |
+  +---------------------+-------------------+
+  All of the above are ceilings that apply only once authentic_reference_scores
+  have been supplied. Without calibration the engine abstains and its weight is
+  moot. PNG earns the highest row because the measured damage here is
+  compression: median per-block residual variance on campic is 0.1358 against a
+  1-LSB quantization-error variance of 0.0833, so a JPEG QF74 residual is
+  barely above its own container's rounding error. Resized is ZERO because
+  resampling rewrites the noise field wholesale. AI-generated is ZERO on
+  principle, not on measurement: a blind LOCAL-inconsistency test is
+  structurally unable to flag a GLOBALLY synthetic image - if the whole frame
+  lacks PRNU equally, every block agrees with its neighbours and the image
+  looks maximally authentic.
+
+CALIBRATION ASSESSMENT
+  Status: NEEDS LABELLED DATASET. Not "broken" - there is nothing to break,
+  because the SKILL states outright that Pipeline A's calibration is "not
+  specified in corpus - engineering recommendation". The empirical-CDF route is
+  implemented and verified working: with 12 supplied authentic reference scores
+  campic returns 0.4167 and its spliced copy returns 1.0000. Before the
+  enhancement both had raw_score exactly 1.000000, so that route could not have
+  told them apart.
+  Action: supply >= 10 authentic reference aggregate scores from the deployment
+  camera. Until then the engine contributes raw_score, the heatmap and
+  flagged_regions, and casts no vote.
+
+FUSION ONE-LINER
+  noise_pattern_forgery: detects local noise-level inconsistency well when
+  content is not a confound (0.0383 authentic vs 0.5924 tampered on synthetic
+  ground truth, and it catches denoised regions as readily as noisier ones),
+  and localizes real cross-sensor splices at 3.2x chance; misses everything on
+  heavily recompressed JPEG, is structurally blind to wholly synthetic images,
+  and has no absolute threshold - a real manipulation moves it +0.034..+0.077
+  while untampered images span 0.122 - so it ABSTAINS unless the orchestrator
+  supplies authentic reference scores; weight LOW on PNG/high-quality JPEG when
+  calibrated, ZERO on recompressed, resized, low-resolution or AI-generated
+  input.
+
+PERFORMANCE
+  Harness average across the six images: 243.8 ms before, 189.7 ms after. Do
+  not read a speed-up into that - the two runs differ by more than the code
+  does. Timed properly on one image (campic.jpeg, 7 runs after warm-up) the
+  spread is median 329.6 ms, min 290.3, max 491.3, so run-to-run variance on
+  this machine is wider than the difference between the two harness averages.
+  The honest statement is that the enhancement did not measurably change the
+  cost. Slowest stage is Pipeline C's 64 per-cell FFTs together with the
+  pure-Python neighbourhood-median loop in utils.grid_neighbourhood_median;
+  ENHANCEMENT 1 adds one Laplacian per block and a single 1-D polyfit per
+  image, neither of which is the bottleneck. No memory concern - the largest
+  intermediate is one float64 copy of the image.
+
+NEXT STEP THAT WOULD ACTUALLY MOVE THIS ENGINE
+  Not more tuning. Either (a) a labelled calibration set from the deployment
+  camera, which turns the working empirical-CDF route on, or (b) a real Mihcak
+  filter - the SKILL names it as the shared residual-extraction step for
+  Pipelines A, B and C and never prints its formula, and the plain Haar
+  high-pass standing in for it is the origin of the texture coupling this
+  engine now has to regress out after the fact.

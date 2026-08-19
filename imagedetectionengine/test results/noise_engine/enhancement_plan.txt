@@ -1,0 +1,125 @@
+PHASE 7.1 - ENHANCEMENT PLAN  (noise_engine / Noise-Pattern Forgery Detection)
+Every row cites the Phase 3-6 finding that justifies it. No row exists without
+a measured number behind it (RULE 4).
+
++---+--------------------------------+--------------------------------+--------------------------------+
+| # | Weakness found                 | Root cause                     | Enhancement                    |
++---+--------------------------------+--------------------------------+--------------------------------+
+| 1 | Block statistic ranks scene    | The residual W = I - F(I) uses | Regress log2(block variance)   |
+|   | texture, not noise level.      | F = single-level Haar LL       | on log2(block Laplacian energy)|
+|   | Spearman(var(W), Laplacian)    | reconstruction, i.e. a plain   | measured on the INTENSITY      |
+|   | = 0.9753 / 0.9768 / 0.9635 /   | high-pass, so var(W) rises     | plane, and compare each block  |
+|   | 0.7726 / 0.9604 / 0.9912 on    | with any high-frequency scene  | on the fit residual instead of |
+|   | the six corpus images.         | content whatever the sensor    | on the raw statistic.          |
+|   | Heatmap peak landed inside a   | noise floor is.                | Category A (signal extraction).|
+|   | known paste 0/12 times;        |                                |                                |
+|   | top-10%-inside 0.083 against   |                                |                                |
+|   | a chance rate of 0.083 -       |                                |                                |
+|   | exactly chance.                |                                |                                |
++---+--------------------------------+--------------------------------+--------------------------------+
+| 2 | raw_score is a constant.       | heatmap = clip(|log2 ratio| /  | Take the flag threshold from   |
+|   | Exactly 1.000000 on all six    | log2(2.0), 0, 1). Measured     | each image's own deviation     |
+|   | corpus images, on all six      | median |log2 ratio| on         | spread (3 x MAD-sigma), and    |
+|   | global nuisance transforms of  | authentic photographs is       | make the scalar the fraction   |
+|   | each, and on all 18 ground-    | 0.4192-0.7725, so the TYPICAL  | of blocks flagged - SKILL step |
+|   | truth manipulations of a real  | authentic block already        | 5, "Aggregate flagged blocks   |
+|   | photograph. Cross-sensor       | deviates 1.34x-1.71x. A fixed  | into a heatmap and a scalar    |
+|   | splice, region denoising and   | factor-of-2 cutoff therefore   | summary".                      |
+|   | foreign noise each moved it by | sits barely above the          | Category C (scoring).          |
+|   | +0.000000.                     | statistic's own noise floor;   |                                |
+|   |                                | 24.1%-41.96% of cells clipped  |                                |
+|   |                                | at the ceiling and the top-10% |                                |
+|   |                                | window fell entirely inside    |                                |
+|   |                                | the saturated set.             |                                |
++---+--------------------------------+--------------------------------+--------------------------------+
+| 3 | Engine abstained on both       | BLOCK_VARIANCE_DEGENERACY_     | Set the floor to 1/12, the     |
+|   | authentic photographs.         | FLOOR = 1.0 is about ten times | variance of uniform            |
+|   | 62.0% / 62.0% / 61.3% / 55.4%  | the median per-block residual  | quantization error on a 1-LSB  |
+|   | of the blocks of campic,       | variance of an ordinary JPEG   | 8-bit quantizer.               |
+|   | campic2, gen and genratedimage | photograph (measured medians   | Category B (condition checker).|
+|   | fell under the floor and       | 0.1358 / 0.1410 / 0.1957 /     |                                |
+|   | tripped the flat-content gate. | 0.0954).                       |                                |
++---+--------------------------------+--------------------------------+--------------------------------+
+| 4 | A vote was published on an     | _score read only               | Read checks["saturation"][0]   |
+|   | image whose own saturation     | checks["flatness"][0]. The     | into is_reliable too.          |
+|   | check had already failed.      | saturation check's pass/fail   | Category B (condition checker).|
+|   | fake .jpeg: 65% of pixels at   | boolean was computed and then  |                                |
+|   | or above 250, check returned   | discarded; only its confidence |                                |
+|   | failed, engine published FAKE  | penalty was used.              |                                |
+|   | at probability 0.9991.         |                                |                                |
++---+--------------------------------+--------------------------------+--------------------------------+
+| 5 | An uncalibrated provisional    | The SKILL states Pipeline A's  | Publish no probability on the  |
+|   | sigmoid was published at FULL  | calibration is "not specified  | uncalibrated route. raw_score, |
+|   | confidence (1.0000) on         | in corpus - engineering        | heatmap and flagged_regions    |
+|   | fake.jpeg. Measured: the       | recommendation". Nothing in    | are still published.           |
+|   | scalar moves +0.0340..+0.0772  | the corpus anchors a cutoff,   | Category C (scoring).          |
+|   | under a real manipulation      | and the measurement shows the  |                                |
+|   | while six untampered images    | between-image spread exceeds   |                                |
+|   | span 0.1222 - no fixed cutoff  | the manipulation effect.       |                                |
+|   | can separate them.             |                                |                                |
++---+--------------------------------+--------------------------------+--------------------------------+
+
+FILES AND METHODS CHANGED
+  computer.py   LocalNoiseInconsistencyComputer
+                  + block_texture_energy          (new, ENHANCEMENT 1)
+                  + _texture_conditioned_statistic(new, ENHANCEMENT 1)
+                  + deviation_field               (new, replaces
+                                                   _log_ratio_to_neighbourhood)
+                  + deviation_scale               (new, ENHANCEMENT 2)
+                  ~ flag_deviant_blocks           (signature now takes the
+                                                   texture grid)
+                  ~ compute                       (new aggregate scalar)
+  constants.py  ~ BLOCK_VARIANCE_DEGENERACY_FLOOR 1.0 -> 1/12  (ENHANCEMENT 3)
+                + TEXTURE_CONDITIONING_ENABLED, TEXTURE_FIT_POLYNOMIAL_DEGREE,
+                  MINIMUM_BLOCKS_FOR_TEXTURE_FIT,
+                  MEDIAN_ABSOLUTE_DEVIATION_TO_SIGMA,
+                  DEVIATION_ROBUST_SPREAD_MULTIPLE, MINIMUM_STATISTIC_FLOOR,
+                  ABSTAIN_WHEN_UNCALIBRATED
+                + TEST_DERIVED_ENHANCEMENTS (5), REJECTED_ENHANCEMENTS (8)
+  contracts.py  ~ LocalInconsistencyResult gains legacy_top_k_scalar. This is
+                  an ENGINE-SPECIFIC result object, not one of the four fixed
+                  shapes; EngineInput / EngineOutput / ImageMetadata /
+                  ConditionReport are untouched and verified field-for-field.
+  engine.py     ~ _score wires the saturation gate and the calibration gate
+                  into is_reliable (ENHANCEMENTS 4, 5)
+                ~ _pipeline_a_key_values reports legacy_top_k_scalar
+  scorer.py     ~ uncalibrated note lifted to module-level
+                  UNCALIBRATED_ABSTENTION_NOTE and restated with the measured
+                  numbers behind the abstention
+  condition.py    unchanged in code; behaviour changes through constant 3
+
+RISK CARRIED
+  ENHANCEMENT 1 assumes the block texture / block noise relationship is
+  monotone and roughly log-linear across one image. Where it is not - a frame
+  containing both a dense synthetic pattern and open sky - the fit residual
+  will misprice the extremes. Measured effect on the corpus: block statistic
+  now spans 0.0278-0.1500 instead of a constant 1.0, and no image degenerated.
+  ENHANCEMENT 2 changes what raw_score MEANS (a flagged fraction, not a mean
+  anomaly level), so any downstream threshold tuned on the old scalar is
+  invalidated. Since the old scalar was measured to be the constant 1.0, no
+  such threshold could have existed.
+  ENHANCEMENT 5 means the engine casts no vote in its default configuration.
+  That is the intended outcome, not a side effect.
+
+CHANGES TESTED AND REJECTED (full numbers in constants.REJECTED_ENHANCEMENTS)
+  - MAD-sigma(W) as the block statistic: delta +0.00000 on all three real
+    manipulations. Changing the statistic alone does not lift the saturation.
+  - MAD-sigma(HH of W): degenerate on JPEG - 90 of campic's 108 blocks return
+    exactly 0.0. An apparent +0.45455 splice delta was traced to disagreement
+    between np.where(x>0,...) and np.maximum(x,eps) on values inside (0,eps),
+    not to any detection.
+  - MAD-sigma(HH of I), Donoho's estimator: raw 1.000000 everywhere.
+  - Trimmed p10-p90 block variance: delta +0.00000 everywhere.
+  - p5/p10/p25 of the block's 5x5 local-variance map (noise-floor estimator):
+    genuinely reduced texture coupling, Spearman 0.9753 -> 0.7475 at p5, but
+    localization stayed at chance (0.121 vs 0.111) and the scalar still read
+    1.00000 on every image, authentic and manipulated alike.
+  - SKILL Eq. 20's f_T as the conditioning feature: scored 0.076
+    top-10%-inside on denoised regions, BELOW the 0.111 chance rate, because
+    f_T is computed from the residual and so moves with the denoising in
+    exactly the way that explains the signal away. The intensity-plane
+    Laplacian scored 0.273 on the same trials.
+  - Scalar = (top-k% mean - median) of the clipped heatmap: correct direction
+    on 3/6 denoise trials against 5/6 for the flagged-block fraction.
+  - Scalar = (top-k% - median)/robust spread of the unclipped field:
+    saturates at 1.0000 on all seven images tested.
