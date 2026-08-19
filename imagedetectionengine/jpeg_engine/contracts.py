@@ -144,3 +144,10 @@ class CalibrationSettings:
     history_threshold: Optional[float] = None  # per-image-size t, Pipeline A.1
     trend_removal_window_length: Optional[int] = None  # n, Eq. 5
     run_quality_factor_sweep: bool = True  # A.3 costs 100 JPEG round-trips
+    # ENHANCEMENT 1: the 8x8 luminance table read straight from the file's DQT
+    # marker, when the orchestrator still has the container. The SKILL makes
+    # this the preferred route and A.3 the fallback; see
+    # constants.PREFER_CONTAINER_QUANTIZATION_TABLE for the measurement that
+    # forced it. Only CalibrationSettings is extended - the four fixed
+    # contracts the fusion layer depends on are untouched.
+    container_quantization_table: Optional[np.ndarray] = None

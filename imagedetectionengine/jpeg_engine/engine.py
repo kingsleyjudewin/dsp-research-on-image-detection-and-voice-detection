@@ -162,21 +162,44 @@ class JpegEngine:
 
         quality = self._run_quality_sweep(prepared.luminance)
         steps = self.step_estimator.compute(blocks.coefficients)
+        table = self._quantization_table(quality, steps)
         double_compression = self.double_compression_detector.compute(
-            blocks.coefficients, self._trend_window_length(),
-            self._quantization_table(quality, steps))
+            blocks.coefficients, self._trend_window_length(), table)
 
-        checks = {
-            "block_count": block_check,
-            "jpeg_history": history_check,
-            "quality_factor": self.condition_checker.assess_quality_factor(quality),
-            "usable_frequencies":
-                self.condition_checker.assess_usable_frequencies(double_compression),
-            "table_margin":
-                self.condition_checker.assess_table_detection_margin(quality),
-        }
+        checks = self._post_checks(block_check, history_check, quality,
+                                   double_compression, table)
         return self._assemble(blocks, history, quality, steps,
                               double_compression, condition, checks, start_time)
+
+    def _post_checks(self, block_check, history_check, quality,
+                     double_compression, table) -> dict:
+        """Run every post-computation condition check.
+
+        Args:
+            block_check: Result of assess_block_count.
+            history_check: Result of assess_jpeg_history.
+            quality: Pipeline A.3's result.
+            double_compression: Pipeline B's result.
+            table: The quantization table Pipeline B was given.
+
+        Returns:
+            Dict of named CheckResult tuples.
+        """
+        checker = self.condition_checker
+        return {
+            "block_count": block_check,
+            "jpeg_history": history_check,
+            "quality_factor": checker.assess_quality_factor(quality),
+            "usable_frequencies":
+                checker.assess_usable_frequencies(double_compression),
+            "table_margin": checker.assess_table_detection_margin(quality),
+            # ENHANCEMENT 2: an all-unit-step table makes Pipeline B's
+            # normalisation a no-op and inverts the score.
+            "table_usability": checker.assess_quantization_table_usability(table),
+            # ENHANCEMENT 3: the A.1 gate is uninformative at very high
+            # quality factors, in either direction.
+            "history_regime": checker.assess_history_feature_regime(quality),
+        }
 
     def _assemble(self, blocks, history, quality, steps, double_compression,
                   condition, checks, start_time) -> EngineOutput:
@@ -252,6 +275,17 @@ class JpegEngine:
         Returns:
             8x8 integer array of quantization steps.
         """
+        # ENHANCEMENT 1: the container's own DQT marker outranks A.3's
+        # recompression search. A.3 can only answer from the 100-table IJG
+        # family Eq. 26 generates, so a file encoded with a non-standard
+        # table has no correct candidate available - measured on all six
+        # supplied photographs, where A.3 returned QF=100 against a header
+        # table matching no IJG quality factor.
+        supplied = self.calibration.container_quantization_table
+        if (constants.PREFER_CONTAINER_QUANTIZATION_TABLE
+                and supplied is not None):
+            return np.asarray(supplied, dtype=np.int64).reshape(
+                constants.DCT_BLOCK_SIZE, constants.DCT_BLOCK_SIZE)
         if quality.sweep_ran:
             return self.quality_detector.encoder_quantization_table(
                 quality.quality_factor)
