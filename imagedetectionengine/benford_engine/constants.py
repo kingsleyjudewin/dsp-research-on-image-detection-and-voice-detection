@@ -180,11 +180,30 @@ BENFORD_FIT_MAX_FUNCTION_EVALUATIONS: int = 10000
 # inventing alpha, which this engine refuses to do.
 PRIMARY_DIVERGENCE_NAME: str = "symmetric_kl_unaveraged"
 
-# Value: 1e-12. [ENGINEERING] Floor applied to probabilities before the log in
-# the KL sum, so an empty histogram bin yields a large-but-finite contribution
-# instead of inf/NaN. Chosen far below the smallest pmf value representable from
-# realistic sample counts, so it cannot perturb a genuine score.
+# Value: 1e-12. [ENGINEERING] Absolute floor applied to probabilities before the
+# log in the KL sum, so an empty histogram bin yields a large-but-finite
+# contribution instead of inf/NaN. Retained only as a last-resort guard; the
+# operative floor is now the resolvable floor below.
 DIVERGENCE_PROBABILITY_FLOOR: float = 1e-12
+
+# ENHANCEMENT 3: use 1/K - the smallest probability K samples can resolve - as
+# the flooring level, instead of the fixed 1e-12 above.
+#
+# Test evidence (diagnostic run, campic.jpeg, worst cell QF85 frequency 4):
+# the least-squares fit escaped to beta=3.56e16, gamma=4.07e16, delta=36.3,
+# producing a fitted curve of [0.380, 0.380, 0.060, 0, 0, 0, 0, 0, 0]. Digits
+# 4-9 hold real empirical mass (0.063, 0.050, 0.009, 0.031, 0.005, 0.021) but
+# the fitted curve there is ~1e-17. Per-digit forward-KL terms measured
+# [-0.145, 0.252, -0.012, 0.643, 0.904, 0.211, 0.737, 0.115, 0.504]: digits 4-9
+# contribute 3.114 of the total 3.210, i.e. 97% of the reported divergence came
+# from bins where the FIT collapsed, and their magnitude was set by
+# log(p_hat / 1e-12) ~ 25 nats - a number chosen by this file, not measured
+# from the image.
+#
+# A probability below 1/K is not distinguishable from zero given K draws, so
+# flooring there states exactly what the sample can support. Measured effect on
+# the same image: raw score 3.8317 -> 2.3560, with the ordering of cells intact.
+USE_RESOLVABLE_PROBABILITY_FLOOR: bool = True
 
 # Value: "max". [CORPUS-SANCTIONED, resolved by measurement]
 # The SKILL offers two aggregations on equal footing for the training-free
@@ -232,6 +251,97 @@ MAX_ACCEPTABLE_ZERO_COEFFICIENT_RATE: float = 0.95
 # Not in the corpus; a pmf over 9 bins from fewer than ~100 draws is dominated
 # by counting noise. Configurations below this are skipped, not scored.
 MINIMUM_DIGIT_SAMPLE_COUNT: int = 100
+
+
+# ---------------------------------------------------------------------------
+# ENHANCEMENT 1 - self-inflicted double-quantization detection
+# ---------------------------------------------------------------------------
+# THE SINGLE LARGEST DEFECT FOUND IN DIAGNOSTIC TESTING.
+#
+# SKILL family A step 1 says to quantize with "a standard JPEG quantization
+# matrix at a chosen quality factor". In Bonettini et al.'s corpus the images
+# are uncompressed GAN output, so that quantization is the image's FIRST. Every
+# real-world input is already JPEG, so the same operation is a SECOND
+# quantization, and when the applied step is a rational fraction of the step
+# already baked into the image, the result is forced onto a sublattice.
+#
+# Measured on campic.jpeg (an authentic camera photo):
+#   embedded quantization steps, zig-zag 1..9 : [6, 6, 6, 7, 6, 7, 8, 8, 7]
+#   IJG steps the engine applied at QF85      : [3, 4, 4, 4, 3, 5, 4, 4, 4]
+#   ratio                                     : [2.0, 1.5, 1.5, 1.75, 2.0, ...]
+# At ratio exactly 2.0 every quantized coefficient becomes even, so the leading
+# digit can only be 2, 4, 6, 8 or (via 10-19) 1. The observed pmf at that cell
+# was [0.086, 0.674, 0.060, 0.063, 0.050, 0.009, 0.031, 0.005, 0.021] - a 0.674
+# spike on digit 2 against Benford's 0.176.
+#
+# Consequence measured across the sweep for that one authentic image:
+#   native QF74 : divergence 0.1143      <- uncontaminated
+#   QF80        : 2.6043
+#   QF85        : 3.8317                 <- 33x inflation, became the raw score
+#   QF90/95/100 : 3.5276 / 3.3140 / 3.3140
+# The engine was reading an artifact of its own arithmetic as evidence of
+# tampering, and did so most strongly on authentic photographs.
+#
+# The gate below detects the symptom directly on the integers, with no need to
+# know the image's true table: under any population NOT confined to a
+# sublattice, a fraction 1/m of integers is divisible by m, so the ratio
+# (observed divisible fraction) x m is ~1. On a sublattice of period m it
+# approaches m.
+
+# Value: base - 1, i.e. 9 at base 10. [STRUCTURAL] The leading-digit support is
+# {1..base-1}; a lattice whose period reaches the base shifts the digit wholesale
+# rather than distorting the histogram shape, so divisors are tested up to the
+# top of the support.
+SUBLATTICE_MAXIMUM_DIVISOR_OFFSET: int = 1
+
+# Value: 1.3. [ENGINEERING - test-derived] Measured excess ratios on
+# campic.jpeg, frequencies 1-9, by swept quality factor:
+#   QF60/70/74 (at or below native) : 1.00 at all nine frequencies
+#   QF80                            : one frequency at 1.43
+#   QF85                            : six of nine at 1.46-1.99
+#   QF90                            : five of nine at 1.17-2.24
+#   QF95 / QF100                    : nine of nine at 1.34-3.74
+# Clean cells sit at exactly 1.00 and contaminated ones at 1.17 and above, so
+# 1.3 falls inside the observed empty gap rather than splitting a population.
+# Flagged unsourced; re-measure on a wider corpus before forensic use.
+SUBLATTICE_EXCESS_TOLERANCE: float = 1.3
+
+# THE ATTRIBUTION RULE, and the reason this gate does not destroy the engine's
+# one genuinely working detection. A lattice in the quantized coefficients has
+# two possible authors, and they must not be treated alike:
+#
+#   * THIS ENGINE created it, by applying a step FINER than the one already in
+#     the image. Quantizing an already-JPEG image more finely than its own
+#     encoder did cannot recover information the encoder destroyed; it can only
+#     re-express the surviving lattice. This is the artifact.
+#   * THE IMAGE'S OWN HISTORY created it - a genuine earlier compression at a
+#     coarser step, which is precisely Singh et al.'s double-compression
+#     signal and one of the three manipulations the SKILL says this method
+#     detects best.
+#
+# Measured separation between the two, over four controlled cases:
+#   single-compressed synthetic, native QF90 : 0 cells flagged at ANY swept QF
+#   authentic photo campic.jpeg, native QF74 : 0 flagged at QF60/70/74,
+#                                              30 flagged across QF80-100
+#                                              -> artifact lives ABOVE native
+#   double-compressed QF30 then QF95         : 15 flagged at QF70/80/85/90,
+#                                              0 at QF95 and QF100
+#   double-compressed QF60 then QF95         : 9 flagged at QF80/85/90,
+#                                              0 at QF100
+#                                              -> signal lives AT OR BELOW native
+#
+# The two populations do not overlap in a single one of these cases, so a cell
+# is discarded ONLY when it is both lattice-bearing AND swept above the image's
+# own quality factor. Below and at the native factor a lattice is evidence
+# about the image and is kept.
+CONTAMINATION_REQUIRES_FINER_THAN_NATIVE: bool = True
+
+# Value: 32. [ENGINEERING] Minimum non-zero coefficients before a divisibility
+# fraction is estimated at all; below this the fraction is counting noise.
+SUBLATTICE_MINIMUM_SAMPLE_COUNT: int = 32
+
+# Neutral excess ratio, meaning "no sublattice detected". [STRUCTURAL]
+SUBLATTICE_NEUTRAL_EXCESS: float = 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -341,6 +451,36 @@ MOIN_UNALTERED_CHI_SQUARE_MAXIMUM: float = 0.0126
 MOIN_ALTERED_CHI_SQUARE_MINIMUM: float = 0.0051
 MOIN_ALTERED_CHI_SQUARE_MAXIMUM: float = 0.0791
 
+# ENHANCEMENT 4: report the distance from the published chi-square range, and
+# penalise confidence by it - but do NOT gate on it.
+#
+# This was first implemented as a hard reliability gate and the gate was
+# WITHDRAWN after measurement, because this pipeline does not reproduce Moin et
+# al.'s chi-square scale and therefore cannot borrow their numbers as a
+# threshold. Measured on a single-compressed synthetic image with no
+# manipulation whatsoever, against Moin's published unaltered 0.0112-0.0126:
+#     QF90  per-frequency mean 0.10212   pooled over frequencies 0.02475
+#     QF70  per-frequency mean 0.65603   pooled over frequencies 0.24106
+#     QF50  per-frequency mean 1.24708   pooled over frequencies 0.52219
+# Pooling the frequencies into one histogram, which is Moin's simpler setup
+# ("it does not sweep multiple frequencies the way Bonettini does"), moves the
+# QF90 figure from 9x the published value to 2x - but the gap then grows to 19x
+# at QF70 and 41x at QF50. The discrepancy is not a constant factor, so no
+# rescaling recovers comparability, and a threshold taken from the published
+# number would be arbitrary.
+#
+# What survives as honest is the ORDER OF MAGNITUDE of the gap: a chi-square
+# many times the largest value any paper reports for any class tells the fusion
+# layer that this image's coefficient population is unlike the corpus material,
+# without pretending to a calibrated boundary.
+CHI_SQUARE_VALIDITY_CEILING: float = MOIN_ALTERED_CHI_SQUARE_MAXIMUM
+
+# Applied when the measured chi-square sits far outside every published value.
+# [ENGINEERING] Set equal to the existing harshest non-zero penalty in this
+# file (CONFIDENCE_PENALTY_WAVELET_CODEC) so the severity ladder stays
+# consistent rather than introducing a new level.
+CONFIDENCE_PENALTY_OUTSIDE_PUBLISHED_REGIME: float = 0.30
+
 # Per-quality-factor unaltered baseline. [CORPUS] SKILL "Calibrating to a [0,1]
 # ...": "Moin's Table I: unaltered mean chi2 is 0.0112 at QF90 vs 0.0126 at
 # QF50 - not constant". The QF70 value is not individually printed in the SKILL,
@@ -367,19 +507,38 @@ QUALITY_FACTOR_BUCKET_NAMES: tuple[str, ...] = ("qf_low", "qf_medium", "qf_high"
 #
 # *** THESE TWO NUMBERS ARE NOT FROM THE CORPUS. ***
 # The SKILL publishes no divergence magnitudes whatsoever for family A, so no
-# honest data-driven midpoint exists. Their only justification is SCALE: during
-# implementation testing on SYNTHETIC imagery the max-divergence statistic sat
-# near 0.21 for authentic content and spanned 0.23-10 for manipulated content,
-# so a midpoint of 0.30 places the sigmoid's steep region where those two
-# populations actually separate, instead of leaving it saturated at one end.
+# honest data-driven midpoint exists.
 #
-# That is a statement about synthetic test images, NOT a validated forensic
-# threshold, and it must never be reported as one. Any run falling back to
-# these values is flagged uncalibrated, has its confidence multiplied by
+# ENHANCEMENT 5 - re-anchored after the previous values were shown to saturate.
+# The former settings (midpoint 0.30, slope 10.0) had been chosen on SYNTHETIC
+# imagery where the statistic sat near 0.21 for authentic content. On real
+# photographs the statistic is an order of magnitude larger, so the sigmoid
+# saturated: measured probabilities on the six diagnostic images were
+# 1.0000, 1.0000, 0.0891, 1.0000, 1.0000, 1.0000 - five of six pinned at
+# exactly 1.0, INCLUDING both authentic camera photographs. A probability that
+# takes two values is not a probability; the fusion layer received a hard vote
+# of "certainly forged" on genuine photographs.
+#
+# The values below are placed against the statistic's measured range once
+# ENHANCEMENTS 1-3 remove the artifacts:
+#   single-compressed synthetic, QF80-100 : 0.0764 - 0.0979
+#   authentic camera photographs          : 0.0298 - 0.1271
+#   double-compressed QF75 then QF95      : 0.1991
+#   double-compressed QF60 then QF95      : 1.6389
+#   double-compressed QF45 then QF95      : 2.3682
+#   double-compressed QF30 then QF95      : 3.6207
+# A midpoint of 0.70 sits in the gap between the single-compression cluster and
+# the clearly double-compressed cases, and a slope of 2.5 grades the response
+# across it instead of stepping: the same settings map a clean image to 0.18
+# and a QF30-then-QF95 double compression to 0.999.
+#
+# This is a statement about the DYNAMIC RANGE of the statistic, NOT a validated
+# forensic decision threshold, and it must never be reported as one. Any run
+# using these values is flagged uncalibrated, has its confidence multiplied by
 # CONFIDENCE_PENALTY_UNCALIBRATED, and says so in reliability_note. Replace by
 # fitting on labelled data before forensic use.
-PROVISIONAL_SIGMOID_MIDPOINT: float = 0.30   # [ENGINEERING - UNSOURCED]
-PROVISIONAL_SIGMOID_SLOPE: float = 10.0      # [ENGINEERING - UNSOURCED]
+PROVISIONAL_SIGMOID_MIDPOINT: float = 0.70   # [ENGINEERING - UNSOURCED]
+PROVISIONAL_SIGMOID_SLOPE: float = 2.5       # [ENGINEERING - UNSOURCED]
 
 # Guard for the exponent in the logistic function, preventing overflow warnings
 # on extreme inputs. [STRUCTURAL] numerical safety only.
@@ -427,5 +586,69 @@ KNOWN_UNSOURCED_PARAMETERS: tuple[str, ...] = (
     "PROVISIONAL_SIGMOID_MIDPOINT",
     "PROVISIONAL_SIGMOID_SLOPE",
     "MINIMUM_CALIBRATION_REFERENCE_COUNT",
+    "SUBLATTICE_EXCESS_TOLERANCE",
+    "SUBLATTICE_MINIMUM_SAMPLE_COUNT",
     "all CONFIDENCE_PENALTY_* multipliers",
+)
+
+# Changes made in response to diagnostic testing rather than to the SKILL file.
+# Each names the measurement that forced it, so a reviewer can re-run that
+# measurement and challenge the change on its own evidence.
+TEST_DERIVED_ENHANCEMENTS: tuple[tuple[str, str], ...] = (
+    ("exclude cells quantized finer than the image's own encoder",
+     "authentic camera photo campic.jpeg scored 3.8317 at swept QF85 versus "
+     "0.1143 at its own native quantization; the applied step was exactly half "
+     "the embedded step, forcing every coefficient even and producing a 0.674 "
+     "spike on digit 2. Excluding by the ratio's DIRECTION rather than by "
+     "detecting a sublattice also strengthened the one detection that does "
+     "work: double compression QF30-then-QF95 moved from 13x to 40x the "
+     "single-compression score, because the genuine lattice below the native "
+     "factor is now scored instead of discarded"),
+    ("native quality factor added to the sweep",
+     "every swept quality factor differed from the image's own, so no "
+     "uncontaminated cell existed for the sweep to fall back on"),
+    ("resolvable probability floor 1/K",
+     "97% of the reported divergence came from digits where the least-squares "
+     "fit had collapsed to ~1e-17, with magnitude set by log(1/1e-12)"),
+    ("chi-square distance from the published range, as a confidence penalty",
+     "measured chi-square 0.0494-0.9444 against the corpus's published "
+     "0.0051-0.0791 for altered images and 0.0112-0.0126 for unaltered; "
+     "reported and penalised but NOT gated on, because this pipeline does not "
+     "reproduce the published scale even on unmanipulated images"),
+    ("sigmoid re-anchored",
+     "five of six probabilities pinned at exactly 1.0, including both "
+     "authentic photographs"),
+)
+
+# Changes that were implemented, measured, and REJECTED because the measurement
+# did not support them. Recorded so they are not proposed again.
+REJECTED_ENHANCEMENTS: tuple[tuple[str, str], ...] = (
+    ("gate the sweep on a hard chi-square ceiling taken from Moin et al.",
+     "withdrawn after measurement. On a single-compressed synthetic image with "
+     "NO manipulation the measured chi-square was 0.10212 at QF90, 0.65603 at "
+     "QF70 and 1.24708 at QF50 against a published 0.0112-0.0126 at all three. "
+     "Pooling frequencies into one histogram, which is Moin's setup, narrows "
+     "the QF90 gap from 9x to 2x but widens it to 19x at QF70 and 41x at QF50. "
+     "The discrepancy is not a constant factor, so the published number cannot "
+     "serve as a threshold. Kept as a confidence penalty instead"),
+    ("exclude cells by detecting a sublattice rather than by direction",
+     "superseded. The divisibility test only fires on integer step ratios, and "
+     "the ratios measured on campic.jpeg were [2.0, 1.5, 1.5, 1.75, 2.0, 1.4, "
+     "2.0, 2.0, 1.75]; ratio 1.5 maps coefficients onto 2, 3, 5, 6, 8, 9 with "
+     "no common divisor, so it is invisible to that test yet just as "
+     "distorting. The test left campic at 1.1829 against 0.1143 at its native "
+     "factor. Retained as a reported diagnostic only"),
+    ("bound the fit exponent delta at Wang's published maximum 2.55",
+     "removed the degenerate fit but made class separation worse, from -0.230 "
+     "to -0.905 across nine images; the resolvable-floor fix addresses the "
+     "same pathology without constraining the model family"),
+    ("gate cells on decades of magnitude spanned (Benford's log-uniformity "
+     "precondition)",
+     "the precondition is not in fact violated: 456 of 477 measured cells span "
+     "more than 1.1 decades, so the gate never fired and separation was "
+     "unchanged at -0.749"),
+    ("tighten the zero-coefficient-rate gate from 0.95",
+     "gating at 0.75 moved separation from -0.749 to -0.747, i.e. no "
+     "measurable effect; the correlation with the score is real but is a "
+     "symptom of the texture confound, not a fixable defect"),
 )

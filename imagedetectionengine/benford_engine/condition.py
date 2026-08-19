@@ -325,6 +325,123 @@ class ConditionChecker:
         return True, constants.FULL_CONFIDENCE, ""
 
     @staticmethod
+    def assess_sweep_applicability(excluded_count: int,
+                                   scored_count: int,
+                                   residual_lattice_count: int,
+                                   native_quality_factor) -> CheckResult:
+        """Report how much of the corpus sweep applied to this image at all.
+
+        ENHANCEMENT 1, forced by diagnostic testing. The SKILL's sweep
+        {80, 85, 90, 95, 100} comes from Bonettini et al., whose corpus is
+        UNCOMPRESSED, so every one of those factors is that image's FIRST
+        quantization. On an image already saved at a lower quality factor, all
+        of them re-quantize more finely than its own encoder did, which cannot
+        add information and measurably distorts the digit histogram. Those cells
+        are excluded; this reports how thin what remains is.
+
+        Args:
+            excluded_count: Cells excluded as finer than the image's own.
+            scored_count: Cells that survived and were scored.
+            residual_lattice_count: Scored cells still carrying a lattice.
+            native_quality_factor: The image's own quality factor, or None.
+
+        Returns:
+            CheckResult; fails only when nothing survived.
+        """
+        total = excluded_count + scored_count
+        if scored_count == 0:
+            return (False, constants.ZERO_CONFIDENCE,
+                    f"All {total} sweep configurations quantized this image "
+                    f"more finely than its own encoder did (estimated quality "
+                    f"factor {native_quality_factor}), so none of them can "
+                    f"report anything but the engine's own arithmetic. No "
+                    f"measurement is returned.")
+
+        return (True, constants.FULL_CONFIDENCE,
+                ConditionChecker._describe_sweep_coverage(
+                    excluded_count, scored_count, residual_lattice_count,
+                    native_quality_factor))
+
+    @staticmethod
+    def _describe_sweep_coverage(excluded_count: int,
+                                 scored_count: int,
+                                 residual_lattice_count: int,
+                                 native_quality_factor) -> str:
+        """Word the sweep-coverage and residual-lattice findings for the report.
+
+        Args:
+            excluded_count: Cells excluded as finer than the image's own.
+            scored_count: Cells that survived and were scored.
+            residual_lattice_count: Scored cells still carrying a lattice.
+            native_quality_factor: The image's own quality factor, or None.
+
+        Returns:
+            Explanatory text, empty when there is nothing to report.
+        """
+        total = excluded_count + scored_count
+        notes = []
+        if excluded_count:
+            notes.append(
+                f"{excluded_count} of {total} sweep configurations were "
+                f"excluded because the standard table applied there is finer "
+                f"than this image's own quantization (estimated quality factor "
+                f"{native_quality_factor}); re-quantizing more finely than the "
+                f"original encoder cannot recover discarded information and "
+                f"distorts the leading-digit histogram. The score rests on the "
+                f"{scored_count} configurations at or below the image's own "
+                f"quality factor.")
+        if residual_lattice_count:
+            notes.append(
+                f"{residual_lattice_count} scored configuration(s) still show a "
+                f"lattice in the coefficients. At or below the image's own "
+                f"quality factor this engine cannot have created it, so it is "
+                f"evidence of an EARLIER compression - the double-compression "
+                f"signature Singh et al. describe.")
+        return " ".join(notes)
+
+    @staticmethod
+    def assess_published_regime(representative_chi_square: float) -> CheckResult:
+        """Check the image sits inside the regime the corpus actually measured.
+
+        ENHANCEMENT 4, forced by diagnostic testing, and deliberately a
+        CONFIDENCE PENALTY rather than a reliability gate.
+
+        First built as a hard gate on the published range, then WITHDRAWN: on
+        an unmanipulated single-compressed image the statistic read 0.10212 at
+        QF90 and 1.24708 at QF50 against a published 0.0112-0.0126 at both. The
+        gap varies with quality factor, so no borrowed threshold is defensible.
+        Only the order of magnitude stays honest, so it earns a confidence
+        penalty rather than a refusal to vote. See constants.py.
+
+        Args:
+            representative_chi_square: Chi-square measured nearest the image's
+                own quality factor.
+
+        Returns:
+            CheckResult; always passes, carrying a penalty when far outside.
+        """
+        if representative_chi_square <= constants.CHI_SQUARE_VALIDITY_CEILING:
+            return True, constants.FULL_CONFIDENCE, ""
+
+        multiple = (representative_chi_square /
+                    constants.CHI_SQUARE_VALIDITY_CEILING)
+        return (True,
+                constants.CONFIDENCE_PENALTY_OUTSIDE_PUBLISHED_REGIME,
+                f"Chi-square against the classical Benford curve measured "
+                f"{representative_chi_square:.4f}, which is {multiple:.1f}x the "
+                f"largest value any paper in this corpus reports for ANY image "
+                f"class (altered images reach "
+                f"{constants.MOIN_ALTERED_CHI_SQUARE_MAXIMUM:.4f}; unaltered "
+                f"images sit at "
+                f"{constants.MOIN_UNALTERED_CHI_SQUARE_MINIMUM:.4f}-"
+                f"{constants.MOIN_UNALTERED_CHI_SQUARE_MAXIMUM:.4f}). This "
+                f"image's coefficient population is unlike the material the "
+                f"corpus characterises, so confidence is reduced. Note this "
+                f"engine does not reproduce the published chi-square scale even "
+                f"on unmanipulated images, so the gap is NOT itself evidence "
+                f"of tampering.")
+
+    @staticmethod
     def _normalise_format(metadata: ImageMetadata) -> str:
         """Upper-case the container format for case-insensitive comparison.
 
