@@ -1,0 +1,128 @@
+================================================================
+JPEG-COMPRESSION-ARTIFACT ENGINE (jpeg_compression_artifact)
+DIAGNOSTIC SUMMARY - generated 2026-08-19
+Tested: 6 supplied images + 20 ground-truth files with known
+compression history, across 3 never-compressed source families.
+================================================================
+
+OVERALL HEALTH:  NEEDS INVESTIGATION BEFORE INTEGRATION
+   One real defect was found and fixed - the engine was silently running in
+   a configuration measured to invert its own score, on every supplied image.
+   Even repaired, its discrimination in its best regime is weak (+0.0285),
+   and in the SKILL's documented hard regime it is inverted.
+
+SEPARATION
+   Six supplied images : +0.0115 before, -0.1224 after. NEITHER NUMBER MEANS
+                         ANYTHING for this engine. Eight of the nine supplied
+                         files carry byte-identical quantization tables, real
+                         and fake alike, so every one is genuinely
+                         double-compressed. A working double-compression
+                         detector must fire on all of them, and after the fix
+                         it does - every raw score rose by a factor of 2.0 to
+                         2.5. The "real" label is not a single-compression
+                         label. This was predicted in writing before the run.
+   Ground truth        : +0.0285 in the SKILL's best regime (QF2 > QF1,
+                         non-integer ratio) with the normalisation working,
+                         against -0.0719 with it disabled - the state the
+                         engine was actually in.
+
+TOP 3 STRENGTHS (evidence-based)
+ 1. Pipeline A.3 is excellent and reproduces the paper's benchmark. On 20
+    ground-truth files encoded with standard tables it recovered the EXACT
+    true quality factor every time, at exact-pixel-match rates of 0.9968 to
+    1.0000. The SKILL claims 94-99.96%; measured here it was 100% of 20.
+ 2. It correctly declines what the SKILL says it cannot do. A QF1=QF2 double
+    compression reproduces the file byte-for-byte and scores identically to
+    single compression - the documented blind spot, behaving as documented.
+    After the fix, a genuine near-lossless image abstains outright rather
+    than reporting a score its own model cannot support.
+ 3. It is cheap and fully deterministic: 1.7 s per image including A.3's 100
+    JPEG round trips, and five repeat runs on one image gave byte-identical
+    raw scores.
+
+TOP 3 WEAKNESSES (honest)
+ 1. WAS RUNNING INVERTED ON EVERY SUPPLIED IMAGE, SILENTLY. A.3 returned
+    QF=100 on all six, whose table is all ones, which made Pipeline B's
+    quantization-step normalisation a no-op. Measured over three seeds, that
+    configuration separates single from double compression at -0.0719 against
+    +0.0285 with the normalisation in force. The sign flips. Nothing in the
+    output said so; the probe caught it by recomputing Pipeline B with the
+    normalisation deliberately disabled and getting an identical answer.
+ 2. THE A.1 GATE DOES NOT SEPARATE WHAT IT CLAIMS TO, AND CANNOT BE FIXED BY
+    RETHRESHOLDING. It fires on never-compressed smooth content (s=27.8 on a
+    gradient, 45.9 on a blob, against a threshold of 2.0) and fails on real
+    JPEGs at high quality (s=1.0-7.3 at QF98-100). Those two ranges overlap,
+    so no threshold separates them. The SKILL's stated reliable regime
+    (QF>=85) is measured to be backwards: it works at QF50-90 and fails above
+    QF95.
+ 3. WEAK EVEN WHEN WORKING, AND INVERTED IN THE HARD REGIME. Best-case
+    separation is +0.0285. Where the image was re-saved at LOWER quality than
+    its original, separation is -0.0780 - the SKILL calls this regime
+    "substantially degraded"; measured, it is inverted, not just degraded.
+
+BUGS FOUND
+  ONE REAL DEFECT, now fixed: the silent normalisation no-op described above.
+  It was not a crash and produced no warning - the engine reported
+  is_reliable=True at confidence 0.967-0.984 on all six images while running
+  in its inverted mode.
+  NO contract violations. All four fixed shapes (EngineInput, EngineOutput,
+  ImageMetadata, ConditionReport) are unchanged field-for-field; all three
+  EngineOutput construction sites pass all 11 fields; probability is None
+  exactly when is_reliable is False, verified across four input classes.
+  Deterministic across repeat runs. No numeric literals outside constants.py.
+
+CHANGES APPLIED (all evidence-cited; see enhancement_plan.txt)
+  1. Prefer the container's own DQT quantization table over A.3's
+     recompression search - the SKILL's own stated preference order.
+  2. Abstain when the effective table is all unit steps, because Pipeline B
+     is then measured to score in the wrong direction.
+  3. Note the quality-factor regime in which the A.1 gate stops
+     discriminating.
+
+CHANGES TESTED AND REJECTED (do not re-propose)
+  - Changing Pipeline B's aggregation. DC-only scores best on average
+    (+0.1038 vs the shipped +0.0691) but inverts catastrophically on the 1/f
+    family (-0.2913); mean-excluding-DC inverts on another (-0.0248). The
+    shipped mean over all 10 frequencies is the only rule positive on every
+    family tested.
+  - Re-fitting the A.1 threshold: no separating value exists.
+  - Gating A.1 on R2 share or AC energy: real JPEGs are MORE extreme than the
+    false positives on both statistics.
+  - Re-fitting the probability sigmoid: it would be fitting the decision
+    boundary to my own ground truth.
+
+FUSION WEIGHT RECOMMENDATIONS
+    JPEG, spliced from LOWER-quality source, non-integer ratio ... LOW
+    JPEG, spliced from HIGHER-quality source (QF2 < QF1) ......... ZERO
+    JPEG, QF1 == QF2 ............................................ ZERO (blind)
+    JPEG, integer quantization-step ratio ....................... ZERO (blind)
+    JPEG re-saved near-lossless (most steps = 1) ................ ZERO (abstains)
+    Non-aligned / grid-shifted splice ........................... ZERO (blind)
+    PNG lossless / never-compressed ............................. ZERO
+    Resized image ............................................... ZERO (the
+                                block grid is destroyed; the SKILL states no
+                                closed-form method in its corpus solves this)
+    AI-generated ................................................ ZERO (out of scope)
+    Low resolution (under 64 unsaturated blocks) ................ ZERO (skips)
+    A LOW score from this engine ................................ NEVER evidence
+                                                                  of authenticity
+  LOW rather than MEDIUM even at its best: +0.0285 separation is a weak
+  ordering signal, and the probability mapping on top of it is uncalibrated.
+
+FUSION ONE-LINER
+    jpeg_compression_artifact: recovers a JPEG's quantization table and
+    quality factor essentially perfectly (exact QF on 20 of 20 ground-truth
+    files) and detects globally double-compressed images, but its actual
+    tampering score is weak (+0.0285 separation in its best regime), inverted
+    where the image was re-saved at lower quality than its original, blind by
+    construction to integer step ratios, to QF1=QF2, and to grid-misaligned
+    splices, and it produces no spatial localisation at all. Weight LOW on
+    JPEG input with a lower-quality spliced source, ZERO everywhere else, and
+    never read a low score as evidence of authenticity.
+
+PERFORMANCE
+    1.68 s per image before, 1.72 s after - no regression. Dominated by
+    Pipeline A.3's 100 JPEG encode/decode round trips, which the caller can
+    switch off via CalibrationSettings.run_quality_factor_sweep. Memory: no
+    concern; the block-DCT array is the largest object and is proportional to
+    image size.

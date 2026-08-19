@@ -1,0 +1,117 @@
+BEFORE vs AFTER - JPEG-COMPRESSION-ARTIFACT ENGINE
+==================================================
+
+PART 1 - THE SIX SUPPLIED IMAGES (Phase 7.4 table)
+
+  Image                 truth          before prob  after prob  change
+  ---------------------------------------------------------------------
+  campic.jpeg           REAL                0.1916      0.6630  +
+  campic2.jpeg          REAL                0.1954      0.6694  +
+  fake .jpeg            FAKE                0.1010      0.2814  +
+  fake.jpeg             FAKE                0.3091      0.8061  +
+  gen.jpeg              AI-GENERATED        0.2091      0.6968  +
+  genratedimage.jpeg    AI-GENERATED        0.2064      0.7362  +
+  ---------------------------------------------------------------------
+  separation (fake-real)                   +0.0115     -0.1224  -
+  raw separation                           -0.0027     -0.0179  -
+  correct verdicts                             2/6         2/6  =
+  reliable                                     6/6         6/6  =
+
+  Underlying raw scores, which is where the change actually lives:
+
+  Image                 before raw  after raw  ratio   normalisation active?
+  ------------------------------------------------------------------------
+  campic.jpeg               0.0624     0.1471  x2.36   no -> YES
+  campic2.jpeg              0.0634     0.1482  x2.34   no -> YES
+  fake .jpeg                0.0325     0.0825  x2.54   no -> YES
+  fake.jpeg                 0.0878     0.1770  x2.02   no -> YES
+  gen.jpeg                  0.0668     0.1533  x2.29   no -> YES
+  genratedimage.jpeg        0.0661     0.1611  x2.44   no -> YES
+
+  BEFORE, the harness probe recomputed Pipeline B with the quantization-step
+  normalisation deliberately disabled and got a score IDENTICAL to the
+  engine's own, to four decimal places, on all six images. That is the
+  signature of the defect: A.3 returned QF=100, whose table is all ones, so
+  the divide-by-q was a no-op and the engine was running in the configuration
+  measured to separate in the WRONG direction. AFTER, the container's own
+  quantization table drives the normalisation and the two no longer agree on
+  any image.
+
+  SEPARATION GOT NUMERICALLY WORSE, AND THAT IS NOT A REGRESSION.
+  This engine detects DOUBLE COMPRESSION. Eight of the nine files in the two
+  supplied folders carry byte-identical quantization tables, real and fake
+  alike, so every one of them HAS been re-encoded by one common pipeline and
+  every one is genuinely double-compressed. A working double-compression
+  detector must fire on all six - which is exactly what it now does, raising
+  every score by a factor of 2.0 to 2.5. The "real" label is not a
+  single-compression label, so the fake-minus-real difference is not a
+  measure of this engine's discrimination. It cannot be measured on this
+  corpus at all, and the separation figure above should not be read as one.
+  This was written down as the primary prediction in phase1_predictions.txt
+  before the engine was run.
+
+PART 2 - GROUND TRUTH (where the engine can actually be measured)
+Sources synthesised so their compression history is known exactly. Three
+families, all VERIFIABLY never JPEG-encoded (Pipeline A.1 gives s = 1.02 for
+uniform noise, 1.02 for the 1/f field, and the Laplacian source is built
+directly in the DCT domain and never encoded). Three seeds each.
+
+  condition                          single   easy-double   separation
+  --------------------------------------------------------------------
+  Laplacian AC statistics, norm ON   0.2446        0.2731       +0.0285
+  Laplacian AC statistics, norm OFF  0.3084        0.2365       -0.0719
+  1/f field                          0.2015        0.3458       +0.1442
+  Laplacian ac90                     0.2778        0.2857       +0.0079
+  Laplacian ac10                     0.0874        0.1425       +0.0550
+
+  "easy-double" is the regime the SKILL says the method is strongest in:
+  QF2 > QF1 with a non-integer step ratio (70->85, 60->90, 75->95).
+
+  THE HARD CASES BEHAVE AS THE SKILL PREDICTS, ONLY WORSE.
+  QF2 < QF1 (85->70, 90->60) gives separation -0.0780 on the Laplacian
+  family and -0.0049 on 1/f. The SKILL calls this "the historically hardest
+  case for every DQ-histogram method" and reports "substantially degraded
+  accuracy"; measured, it is not merely degraded but INVERTED - a
+  down-quality recompression scores LOWER than a single compression.
+
+  QF1 == QF2 (85->85) reproduces the input file byte-for-byte, so its score
+  is identical to single_q85 to four decimals. That is the SKILL's documented
+  blind spot behaving exactly as documented.
+
+PART 3 - PIPELINE A.3 IS SOUND; ITS CANDIDATE SET IS NOT
+  On 20 ground-truth files encoded with standard tables, A.3 recovered the
+  EXACT true final quality factor every single time - 85, 70, 90, 85, 90, 95,
+  70, 60, 85, 100 across both source families - at exact-pixel-match rates of
+  0.9968 to 1.0000. The SKILL's 94-99.96% benchmark is reproduced.
+  On the six supplied photographs it returns 100 every time, because their
+  encoder used a table outside the IJG family Eq. 26 generates. The method is
+  right; the candidate set does not contain the answer.
+
+PART 4 - THE A.1 GATE DOES NOT SEPARATE WHAT IT CLAIMS TO
+  s over JPEGs of known quality, three source families:
+      QF50-85 : 101 - 2913     QF90 : 77 - 290
+      QF95    : 15 - 22        QF98 : 3.2 - 7.3     QF100 : 1.0 - 4.5
+  s over never-compressed content:
+      uniform noise 1.02   1/f 1.02   laplace_ac40 2.04
+      laplace_ac10 6.85    smooth gradient 27.80    smooth blob 45.93
+  The classes OVERLAP: a real JPEG at QF98 scores below a never-compressed
+  gradient. No threshold separates them, so the false positives on smooth
+  content cannot be removed by moving the cut. The SKILL states the feature
+  is reliable at "QF >= ~85"; measured, it works from QF50 to about QF90 and
+  fails above QF95 - the opposite way round.
+
+HONEST RESIDUAL DEFECTS
+  - Separation on clean ground truth is +0.0285 in the engine's best regime.
+    That is weak. The SKILL's own accuracy figures for this pipeline come
+    from an SVM integrating all 10 frequencies, which is [ML - excluded]; the
+    training-free peak-prominence substitute the SKILL recommends in its
+    place is what was measured here.
+  - The QF2 < QF1 regime is inverted, not merely weak.
+  - The probability mapping is uncalibrated and its midpoint of 0.12 decides
+    the verdict almost by itself: it sits above the pre-enhancement corpus
+    range (0.03-0.09, everything read REAL) and below the ground-truth range
+    (0.20-0.32, everything reads FAKE).
+  - No spatial localisation. flagged_regions is always None, and evidence_map
+    renders the 10 computed spectra rather than a claimed tamper map. This is
+    correct per the SKILL, which calls block-wise re-application "not
+    validated end-to-end in the corpus".

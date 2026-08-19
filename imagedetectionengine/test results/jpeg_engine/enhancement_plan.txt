@@ -1,0 +1,107 @@
+PHASE 7.1 - ENHANCEMENT PLAN: JPEG-COMPRESSION-ARTIFACT ENGINE
+Every row cites the measurement that forced it.
+
++---+------------------------------+------------------------------+------------------------------+
+| # | Weakness found               | Root cause                   | Enhancement                  |
++---+------------------------------+------------------------------+------------------------------+
+| 1 | Pipeline A.3 returned QF=100 | A.3 searches only the 100    | Prefer the quantization      |
+|   | on ALL SIX supplied images,  | tables Eq. 26 generates from | table read from the file's   |
+|   | while each file's own DQT    | the IJG base table. A file   | own DQT marker when the      |
+|   | marker encodes a table       | encoded with a NON-STANDARD  | orchestrator still has the   |
+|   | matching no IJG quality      | table has no correct answer  | container. The SKILL already |
+|   | factor (best residual 11.05, | in that candidate set, so    | makes this the preferred     |
+|   | DC step 6 where QF74 gives   | Eq. 25's argmax lands        | route and A.3 the fallback   |
+|   | 8). A.3 itself is sound - on | wherever the pixel-match     | "only when the image is a    |
+|   | 20 ground-truth files it     | rate happens to peak, which  | bitmap of unknown/stripped   |
+|   | recovered the exact true QF  | is at QF=100 because         | provenance".                 |
+|   | every time (R 0.9968-1.0000).| recompressing at the highest |                              |
+|   |                              | quality changes fewest       |                              |
+|   |                              | pixels.                      |                              |
++---+------------------------------+------------------------------+------------------------------+
+| 2 | The QF=100 table is all      | to_quantized_domain returns  | Fail the run when fewer than |
+|   | ones, so Pipeline B's        | its input unchanged when the | half the steps are >= 2.     |
+|   | quantization-step            | step is <= 1. Pipeline B     | is_reliable=False, not a     |
+|   | normalisation became a       | then histograms the          | confidence discount: a score |
+|   | SILENT NO-OP on every        | DEQUANTIZED domain, where    | measured to separate the     |
+|   | supplied image. Confirmed    | the periodicity belongs to   | wrong way is not a           |
+|   | directly: the un-normalised  | the quantization step itself | measurement.                 |
+|   | Pipeline B score equalled    | rather than to any double-   |                              |
+|   | the normalised one to four   | quantization artifact.       |                              |
+|   | decimals on all six.         | Measured over 3 seeds:       |                              |
+|   |                              | separation +0.0285 with the  |                              |
+|   |                              | normalisation, -0.0719       |                              |
+|   |                              | without. The sign FLIPS.     |                              |
++---+------------------------------+------------------------------+------------------------------+
+| 3 | Pipeline A.1's gate          | Eq. 7 measures how           | Carry a note when the        |
+|   | false-positives on           | concentrated AC mass is near | recovered QF is >= 95, the   |
+|   | never-compressed smooth      | zero, which smoothness       | regime where the gate was    |
+|   | content: s=27.8 on a         | drives as strongly as        | measured to stop             |
+|   | gradient and 45.9 on a       | quantization does. And at    | discriminating. NOT a        |
+|   | smooth blob, against a       | very high QF there is        | threshold refit - see the    |
+|   | threshold of 2.0. It also    | almost no quantization to    | rejected list.               |
+|   | FAILS on real JPEGs at high  | detect.                      |                              |
+|   | quality: s=1.0-7.3 at        |                              |                              |
+|   | QF98-100, BELOW those false  |                              |                              |
+|   | positives. Classes overlap.  |                              |                              |
++---+------------------------------+------------------------------+------------------------------+
+
+FILES AND METHODS CHANGED
+  1. contracts.py  CalibrationSettings gains container_quantization_table.
+     engine.py     JpegEngine._quantization_table prefers it.
+     constants.py  PREFER_CONTAINER_QUANTIZATION_TABLE.
+     Only CalibrationSettings is extended; EngineInput, EngineOutput,
+     ImageMetadata and ConditionReport are byte-for-byte unchanged, verified
+     field-by-field by the audit.
+     Risk: a caller supplying a wrong table would mis-normalise Pipeline B.
+     Mitigated because the table comes from the file's own header, which is
+     definitionally correct for that file.
+  2. condition.py  new ConditionChecker.assess_quantization_table_usability.
+     engine.py     wired into the post-computation check set.
+     constants.py  MINIMUM_USABLE_QUANTIZATION_STEP,
+                   MINIMUM_NON_UNIT_STEP_FRACTION.
+     Risk: over-gating. It fires only when most steps are 1, which means a
+     near-lossless image with no quantization structure to exploit - the one
+     case where abstaining is right. Verified: a genuine QF100 image now
+     returns raw 0.0000, probability None, is_reliable False.
+  3. condition.py  new ConditionChecker.assess_history_feature_regime.
+     constants.py  HISTORY_FEATURE_UNRELIABLE_ABOVE_QUALITY.
+     Risk: none. It never changes is_reliable or any score, only the note.
+
+CATEGORIES COVERED
+  A (signal extraction) : #1 and #2 - both restore the integer coefficient
+                          domain Eq. 4 is actually written over.
+  B (condition checker) : #2 and #3.
+  C (scoring)           : considered and REJECTED - see below.
+  D (robustness)        : addressed by testing across three never-compressed
+                          source families rather than by a code change.
+  E (performance)       : not needed. 1.68 s/image before, 1.72 s after.
+
+TESTED AND REJECTED (do not re-propose)
+  - Changing Pipeline B's aggregation rule. Two alternatives were implemented
+    and measured over three never-compressed source families, three seeds
+    each. Mean-excluding-DC: average easy-case separation +0.0652 against the
+    shipped +0.0691, and it INVERTS on one family (-0.0248). DC-only: much the
+    best average (+0.1038 easy, +0.0716 hard) but it inverts catastrophically
+    on the 1/f family (-0.2913), because DC prominence there saturates near
+    0.93 under single compression and FALLS under double - the reverse of its
+    behaviour on Laplacian-statistics sources. The shipped mean over all 10 is
+    the only rule of the three that is positive on every family tested, so it
+    stays unchanged.
+  - Re-fitting DEFAULT_HISTORY_THRESHOLD to remove A.1's false positives on
+    smooth content. NO SEPARATING VALUE EXISTS: real JPEGs at QF98-100 score
+    s=1.0-7.3, below a never-compressed smooth gradient at 27.8 and a smooth
+    blob at 45.9. Any threshold trades one error class for the other.
+  - Gating A.1 on the R2 region's share of AC mass, or on AC energy. Neither
+    separates. A genuine JPEG has an R2 share of 0.0009-0.008 against
+    0.021-0.035 for the smooth never-compressed cases - the real JPEGs are
+    MORE extreme on the very statistic that would have flagged the false
+    positives. The fraction of AC coefficients below 1 overlaps too:
+    0.947-0.972 for real JPEGs against 0.950-0.956 for the smooth fakes.
+  - Re-fitting PROVISIONAL_SIGMOID_MIDPOINT. Its 0.12 sits below the observed
+    operating range on ground truth (0.20-0.32), so every ground-truth image
+    reads FAKE, and above the corpus range before enhancement (0.03-0.09), so
+    every corpus image read REAL. The midpoint therefore decides the verdict
+    almost by itself. It is left alone because the SKILL states calibration to
+    [0,1] is "not specified in corpus" and the scorer already flags the route
+    PROVISIONAL; refitting it on self-built ground truth would be fitting the
+    decision boundary to the test set.

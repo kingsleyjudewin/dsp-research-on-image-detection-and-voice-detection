@@ -1,0 +1,32 @@
+JPEG-COMPRESSION-ARTIFACT ENGINE - DIAGNOSTIC SUMMARY
+run tag       : before
+generated     : 2026-08-19 18:12:01
+
+images tested : 6
+reliable      : 6 / 6
+correct       : 2 / 6
+wrong         : 4 / 6
+abstained     : 0 / 6
+
+PROBABILITY BY CASE
+  real        : 0.1934827910616897
+  manipulated : 0.20501620390017958
+  ai-generated: 0.20776448293985647
+  separation  : 0.011533412838489882
+
+RAW SCORE BY CASE
+  real        : 0.06289669572431057
+  manipulated : 0.06017853128496298
+  separation  : -0.002718164439347595
+
+NOTICES
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+  - Engine configuration: Pipeline B scores; A.1 gates at s>2.0, A.3 sweeps all 100 quality factors, Eq. 5 trailing window n=8, peak-prominence threshold 0.05, 10 low-frequency DCT positions.
+
+PER-IMAGE
+  campic.jpeg            truth=REAL          raw=0.0624 prob=0.1916 conf=0.981 verdict=REAL
+  campic2.jpeg           truth=REAL          raw=0.0634 prob=0.1954 conf=0.981 verdict=REAL
+  fake .jpeg             truth=FAKE          raw=0.0325 prob=0.1010 conf=0.967 verdict=REAL
+  fake.jpeg              truth=FAKE          raw=0.0878 prob=0.3091 conf=0.978 verdict=UNCERTAIN
+  gen.jpeg               truth=AI-GENERATED  raw=0.0668 prob=0.2091 conf=0.981 verdict=REAL
+  genratedimage.jpeg     truth=AI-GENERATED  raw=0.0661 prob=0.2064 conf=0.984 verdict=REAL

@@ -1,0 +1,497 @@
+==========================================================================
+JPEG ENGINE DIAGNOSTIC REPORT  [after]
+Generated: 2026-08-19 18:25:57
+==========================================================================
+
+Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case
+--------------------------------------------------------------------------------
+campic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real
+campic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real
+mobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real
+mobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real
+fake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI
+fake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI
+fake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI
+gen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI
+genratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI
+
+NOTICES:
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+  - Engine configuration: Pipeline B scores; A.1 gates at s>2.0, A.3 sweeps all 100 quality factors, Eq. 5 trailing window n=8, peak-prominence threshold 0.05, 10 low-frequency DCT positions.
+
+
+##########################################################################
+CASE 1: Case 1 Real (ground truth REAL)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images
+##########################################################################
+
+==========================================================================
+IMAGE: campic.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 79.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.147068
+  Probability  : 0.663003
+  Confidence   : 0.9811
+  Is reliable  : True
+  Time         : 2789.8 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. Double-quantization periodicity is undetectable in principle when the secondary/primary quantization-step ratio is an integer (the SKILL calls this a fundamental, unavoidable blind spot of every DQ-histogram method, with detection accuracy near zero), and is substantially degraded when the image was re-saved at LOWER quality than its original. Content spliced from a never-compressed source and never itself re-encoded is undetectable by this module family entirely. COVERAGE GAP: excluding the SKILL's [ML] Pipelines C and D leaves this engine blind to non-aligned (block-grid-shifted) double JPEG compression and to the QF1=QF2 case, which the SKILL states are handled by no training-free technique in its corpus. Best candidate quantization table reproduces only 98.1% of pixels exactly (runner-up 97.5%); a clean single compression history normally reproduces near 100%. Treated as a confidence discount only - the SKILL marks this reading an unvalidated engineering extrapolation. Estimated quality factor is 100, in the regime where the Pipeline A.1 history gate was measured to stop discriminating: s falls to 15-22 at QF95, 3.2-7.3 at QF98 and 1.0-4.5 at QF100, overlapping the 1.02-45.93 range never-compressed content produces. The gate's verdict for this image should not be read as evidence either way about its JPEG history. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states calibration to [0,1] is not specified in its corpus for this module, and the peak-prominence decision rule itself is the SKILL's own training-free substitute for an [ML] classifier it excludes - treat this probability as a rough ordering signal, not a validated likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Block DCT extraction
+      Converted to luminance, cropped to the 8x8 block grid, and applied a level-shifted 8x8 DCT to every unsaturated block (saturated blocks are excluded so truncation error can be neglected, per the SKILL).
+      in=  out=
+        total_blocks = 29850
+        unsaturated_blocks = 28864
+        blocks_per_row = 199
+        blocks_per_column = 150
+    Step 2: Pipeline A.1: JPEG-history gate (NOT SCORED)
+      Computed the ratio of AC-coefficient mass in R1=(-1,+1) to that in R2=(-2,-1)u(+1,+2). Used only to decide whether this module applies at all - being JPEG is not evidence of forgery.
+      in=  out=
+        history_feature_s = 153.9086
+        threshold = 2.0
+        is_jpeg_derived = True
+        region_one_count = 1735319
+        region_two_count = 11275
+    Step 3: Pipeline A.3: quality-factor recovery (CONDITIONING + CONFIDENCE)
+      Recompressed at every candidate quality factor and took the one reproducing the most pixels exactly. Feeds the low-QF reliability gate, the confidence discount, and the quantization steps Pipeline B needs - never raw_score.
+      in=  out=
+        sweep_ran = True
+        estimated_quality_factor = 100
+        pixel_match_ratio = 0.9811
+        runner_up_match_ratio = 0.9755
+    Step 4: Pipeline A.2: per-frequency quantization steps (CONDITIONING)
+      Estimated the quantization step at each AC DCT frequency from the histogram of rounded coefficients. The SKILL calls this a nuisance parameter, not a tampering score; it is reported for the record and used only as a fallback when the quality-factor sweep is disabled.
+      in=  out=
+        usable_frequency_count = 43
+    Step 5: Pipeline B: double-quantization periodicity (SCORE-DRIVING)
+      Divided each selected low-frequency coefficient by its quantization step to recover the integer domain the double-quantization model is written over, histogrammed it, took the normalised FFT magnitude, removed the decaying trend by trailing-minimum subtraction, and measured the surviving peak prominences.
+      in=  out=
+        usable_frequencies = 10
+        total_frequencies = 10
+        peak_bearing_frequencies = 10
+        aggregate_score = 0.1471
+        per_frequency_strongest_prominence = [0.1672, 0.1044, 0.1251, 0.1719, 0.1035, 0.1468, 0.17, 0.1278, 0.1845, 0.1696]
+    Step 6: Scoring
+      Aggregate peak prominence converted to a probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+        raw_score = 0.1471
+
+  REASONING:
+    Engine reported raw_score=0.147068 - Pipeline B's mean strongest peak prominence across its usable frequencies - at confidence 0.9811, is_reliable=True. Block DCT: {'total_blocks': 29850, 'unsaturated_blocks': 28864, 'blocks_per_row': 199, 'blocks_per_column': 150}. Pipeline A.1 (gate, never scored) measured the JPEG-history feature s=153.9086 against t=2.0, verdict is_jpeg_derived=True from 1735319 AC coefficients in R1 against 11275 in R2. Pipeline A.3 recovered QF=100 at an exact-pixel-match rate of 0.9811 (runner-up 0.9755); the file's own DQT marker independently says QF=74 (agrees=False, DC step 6). Pipeline B used 10 of 10 low-frequency positions, of which 10 carried a peak above the 0.05 prominence threshold, with per-frequency strongest prominences [0.1672, 0.1044, 0.1251, 0.1719, 0.1035, 0.1468, 0.17, 0.1278, 0.1845, 0.1696]. With the quantization-step normalisation disabled the same pipeline scores 0.0624.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures double-quantization periodicity. Re-binning a coefficient population already quantized at step q_alpha into bins of a different step q_beta is a non-injective periodic remapping (Mahdian & Saic Eq. 4), so the coefficient histogram develops missing bins and periodic peaks that a singly-compressed histogram does not have. Pipeline B histograms each of 10 low-frequency DCT positions, takes the unit-normalised FFT magnitude, subtracts the trailing local minimum to strip the decaying trend (Eq. 5), and measures what peaks survive. For this image the surviving prominences were [0.1672, 0.1044, 0.1251, 0.1719, 0.1035, 0.1468, 0.17, 0.1278, 0.1845, 0.1696], averaging to raw_score=0.147068. The decisive caveat is that a null result proves nothing: the SKILL states that when the ratio of the two quantization steps is an integer, NO periodic artifact is introduced at all - a fundamental blind spot with detection accuracy near zero - and that the no-ML path additionally cannot see grid-misaligned splices or the QF1=QF2 case.
+
+  Engine says   : UNCERTAIN
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/jpeg_engine/after/jpeg_case1_img1_campic_heatmap.png
+
+==========================================================================
+IMAGE: campic2.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 80.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.148216
+  Probability  : 0.669381
+  Confidence   : 0.9806
+  Is reliable  : True
+  Time         : 2001.6 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. Double-quantization periodicity is undetectable in principle when the secondary/primary quantization-step ratio is an integer (the SKILL calls this a fundamental, unavoidable blind spot of every DQ-histogram method, with detection accuracy near zero), and is substantially degraded when the image was re-saved at LOWER quality than its original. Content spliced from a never-compressed source and never itself re-encoded is undetectable by this module family entirely. COVERAGE GAP: excluding the SKILL's [ML] Pipelines C and D leaves this engine blind to non-aligned (block-grid-shifted) double JPEG compression and to the QF1=QF2 case, which the SKILL states are handled by no training-free technique in its corpus. Best candidate quantization table reproduces only 98.1% of pixels exactly (runner-up 97.5%); a clean single compression history normally reproduces near 100%. Treated as a confidence discount only - the SKILL marks this reading an unvalidated engineering extrapolation. Estimated quality factor is 100, in the regime where the Pipeline A.1 history gate was measured to stop discriminating: s falls to 15-22 at QF95, 3.2-7.3 at QF98 and 1.0-4.5 at QF100, overlapping the 1.02-45.93 range never-compressed content produces. The gate's verdict for this image should not be read as evidence either way about its JPEG history. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states calibration to [0,1] is not specified in its corpus for this module, and the peak-prominence decision rule itself is the SKILL's own training-free substitute for an [ML] classifier it excludes - treat this probability as a rough ordering signal, not a validated likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Block DCT extraction
+      Converted to luminance, cropped to the 8x8 block grid, and applied a level-shifted 8x8 DCT to every unsaturated block (saturated blocks are excluded so truncation error can be neglected, per the SKILL).
+      in=  out=
+        total_blocks = 29850
+        unsaturated_blocks = 28804
+        blocks_per_row = 199
+        blocks_per_column = 150
+    Step 2: Pipeline A.1: JPEG-history gate (NOT SCORED)
+      Computed the ratio of AC-coefficient mass in R1=(-1,+1) to that in R2=(-2,-1)u(+1,+2). Used only to decide whether this module applies at all - being JPEG is not evidence of forgery.
+      in=  out=
+        history_feature_s = 153.901
+        threshold = 2.0
+        is_jpeg_derived = True
+        region_one_count = 1730155
+        region_two_count = 11242
+    Step 3: Pipeline A.3: quality-factor recovery (CONDITIONING + CONFIDENCE)
+      Recompressed at every candidate quality factor and took the one reproducing the most pixels exactly. Feeds the low-QF reliability gate, the confidence discount, and the quantization steps Pipeline B needs - never raw_score.
+      in=  out=
+        sweep_ran = True
+        estimated_quality_factor = 100
+        pixel_match_ratio = 0.9806
+        runner_up_match_ratio = 0.9747
+    Step 4: Pipeline A.2: per-frequency quantization steps (CONDITIONING)
+      Estimated the quantization step at each AC DCT frequency from the histogram of rounded coefficients. The SKILL calls this a nuisance parameter, not a tampering score; it is reported for the record and used only as a fallback when the quality-factor sweep is disabled.
+      in=  out=
+        usable_frequency_count = 44
+    Step 5: Pipeline B: double-quantization periodicity (SCORE-DRIVING)
+      Divided each selected low-frequency coefficient by its quantization step to recover the integer domain the double-quantization model is written over, histogrammed it, took the normalised FFT magnitude, removed the decaying trend by trailing-minimum subtraction, and measured the surviving peak prominences.
+      in=  out=
+        usable_frequencies = 10
+        total_frequencies = 10
+        peak_bearing_frequencies = 10
+        aggregate_score = 0.1482
+        per_frequency_strongest_prominence = [0.1694, 0.105, 0.1305, 0.1649, 0.1161, 0.1489, 0.1592, 0.1235, 0.1908, 0.174]
+    Step 6: Scoring
+      Aggregate peak prominence converted to a probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+        raw_score = 0.1482
+
+  REASONING:
+    Engine reported raw_score=0.148216 - Pipeline B's mean strongest peak prominence across its usable frequencies - at confidence 0.9806, is_reliable=True. Block DCT: {'total_blocks': 29850, 'unsaturated_blocks': 28804, 'blocks_per_row': 199, 'blocks_per_column': 150}. Pipeline A.1 (gate, never scored) measured the JPEG-history feature s=153.901 against t=2.0, verdict is_jpeg_derived=True from 1730155 AC coefficients in R1 against 11242 in R2. Pipeline A.3 recovered QF=100 at an exact-pixel-match rate of 0.9806 (runner-up 0.9747); the file's own DQT marker independently says QF=74 (agrees=False, DC step 6). Pipeline B used 10 of 10 low-frequency positions, of which 10 carried a peak above the 0.05 prominence threshold, with per-frequency strongest prominences [0.1694, 0.105, 0.1305, 0.1649, 0.1161, 0.1489, 0.1592, 0.1235, 0.1908, 0.174]. With the quantization-step normalisation disabled the same pipeline scores 0.0634.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures double-quantization periodicity. Re-binning a coefficient population already quantized at step q_alpha into bins of a different step q_beta is a non-injective periodic remapping (Mahdian & Saic Eq. 4), so the coefficient histogram develops missing bins and periodic peaks that a singly-compressed histogram does not have. Pipeline B histograms each of 10 low-frequency DCT positions, takes the unit-normalised FFT magnitude, subtracts the trailing local minimum to strip the decaying trend (Eq. 5), and measures what peaks survive. For this image the surviving prominences were [0.1694, 0.105, 0.1305, 0.1649, 0.1161, 0.1489, 0.1592, 0.1235, 0.1908, 0.174], averaging to raw_score=0.148216. The decisive caveat is that a null result proves nothing: the SKILL states that when the ratio of the two quantization steps is an integer, NO periodic artifact is introduced at all - a fundamental blind spot with detection accuracy near zero - and that the no-ML path additionally cannot see grid-misaligned splices or the QF1=QF2 case.
+
+  Engine says   : UNCERTAIN
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/jpeg_engine/after/jpeg_case1_img2_campic2_heatmap.png
+
+  CASE 1 SUMMARY
+    average probability : 0.6662
+    score spread        : 0.0064
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 2: Case 2 Manipulated (ground truth FAKE)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: fake .jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg
+==========================================================================
+  Resolution   : 728x1600
+  Format       : JPEG
+  File size    : 157.8 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.082508
+  Probability  : 0.281446
+  Confidence   : 0.9670
+  Is reliable  : True
+  Time         : 1899.1 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. Double-quantization periodicity is undetectable in principle when the secondary/primary quantization-step ratio is an integer (the SKILL calls this a fundamental, unavoidable blind spot of every DQ-histogram method, with detection accuracy near zero), and is substantially degraded when the image was re-saved at LOWER quality than its original. Content spliced from a never-compressed source and never itself re-encoded is undetectable by this module family entirely. COVERAGE GAP: excluding the SKILL's [ML] Pipelines C and D leaves this engine blind to non-aligned (block-grid-shifted) double JPEG compression and to the QF1=QF2 case, which the SKILL states are handled by no training-free technique in its corpus. Best candidate quantization table reproduces only 96.7% of pixels exactly (runner-up 93.2%); a clean single compression history normally reproduces near 100%. Treated as a confidence discount only - the SKILL marks this reading an unvalidated engineering extrapolation. Estimated quality factor is 100, in the regime where the Pipeline A.1 history gate was measured to stop discriminating: s falls to 15-22 at QF95, 3.2-7.3 at QF98 and 1.0-4.5 at QF100, overlapping the 1.02-45.93 range never-compressed content produces. The gate's verdict for this image should not be read as evidence either way about its JPEG history. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states calibration to [0,1] is not specified in its corpus for this module, and the peak-prominence decision rule itself is the SKILL's own training-free substitute for an [ML] classifier it excludes - treat this probability as a rough ordering signal, not a validated likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Block DCT extraction
+      Converted to luminance, cropped to the 8x8 block grid, and applied a level-shifted 8x8 DCT to every unsaturated block (saturated blocks are excluded so truncation error can be neglected, per the SKILL).
+      in=  out=
+        total_blocks = 18200
+        unsaturated_blocks = 10145
+        blocks_per_row = 91
+        blocks_per_column = 200
+    Step 2: Pipeline A.1: JPEG-history gate (NOT SCORED)
+      Computed the ratio of AC-coefficient mass in R1=(-1,+1) to that in R2=(-2,-1)u(+1,+2). Used only to decide whether this module applies at all - being JPEG is not evidence of forgery.
+      in=  out=
+        history_feature_s = 46.4138
+        threshold = 2.0
+        is_jpeg_derived = True
+        region_one_count = 573628
+        region_two_count = 12359
+    Step 3: Pipeline A.3: quality-factor recovery (CONDITIONING + CONFIDENCE)
+      Recompressed at every candidate quality factor and took the one reproducing the most pixels exactly. Feeds the low-QF reliability gate, the confidence discount, and the quantization steps Pipeline B needs - never raw_score.
+      in=  out=
+        sweep_ran = True
+        estimated_quality_factor = 100
+        pixel_match_ratio = 0.967
+        runner_up_match_ratio = 0.9324
+    Step 4: Pipeline A.2: per-frequency quantization steps (CONDITIONING)
+      Estimated the quantization step at each AC DCT frequency from the histogram of rounded coefficients. The SKILL calls this a nuisance parameter, not a tampering score; it is reported for the record and used only as a fallback when the quality-factor sweep is disabled.
+      in=  out=
+        usable_frequency_count = 63
+    Step 5: Pipeline B: double-quantization periodicity (SCORE-DRIVING)
+      Divided each selected low-frequency coefficient by its quantization step to recover the integer domain the double-quantization model is written over, histogrammed it, took the normalised FFT magnitude, removed the decaying trend by trailing-minimum subtraction, and measured the surviving peak prominences.
+      in=  out=
+        usable_frequencies = 10
+        total_frequencies = 10
+        peak_bearing_frequencies = 9
+        aggregate_score = 0.0825
+        per_frequency_strongest_prominence = [0.0225, 0.0749, 0.0787, 0.0974, 0.0772, 0.096, 0.1171, 0.0703, 0.1148, 0.0761]
+    Step 6: Scoring
+      Aggregate peak prominence converted to a probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+        raw_score = 0.0825
+
+  REASONING:
+    Engine reported raw_score=0.082508 - Pipeline B's mean strongest peak prominence across its usable frequencies - at confidence 0.9670, is_reliable=True. Block DCT: {'total_blocks': 18200, 'unsaturated_blocks': 10145, 'blocks_per_row': 91, 'blocks_per_column': 200}. Pipeline A.1 (gate, never scored) measured the JPEG-history feature s=46.4138 against t=2.0, verdict is_jpeg_derived=True from 573628 AC coefficients in R1 against 12359 in R2. Pipeline A.3 recovered QF=100 at an exact-pixel-match rate of 0.967 (runner-up 0.9324); the file's own DQT marker independently says QF=74 (agrees=False, DC step 6). Pipeline B used 10 of 10 low-frequency positions, of which 9 carried a peak above the 0.05 prominence threshold, with per-frequency strongest prominences [0.0225, 0.0749, 0.0787, 0.0974, 0.0772, 0.096, 0.1171, 0.0703, 0.1148, 0.0761]. With the quantization-step normalisation disabled the same pipeline scores 0.0325.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures double-quantization periodicity. Re-binning a coefficient population already quantized at step q_alpha into bins of a different step q_beta is a non-injective periodic remapping (Mahdian & Saic Eq. 4), so the coefficient histogram develops missing bins and periodic peaks that a singly-compressed histogram does not have. Pipeline B histograms each of 10 low-frequency DCT positions, takes the unit-normalised FFT magnitude, subtracts the trailing local minimum to strip the decaying trend (Eq. 5), and measures what peaks survive. For this image the surviving prominences were [0.0225, 0.0749, 0.0787, 0.0974, 0.0772, 0.096, 0.1171, 0.0703, 0.1148, 0.0761], averaging to raw_score=0.082508. The decisive caveat is that a null result proves nothing: the SKILL states that when the ratio of the two quantization steps is an integer, NO periodic artifact is introduced at all - a fundamental blind spot with detection accuracy near zero - and that the no-ML path additionally cannot see grid-misaligned splices or the QF1=QF2 case.
+
+  Engine says   : REAL
+  Ground truth  : FAKE
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/jpeg_engine/after/jpeg_case2_img1_fake__heatmap.png
+
+==========================================================================
+IMAGE: fake.jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg
+==========================================================================
+  Resolution   : 928x1152
+  Format       : JPEG
+  File size    : 67.4 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.176987
+  Probability  : 0.806070
+  Confidence   : 0.9779
+  Is reliable  : True
+  Time         : 1745.5 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. Double-quantization periodicity is undetectable in principle when the secondary/primary quantization-step ratio is an integer (the SKILL calls this a fundamental, unavoidable blind spot of every DQ-histogram method, with detection accuracy near zero), and is substantially degraded when the image was re-saved at LOWER quality than its original. Content spliced from a never-compressed source and never itself re-encoded is undetectable by this module family entirely. COVERAGE GAP: excluding the SKILL's [ML] Pipelines C and D leaves this engine blind to non-aligned (block-grid-shifted) double JPEG compression and to the QF1=QF2 case, which the SKILL states are handled by no training-free technique in its corpus. Best candidate quantization table reproduces only 97.8% of pixels exactly (runner-up 97.1%); a clean single compression history normally reproduces near 100%. Treated as a confidence discount only - the SKILL marks this reading an unvalidated engineering extrapolation. Estimated quality factor is 100, in the regime where the Pipeline A.1 history gate was measured to stop discriminating: s falls to 15-22 at QF95, 3.2-7.3 at QF98 and 1.0-4.5 at QF100, overlapping the 1.02-45.93 range never-compressed content produces. The gate's verdict for this image should not be read as evidence either way about its JPEG history. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states calibration to [0,1] is not specified in its corpus for this module, and the peak-prominence decision rule itself is the SKILL's own training-free substitute for an [ML] classifier it excludes - treat this probability as a rough ordering signal, not a validated likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Block DCT extraction
+      Converted to luminance, cropped to the 8x8 block grid, and applied a level-shifted 8x8 DCT to every unsaturated block (saturated blocks are excluded so truncation error can be neglected, per the SKILL).
+      in=  out=
+        total_blocks = 16704
+        unsaturated_blocks = 16365
+        blocks_per_row = 116
+        blocks_per_column = 144
+    Step 2: Pipeline A.1: JPEG-history gate (NOT SCORED)
+      Computed the ratio of AC-coefficient mass in R1=(-1,+1) to that in R2=(-2,-1)u(+1,+2). Used only to decide whether this module applies at all - being JPEG is not evidence of forgery.
+      in=  out=
+        history_feature_s = 135.3218
+        threshold = 2.0
+        is_jpeg_derived = True
+        region_one_count = 967957
+        region_two_count = 7153
+    Step 3: Pipeline A.3: quality-factor recovery (CONDITIONING + CONFIDENCE)
+      Recompressed at every candidate quality factor and took the one reproducing the most pixels exactly. Feeds the low-QF reliability gate, the confidence discount, and the quantization steps Pipeline B needs - never raw_score.
+      in=  out=
+        sweep_ran = True
+        estimated_quality_factor = 100
+        pixel_match_ratio = 0.9779
+        runner_up_match_ratio = 0.9709
+    Step 4: Pipeline A.2: per-frequency quantization steps (CONDITIONING)
+      Estimated the quantization step at each AC DCT frequency from the histogram of rounded coefficients. The SKILL calls this a nuisance parameter, not a tampering score; it is reported for the record and used only as a fallback when the quality-factor sweep is disabled.
+      in=  out=
+        usable_frequency_count = 59
+    Step 5: Pipeline B: double-quantization periodicity (SCORE-DRIVING)
+      Divided each selected low-frequency coefficient by its quantization step to recover the integer domain the double-quantization model is written over, histogrammed it, took the normalised FFT magnitude, removed the decaying trend by trailing-minimum subtraction, and measured the surviving peak prominences.
+      in=  out=
+        usable_frequencies = 10
+        total_frequencies = 10
+        peak_bearing_frequencies = 10
+        aggregate_score = 0.177
+        per_frequency_strongest_prominence = [0.4393, 0.1378, 0.1332, 0.1547, 0.1528, 0.1414, 0.1602, 0.1389, 0.154, 0.1575]
+    Step 6: Scoring
+      Aggregate peak prominence converted to a probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+        raw_score = 0.177
+
+  REASONING:
+    Engine reported raw_score=0.176987 - Pipeline B's mean strongest peak prominence across its usable frequencies - at confidence 0.9779, is_reliable=True. Block DCT: {'total_blocks': 16704, 'unsaturated_blocks': 16365, 'blocks_per_row': 116, 'blocks_per_column': 144}. Pipeline A.1 (gate, never scored) measured the JPEG-history feature s=135.3218 against t=2.0, verdict is_jpeg_derived=True from 967957 AC coefficients in R1 against 7153 in R2. Pipeline A.3 recovered QF=100 at an exact-pixel-match rate of 0.9779 (runner-up 0.9709); the file's own DQT marker independently says QF=74 (agrees=False, DC step 6). Pipeline B used 10 of 10 low-frequency positions, of which 10 carried a peak above the 0.05 prominence threshold, with per-frequency strongest prominences [0.4393, 0.1378, 0.1332, 0.1547, 0.1528, 0.1414, 0.1602, 0.1389, 0.154, 0.1575]. With the quantization-step normalisation disabled the same pipeline scores 0.0878.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures double-quantization periodicity. Re-binning a coefficient population already quantized at step q_alpha into bins of a different step q_beta is a non-injective periodic remapping (Mahdian & Saic Eq. 4), so the coefficient histogram develops missing bins and periodic peaks that a singly-compressed histogram does not have. Pipeline B histograms each of 10 low-frequency DCT positions, takes the unit-normalised FFT magnitude, subtracts the trailing local minimum to strip the decaying trend (Eq. 5), and measures what peaks survive. For this image the surviving prominences were [0.4393, 0.1378, 0.1332, 0.1547, 0.1528, 0.1414, 0.1602, 0.1389, 0.154, 0.1575], averaging to raw_score=0.176987. The decisive caveat is that a null result proves nothing: the SKILL states that when the ratio of the two quantization steps is an integer, NO periodic artifact is introduced at all - a fundamental blind spot with detection accuracy near zero - and that the no-ML path additionally cannot see grid-misaligned splices or the QF1=QF2 case.
+
+  Engine says   : FAKE
+  Ground truth  : FAKE
+  Correct       : True
+  Surprise level: EXPECTED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/jpeg_engine/after/jpeg_case2_img2_fake_heatmap.png
+
+  CASE 2 SUMMARY
+    average probability : 0.5438
+    score spread        : 0.5246
+    correct verdicts    : 1 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 3: Case 3 AI-generated (ground truth AI-GENERATED)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: gen.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg
+==========================================================================
+  Resolution   : 800x1006
+  Format       : JPEG
+  File size    : 44.6 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.153281
+  Probability  : 0.696783
+  Confidence   : 0.9806
+  Is reliable  : True
+  Time         : 736.0 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. Double-quantization periodicity is undetectable in principle when the secondary/primary quantization-step ratio is an integer (the SKILL calls this a fundamental, unavoidable blind spot of every DQ-histogram method, with detection accuracy near zero), and is substantially degraded when the image was re-saved at LOWER quality than its original. Content spliced from a never-compressed source and never itself re-encoded is undetectable by this module family entirely. COVERAGE GAP: excluding the SKILL's [ML] Pipelines C and D leaves this engine blind to non-aligned (block-grid-shifted) double JPEG compression and to the QF1=QF2 case, which the SKILL states are handled by no training-free technique in its corpus. Best candidate quantization table reproduces only 98.1% of pixels exactly (runner-up 97.3%); a clean single compression history normally reproduces near 100%. Treated as a confidence discount only - the SKILL marks this reading an unvalidated engineering extrapolation. Estimated quality factor is 100, in the regime where the Pipeline A.1 history gate was measured to stop discriminating: s falls to 15-22 at QF95, 3.2-7.3 at QF98 and 1.0-4.5 at QF100, overlapping the 1.02-45.93 range never-compressed content produces. The gate's verdict for this image should not be read as evidence either way about its JPEG history. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states calibration to [0,1] is not specified in its corpus for this module, and the peak-prominence decision rule itself is the SKILL's own training-free substitute for an [ML] classifier it excludes - treat this probability as a rough ordering signal, not a validated likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Block DCT extraction
+      Converted to luminance, cropped to the 8x8 block grid, and applied a level-shifted 8x8 DCT to every unsaturated block (saturated blocks are excluded so truncation error can be neglected, per the SKILL).
+      in=  out=
+        total_blocks = 12500
+        unsaturated_blocks = 12399
+        blocks_per_row = 100
+        blocks_per_column = 125
+    Step 2: Pipeline A.1: JPEG-history gate (NOT SCORED)
+      Computed the ratio of AC-coefficient mass in R1=(-1,+1) to that in R2=(-2,-1)u(+1,+2). Used only to decide whether this module applies at all - being JPEG is not evidence of forgery.
+      in=  out=
+        history_feature_s = 99.4824
+        threshold = 2.0
+        is_jpeg_derived = True
+        region_one_count = 731693
+        region_two_count = 7355
+    Step 3: Pipeline A.3: quality-factor recovery (CONDITIONING + CONFIDENCE)
+      Recompressed at every candidate quality factor and took the one reproducing the most pixels exactly. Feeds the low-QF reliability gate, the confidence discount, and the quantization steps Pipeline B needs - never raw_score.
+      in=  out=
+        sweep_ran = True
+        estimated_quality_factor = 100
+        pixel_match_ratio = 0.9806
+        runner_up_match_ratio = 0.9728
+    Step 4: Pipeline A.2: per-frequency quantization steps (CONDITIONING)
+      Estimated the quantization step at each AC DCT frequency from the histogram of rounded coefficients. The SKILL calls this a nuisance parameter, not a tampering score; it is reported for the record and used only as a fallback when the quality-factor sweep is disabled.
+      in=  out=
+        usable_frequency_count = 63
+    Step 5: Pipeline B: double-quantization periodicity (SCORE-DRIVING)
+      Divided each selected low-frequency coefficient by its quantization step to recover the integer domain the double-quantization model is written over, histogrammed it, took the normalised FFT magnitude, removed the decaying trend by trailing-minimum subtraction, and measured the surviving peak prominences.
+      in=  out=
+        usable_frequencies = 10
+        total_frequencies = 10
+        peak_bearing_frequencies = 10
+        aggregate_score = 0.1533
+        per_frequency_strongest_prominence = [0.4932, 0.115, 0.1045, 0.1161, 0.1148, 0.0988, 0.1237, 0.1054, 0.1435, 0.1178]
+    Step 6: Scoring
+      Aggregate peak prominence converted to a probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+        raw_score = 0.1533
+
+  REASONING:
+    Engine reported raw_score=0.153281 - Pipeline B's mean strongest peak prominence across its usable frequencies - at confidence 0.9806, is_reliable=True. Block DCT: {'total_blocks': 12500, 'unsaturated_blocks': 12399, 'blocks_per_row': 100, 'blocks_per_column': 125}. Pipeline A.1 (gate, never scored) measured the JPEG-history feature s=99.4824 against t=2.0, verdict is_jpeg_derived=True from 731693 AC coefficients in R1 against 7355 in R2. Pipeline A.3 recovered QF=100 at an exact-pixel-match rate of 0.9806 (runner-up 0.9728); the file's own DQT marker independently says QF=74 (agrees=False, DC step 6). Pipeline B used 10 of 10 low-frequency positions, of which 10 carried a peak above the 0.05 prominence threshold, with per-frequency strongest prominences [0.4932, 0.115, 0.1045, 0.1161, 0.1148, 0.0988, 0.1237, 0.1054, 0.1435, 0.1178]. With the quantization-step normalisation disabled the same pipeline scores 0.0668.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures double-quantization periodicity. Re-binning a coefficient population already quantized at step q_alpha into bins of a different step q_beta is a non-injective periodic remapping (Mahdian & Saic Eq. 4), so the coefficient histogram develops missing bins and periodic peaks that a singly-compressed histogram does not have. Pipeline B histograms each of 10 low-frequency DCT positions, takes the unit-normalised FFT magnitude, subtracts the trailing local minimum to strip the decaying trend (Eq. 5), and measures what peaks survive. For this image the surviving prominences were [0.4932, 0.115, 0.1045, 0.1161, 0.1148, 0.0988, 0.1237, 0.1054, 0.1435, 0.1178], averaging to raw_score=0.153281. The decisive caveat is that a null result proves nothing: the SKILL states that when the ratio of the two quantization steps is an integer, NO periodic artifact is introduced at all - a fundamental blind spot with detection accuracy near zero - and that the no-ML path additionally cannot see grid-misaligned splices or the QF1=QF2 case.
+
+  Engine says   : UNCERTAIN
+  Ground truth  : AI-GENERATED
+  Correct       : False
+  Surprise level: SURPRISING
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/jpeg_engine/after/jpeg_case3_img1_gen_heatmap.png
+
+==========================================================================
+IMAGE: genratedimage.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg
+==========================================================================
+  Resolution   : 768x1376
+  Format       : JPEG
+  File size    : 71.2 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.161055
+  Probability  : 0.736210
+  Confidence   : 0.9837
+  Is reliable  : True
+  Time         : 1158.4 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. Double-quantization periodicity is undetectable in principle when the secondary/primary quantization-step ratio is an integer (the SKILL calls this a fundamental, unavoidable blind spot of every DQ-histogram method, with detection accuracy near zero), and is substantially degraded when the image was re-saved at LOWER quality than its original. Content spliced from a never-compressed source and never itself re-encoded is undetectable by this module family entirely. COVERAGE GAP: excluding the SKILL's [ML] Pipelines C and D leaves this engine blind to non-aligned (block-grid-shifted) double JPEG compression and to the QF1=QF2 case, which the SKILL states are handled by no training-free technique in its corpus. Best candidate quantization table reproduces only 98.4% of pixels exactly (runner-up 98.0%); a clean single compression history normally reproduces near 100%. Treated as a confidence discount only - the SKILL marks this reading an unvalidated engineering extrapolation. Estimated quality factor is 100, in the regime where the Pipeline A.1 history gate was measured to stop discriminating: s falls to 15-22 at QF95, 3.2-7.3 at QF98 and 1.0-4.5 at QF100, overlapping the 1.02-45.93 range never-compressed content produces. The gate's verdict for this image should not be read as evidence either way about its JPEG history. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The SKILL states calibration to [0,1] is not specified in its corpus for this module, and the peak-prominence decision rule itself is the SKILL's own training-free substitute for an [ML] classifier it excludes - treat this probability as a rough ordering signal, not a validated likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Block DCT extraction
+      Converted to luminance, cropped to the 8x8 block grid, and applied a level-shifted 8x8 DCT to every unsaturated block (saturated blocks are excluded so truncation error can be neglected, per the SKILL).
+      in=  out=
+        total_blocks = 16512
+        unsaturated_blocks = 16300
+        blocks_per_row = 96
+        blocks_per_column = 172
+    Step 2: Pipeline A.1: JPEG-history gate (NOT SCORED)
+      Computed the ratio of AC-coefficient mass in R1=(-1,+1) to that in R2=(-2,-1)u(+1,+2). Used only to decide whether this module applies at all - being JPEG is not evidence of forgery.
+      in=  out=
+        history_feature_s = 193.2225
+        threshold = 2.0
+        is_jpeg_derived = True
+        region_one_count = 959543
+        region_two_count = 4966
+    Step 3: Pipeline A.3: quality-factor recovery (CONDITIONING + CONFIDENCE)
+      Recompressed at every candidate quality factor and took the one reproducing the most pixels exactly. Feeds the low-QF reliability gate, the confidence discount, and the quantization steps Pipeline B needs - never raw_score.
+      in=  out=
+        sweep_ran = True
+        estimated_quality_factor = 100
+        pixel_match_ratio = 0.9837
+        runner_up_match_ratio = 0.9797
+    Step 4: Pipeline A.2: per-frequency quantization steps (CONDITIONING)
+      Estimated the quantization step at each AC DCT frequency from the histogram of rounded coefficients. The SKILL calls this a nuisance parameter, not a tampering score; it is reported for the record and used only as a fallback when the quality-factor sweep is disabled.
+      in=  out=
+        usable_frequency_count = 62
+    Step 5: Pipeline B: double-quantization periodicity (SCORE-DRIVING)
+      Divided each selected low-frequency coefficient by its quantization step to recover the integer domain the double-quantization model is written over, histogrammed it, took the normalised FFT magnitude, removed the decaying trend by trailing-minimum subtraction, and measured the surviving peak prominences.
+      in=  out=
+        usable_frequencies = 10
+        total_frequencies = 10
+        peak_bearing_frequencies = 10
+        aggregate_score = 0.1611
+        per_frequency_strongest_prominence = [0.5054, 0.1009, 0.1207, 0.1439, 0.0934, 0.1309, 0.1556, 0.087, 0.1521, 0.1207]
+    Step 6: Scoring
+      Aggregate peak prominence converted to a probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+        raw_score = 0.1611
+
+  REASONING:
+    Engine reported raw_score=0.161055 - Pipeline B's mean strongest peak prominence across its usable frequencies - at confidence 0.9837, is_reliable=True. Block DCT: {'total_blocks': 16512, 'unsaturated_blocks': 16300, 'blocks_per_row': 96, 'blocks_per_column': 172}. Pipeline A.1 (gate, never scored) measured the JPEG-history feature s=193.2225 against t=2.0, verdict is_jpeg_derived=True from 959543 AC coefficients in R1 against 4966 in R2. Pipeline A.3 recovered QF=100 at an exact-pixel-match rate of 0.9837 (runner-up 0.9797); the file's own DQT marker independently says QF=74 (agrees=False, DC step 6). Pipeline B used 10 of 10 low-frequency positions, of which 10 carried a peak above the 0.05 prominence threshold, with per-frequency strongest prominences [0.5054, 0.1009, 0.1207, 0.1439, 0.0934, 0.1309, 0.1556, 0.087, 0.1521, 0.1207]. With the quantization-step normalisation disabled the same pipeline scores 0.0661.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures double-quantization periodicity. Re-binning a coefficient population already quantized at step q_alpha into bins of a different step q_beta is a non-injective periodic remapping (Mahdian & Saic Eq. 4), so the coefficient histogram develops missing bins and periodic peaks that a singly-compressed histogram does not have. Pipeline B histograms each of 10 low-frequency DCT positions, takes the unit-normalised FFT magnitude, subtracts the trailing local minimum to strip the decaying trend (Eq. 5), and measures what peaks survive. For this image the surviving prominences were [0.5054, 0.1009, 0.1207, 0.1439, 0.0934, 0.1309, 0.1556, 0.087, 0.1521, 0.1207], averaging to raw_score=0.161055. The decisive caveat is that a null result proves nothing: the SKILL states that when the ratio of the two quantization steps is an integer, NO periodic artifact is introduced at all - a fundamental blind spot with detection accuracy near zero - and that the no-ML path additionally cannot see grid-misaligned splices or the QF1=QF2 case.
+
+  Engine says   : FAKE
+  Ground truth  : AI-GENERATED
+  Correct       : True
+  Surprise level: EXPECTED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/jpeg_engine/after/jpeg_case3_img2_genratedimage_heatmap.png
+
+  CASE 3 SUMMARY
+    average probability : 0.7165
+    score spread        : 0.0394
+    correct verdicts    : 1 / 2
+    case verdict        : 
+    
+
+
+==========================================================================
+OVERALL
+==========================================================================
+  real average probability     : 0.6661922246037376
+  manipulated average          : 0.5437576600024299
+  ai-generated average         : 0.7164966263410135
+  separation (fake - real)     : -0.12243456460130775
+  raw-score separation         : -0.017894505073919736
+  reliable results             : 6 / 6
+  average processing time (ms) : 1721.7442573334363

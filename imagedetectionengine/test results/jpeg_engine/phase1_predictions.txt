@@ -1,0 +1,120 @@
+PHASE 1 - PRE-TEST EXPECTATIONS: JPEG-COMPRESSION-ARTIFACT ENGINE
+Written 2026-08-19 BEFORE the engine was run on any image. No probe of any
+kind preceded this file. One piece of prior knowledge is carried in from the
+ghost-engine session and is declared here because it drives the predictions:
+eight of the nine files in the two supplied folders carry BYTE-IDENTICAL JPEG
+quantization tables (md5 49b048154bc1), real and fake alike, so every one of
+them has been re-encoded by a single common pipeline.
+
+STEP 1.1 - CORE ENGINE CAPABILITY (from the SKILL)
+
+Property measured: double-quantization periodicity in the 8x8 block-DCT
+coefficient histograms. Mahdian & Saic Eq. 4 gives the model - a coefficient
+already quantized at step q_alpha and re-quantized at q_beta becomes
+round(F * q_alpha / q_beta), a non-injective periodic remapping. Re-binning
+therefore leaves missing bins and periodic peaks in the histogram, which show
+up as peaks in its Fourier magnitude.
+
+Signal present in FAKE, absent in REAL: when a forger splices content whose
+compression history differs from the host's and re-saves, the spliced region
+and the background carry DIFFERENT double-quantization signatures - one
+singly compressed, one doubly, or both doubly at different step pairs. That
+inconsistency is the exploitable cue.
+
+Signal present in REAL: a single compression history everywhere, so each
+frequency's histogram shows a smooth decaying FFT trend with no periodic
+peaks surviving Eq. 5's trailing-minimum subtraction.
+
+Computation producing raw_score: for each of 10 low-frequency DCT positions,
+histogram the coefficients (divided by their quantization step to recover the
+integer domain Eq. 4 is written over), take the unit-L2-normalised FFT
+magnitude, smooth it, subtract the trailing local minimum over a window of
+n=8 (Eq. 5), find peaks, and take the strongest prominence. raw_score is the
+MEAN of those strongest prominences over the frequencies that survived the
+zero-coefficient exclusion rule.
+
+Range meaning: unit-L2 normalisation bounds any single prominence by 1, so
+raw_score sits in [0,1] natively. Higher = more periodicity = more evidence
+of double compression. The probability comes from an UNCALIBRATED sigmoid
+(slope 25, midpoint 0.12) because the SKILL states calibration to [0,1] is
+"not specified in corpus".
+
+THE PREDICTION THAT MATTERS MOST. This engine detects DOUBLE COMPRESSION, and
+the prior knowledge above says every supplied image IS double-compressed -
+globally, by the same pipeline, real and fake alike. The engine should
+therefore fire on REAL and FAKE images equally. I expect separation near ZERO,
+not because the engine is broken but because the corpus gives it no
+contrast: its positive class and its negative class have the same global
+compression history. If the real images score just as high as the fake ones,
+that is the corpus failing the engine, and it must be reported that way
+rather than as an engine defect.
+
+CASE 1 - REAL IMAGES (campic.jpeg, campic2.jpeg)
+  Expected probability range : 0.6 - 1.0. NOT the usual 0.0-0.3 - see above.
+                              These files are re-encoded, so a
+                              double-compression detector SHOULD fire.
+  Expected raw_score range   : 0.10 - 0.40 (above the 0.12 sigmoid midpoint)
+  Expected is_reliable       : True. They are JPEG, well above 64 blocks, and
+                              their QF is ~74, above the QF=50 floor.
+  Expected evidence_map      : not spatial. This engine renders the 10 FFT
+                              spectra themselves; the SKILL says none of
+                              Pipelines A/B natively localise and calls
+                              block-wise re-application "not validated
+                              end-to-end in the corpus".
+  Signal that should be ABSENT: nothing. That is the problem.
+  Most likely failure mode   : a TRUE POSITIVE on an authentic photograph,
+                              which the harness will score as WRONG. The
+                              engine would be right and the label wrong.
+
+CASE 2 - FAKE / MANIPULATED IMAGES (fake .jpeg, fake.jpeg)
+  Expected probability range : 0.6 - 1.0
+  Expected raw_score range   : 0.10 - 0.40, i.e. INDISTINGUISHABLE from Case 1
+  Expected is_reliable       : True, same reasoning.
+  Expected evidence_map      : the same 10-spectrum panel.
+  Signal that should be PRESENT: periodic peaks surviving trend removal.
+  Most likely failure mode   : the integer-ratio blind spot. If the pipeline
+                              that produced these files re-encoded at a step
+                              that is an integer multiple of the original,
+                              the SKILL says NO artifact is introduced at all
+                              and accuracy is near zero. Nothing in the image
+                              can reveal whether this happened.
+
+CASE 3 - AI-GENERATED IMAGES (gen.jpeg, genratedimage.jpeg)
+  Expected probability range : uncertain, but probably the SAME as Cases 1
+                              and 2, because these files went through the
+                              same re-encoder. If an AI image was generated,
+                              saved once, then re-saved by that pipeline, it
+                              is double-compressed exactly like the others.
+  Expected is_reliable       : True.
+  Is AI detection in SKILL scope: NO. The SKILL's mechanisms are quantization,
+                              rounding and truncation error from repeated
+                              JPEG encoding. Nothing about them distinguishes
+                              a generated image from a photographed one - a
+                              generated image saved as JPEG has an ordinary
+                              JPEG history. "AI" appears nowhere in the SKILL,
+                              and its "manipulation types detected best" list
+                              names only JPEG-history identification,
+                              quantization-table recovery, and double
+                              compression.
+  If NO, what will it do     : report on compression history, which for these
+                              files reflects the delivery pipeline and not
+                              the image's origin.
+  Most likely failure mode   : engine is not designed for this case at all.
+
+SECONDARY PREDICTIONS, testable independently of the labels:
+  - A.3 should recover the SAME quality factor the file's own DQT marker
+    encodes. The SKILL benchmarks table detection at 94-99.96%, and the
+    harness reads the header table directly as an independent check. A
+    disagreement would be a genuine engine defect rather than a corpus issue.
+  - A.1's gate should pass on all six. The build notes record s ~ 1.05 for
+    never-compressed content against 26-2000 once compressed, and the default
+    threshold is 2.0, so every JPEG here should clear it comfortably.
+  - The pixel-match ratio R from A.3 should be high (near 1.0) if these files
+    have a clean single-encoder history at the recovered QF. A LOW R would
+    indicate the recovered table does not actually reproduce the file, which
+    the condition checker turns into a confidence discount.
+
+NOTE ON THE AI FOLDER: the folder named in the specification does not exist on
+disk. The two files inside the fake-images folder whose names denote AI
+generation (gen.jpeg, genratedimage.jpeg) stand in for Case 3. Their AI
+provenance is inferred from their filenames, not verified.
