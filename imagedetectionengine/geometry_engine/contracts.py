@@ -255,7 +255,11 @@ class HeightRatioAnalysis:
 
     Attributes:
         measurements: One HeightRatioMeasurement per evaluated pair.
-        minimum_consistency: The smallest C observed, which drives raw_score.
+        minimum_consistency: The smallest C observed over any single pair.
+        corroborated_consistency: The worst object's median C across its own
+            pairs, which drives raw_score. See ENHANCEMENT 1.
+        worst_object_id: Region identifier behind corroborated_consistency.
+        worst_object_partner_count: How many pairs that object was measured in.
         mean_consistency: Mean C across pairs, the averaging SKILL B step 5
             recommends.
         mean_measured_ratio: Mean beta across pairs.
@@ -266,6 +270,13 @@ class HeightRatioAnalysis:
 
     measurements: list = field(default_factory=list)
     minimum_consistency: float = 1.0
+    # ENHANCEMENT 1: the worst object's CORROBORATED consistency - the median
+    # across every pair that object belongs to. A spliced object disagrees with
+    # all of its partners; a mislocalised box disagrees with one. Falls back to
+    # minimum_consistency when no object has two partners.
+    corroborated_consistency: float = 1.0
+    worst_object_id: int = -1
+    worst_object_partner_count: int = 0
     mean_consistency: float = 1.0
     mean_measured_ratio: float = 0.0
     evaluated_pair_count: int = 0

@@ -331,6 +331,8 @@ class GeometryEngine:
                 "evaluated_pair_count": analysis.evaluated_pair_count,
                 "rejected_pair_count": analysis.rejected_pair_count,
                 "minimum_consistency": round(analysis.minimum_consistency, constants.TRACE_DECIMAL_PLACES),
+                # ENHANCEMENT 1: the statistic that actually drives raw_score.
+                **GeometryEngine._corroboration_key_values(analysis),
                 "mean_consistency": round(analysis.mean_consistency, constants.TRACE_DECIMAL_PLACES),
                 "mean_measured_ratio": round(analysis.mean_measured_ratio, constants.TRACE_DECIMAL_PLACES),
                 "worst_pair": (None if worst is None else
@@ -452,6 +454,24 @@ class GeometryEngine:
             self.condition_checker.assess_expected_ratio_provenance(
                 analysis, bool(self.calibration.supplied_regions)),
         ]
+
+    @staticmethod
+    def _corroboration_key_values(analysis: HeightRatioAnalysis) -> dict:
+        """Trace fields for ENHANCEMENT 1's corroborated statistic.
+
+        Args:
+            analysis: The height-ratio analysis.
+
+        Returns:
+            Dictionary of named scalars.
+        """
+        return {
+            "corroborated_consistency":
+                round(analysis.corroborated_consistency,
+                      constants.TRACE_DECIMAL_PLACES),
+            "worst_object_id": analysis.worst_object_id,
+            "worst_object_partner_count": analysis.worst_object_partner_count,
+        }
 
     @staticmethod
     def _compose_confidence(report: ConditionReport,

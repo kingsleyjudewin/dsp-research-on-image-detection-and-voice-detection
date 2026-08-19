@@ -62,7 +62,13 @@ class GeometryScorer:
         """
         if analysis.evaluated_pair_count == 0:
             return 0.0
-        return clip_to_unit_interval(1.0 - analysis.minimum_consistency)
+        # ENHANCEMENT 1: the reduction is the worst object's CORROBORATED
+        # consistency rather than the single worst pair. The SKILL's own reason
+        # for the minimum - "one spliced object is typically inconsistent with
+        # several others" - is exactly what makes corroboration the right test:
+        # a splice disagrees with all its partners, a mislocalised box with one.
+        # The pair minimum remains on the analysis and in the trace.
+        return clip_to_unit_interval(1.0 - analysis.corroborated_consistency)
 
     def to_probability(self,
                        raw_score: float,
