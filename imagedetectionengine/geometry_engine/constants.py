@@ -280,6 +280,27 @@ MINIMUM_RANSAC_INLIER_COUNT: int = 3
 # also the Manhattan-world condition the SKILL rules inapplicable.
 MINIMUM_VANISHING_POINT_INLIER_FRACTION: float = 0.5
 
+# ENHANCEMENT 2 - grade the vote by HOW MUCH consensus the vanishing point had.
+# The gate above is binary: clear 50% and the estimate is treated as certain.
+# Testing showed every scene that passes in practice passes only just. Measured
+# inlier fractions on a synthetic scene built around one exact vanishing point
+# ranged 0.512-0.591, while the six diagnostic photographs sat at 0.11-0.37. A
+# vote resting on 51% of lines agreeing is not the same evidence as one resting
+# on 95%, and the SKILL calls the quantity a "confidence indicator", not a
+# switch. Confidence is therefore scaled linearly from this floor to full
+# consensus. This never changes is_reliable and never raises confidence - it
+# only distinguishes a marginal pass from a strong one.
+CONFIDENCE_AT_MINIMUM_VANISHING_POINT_CONSENSUS: float = 0.5
+
+# Guard against a degenerate span if the gate is ever set to 1.0. [STRUCTURAL]
+CONSENSUS_GRADE_MINIMUM_SPAN: float = 1e-6
+
+# Fewest partners an object needs before its median consistency is used.
+# Value: 2. [DERIVED] A median over one value is that value, so corroboration
+# only means anything from two partners up; below that the engine falls back to
+# the SKILL's pair minimum. Two partners requires three objects in the scene.
+MINIMUM_PARTNERS_FOR_CORROBORATION: int = 2
+
 # Largest A1 line-fit residual accepted, in pixels. Value: 25.0.
 # [ENGINEERING - UNSOURCED] The other confidence indicator the SKILL names.
 # Expressed as the root-mean-square orthogonal distance from measured line
@@ -619,6 +640,8 @@ KNOWN_UNSOURCED_PARAMETERS: tuple = (
     "RANSAC_RESTART_COUNT",
     "RANSAC_INLIER_DISTANCE_PIXELS",
     "MINIMUM_VANISHING_POINT_INLIER_FRACTION",
+    "CONFIDENCE_AT_MINIMUM_VANISHING_POINT_CONSENSUS",
+    "MINIMUM_PARTNERS_FOR_CORROBORATION",
     "MAXIMUM_LINE_FIT_RESIDUAL_PIXELS",
     "DEFAULT_EXPECTED_HEIGHT_RATIO",
     "MINIMUM_PAIRS_FOR_CORROBORATION",
@@ -691,4 +714,48 @@ KNOWN_SKILL_AMBIGUITIES: tuple = (
     "obtainable from the fixed EngineInput contract, which is why "
     "DEFAULT_EXPECTED_HEIGHT_RATIO exists and why the automatic path is the "
     "most heavily confidence-penalised route in this engine.",
+)
+
+
+# ---------------------------------------------------------------------------
+# Audit aid - changes made in response to diagnostic testing
+# ---------------------------------------------------------------------------
+
+TEST_DERIVED_ENHANCEMENTS: tuple = (
+    ("corroborated worst-object reduction replacing the bare pair minimum",
+     "on authentic synthetic scenes with a 2-pixel region-localisation error "
+     "the pair minimum raised a false alarm in 5 of 10 scenes against 2 of 10 "
+     "for the corroborated median; at 5 pixels, 10/10 against 8/10. Detection "
+     "was unchanged at 6/6 for every forgery from 1.1x to 2.0x. On the "
+     "realistic combination of a 1.45x forgery WITH 2-pixel jitter, separation "
+     "rose from +0.534 to +0.645 with false alarms falling 5/10 to 2/10"),
+    ("confidence graded by vanishing-point consensus",
+     "the gate was binary; measured passing inlier fractions were 0.512-0.591, "
+     "all marginal, and were weighted identically to a hypothetical 0.95"),
+    ("per-pair tolerance to region-localisation error reported",
+     "verdicts proved to hinge on box precision - a 2-pixel error flips 5 of "
+     "10 authentic scenes - so the reader needs the margin stated"),
+)
+
+REJECTED_ENHANCEMENTS: tuple = (
+    ("propagate region-localisation uncertainty into Eq. 8's sigma",
+     "rejected as ineffective. Widening sigma to "
+     "sqrt((0.1*alpha)^2 + sigma_beta^2), with sigma_beta propagated from the "
+     "row uncertainty through Eq. 7, moved authentic false alarms only from "
+     "3/8 to 3/8 at 2-pixel jitter and 8/8 to 6/8 at 5 pixels, because the "
+     "propagated term is small beside the paper's 0.1*alpha. The corroborated "
+     "reduction achieves more against the same defect"),
+    ("relax the 0.5 vanishing-point inlier gate",
+     "not adopted. The gate is the SKILL's explicit instruction that a "
+     "low-confidence vanishing point 'should cause the module to abstain "
+     "rather than emit a possibly-spurious height-ratio score'. It is brittle "
+     "- a 1.1x forgery scored 0.4691 and abstained while its 1.15x neighbour "
+     "scored 0.5358 and voted - but loosening it would contradict the corpus. "
+     "The brittleness is reported as a limitation instead"),
+    ("score the SLIC-proposed region path",
+     "already correctly gated by the engine before this work, and testing "
+     "confirmed the gate is right: on a synthetic scene that is authentic by "
+     "construction the SLIC path scored raw 1.0000, identical to the forged "
+     "version, because 778 arbitrary superpixel pairs judged against an "
+     "assumed ratio of 1.0 guarantee some pair looks impossible"),
 )

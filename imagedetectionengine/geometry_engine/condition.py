@@ -204,18 +204,16 @@ class ConditionChecker:
             estimate: VanishingPointEstimate) -> CheckResult:
         """Apply the SKILL's hard gate on vanishing-point confidence.
 
-        SKILL "Output": "a low-confidence VP estimate should cause the module to
-        abstain rather than emit a possibly-spurious height-ratio score", with
-        "RANSAC inlier count/fraction for A4, or line-fit residual for A1" named
-        as the indicators. A low inlier fraction is also exactly the
-        multiple-vanishing-point (Manhattan-world) condition the SKILL rules
-        inapplicable, since competing vanishing points split the consensus.
+        SKILL "Output": a low-confidence VP estimate "should cause the module
+        to abstain rather than emit a possibly-spurious height-ratio score". A
+        low inlier fraction is also the Manhattan-world condition the SKILL
+        rules inapplicable.
 
         Args:
             estimate: The vanishing-point estimate under test.
 
         Returns:
-            CheckResult; a failure here means the engine must abstain.
+            CheckResult; a failure means the engine must abstain.
         """
         if estimate.homogeneous_point is None:
             return (False, constants.ZERO_CONFIDENCE,
@@ -230,16 +228,70 @@ class ConditionChecker:
         if estimate.inlier_fraction < \
                 constants.MINIMUM_VANISHING_POINT_INLIER_FRACTION:
             return (False, constants.ZERO_CONFIDENCE,
-                    f"Only {estimate.inlier_count} of "
-                    f"{estimate.total_line_count} lines "
-                    f"({estimate.inlier_fraction:.0%}) agree on a single "
-                    f"vanishing point, below the "
-                    f"{constants.MINIMUM_VANISHING_POINT_INLIER_FRACTION:.0%} "
-                    f"required. Both source methods assume a single dominant "
-                    f"vanishing point; a split consensus indicates a "
-                    f"Manhattan-world scene, which the corpus rules "
-                    f"inapplicable.")
-        return ConditionChecker._check_residual(estimate)
+                    ConditionChecker._split_consensus_note(estimate))
+        passed, penalty, note = ConditionChecker._check_residual(estimate)
+        if not passed:
+            return passed, penalty, note
+        # ENHANCEMENT 2: above the gate, weight the vote by how much consensus
+        # there actually was. Clearing 50% is not the same evidence as 95%.
+        return ConditionChecker._grade_consensus(estimate, penalty, note)
+
+    @staticmethod
+    def _split_consensus_note(estimate: VanishingPointEstimate) -> str:
+        """Word the rejection when no single vanishing point dominates.
+
+        Args:
+            estimate: The vanishing-point estimate under test.
+
+        Returns:
+            Human-readable explanation.
+        """
+        return (f"Only {estimate.inlier_count} of "
+                f"{estimate.total_line_count} lines "
+                f"({estimate.inlier_fraction:.0%}) agree on a single vanishing "
+                f"point, below the "
+                f"{constants.MINIMUM_VANISHING_POINT_INLIER_FRACTION:.0%} "
+                f"required. Both source methods assume a single dominant "
+                f"vanishing point; a split consensus indicates a "
+                f"Manhattan-world scene, which the corpus rules inapplicable.")
+
+    @staticmethod
+    def _grade_consensus(estimate: VanishingPointEstimate,
+                         penalty: float,
+                         note: str) -> CheckResult:
+        """Scale confidence by how far the consensus exceeded the gate.
+
+        ENHANCEMENT 2, forced by diagnostic testing. The gate is binary, but
+        every scene that passes in practice passes only just: measured inlier
+        fractions on a synthetic scene built around one exact vanishing point
+        ranged 0.512-0.591, against 0.11-0.37 for the six diagnostic
+        photographs. The SKILL calls the inlier fraction a "confidence
+        indicator", so it is used as one. This can only lower confidence, never
+        raise it, and never changes is_reliable.
+
+        Args:
+            estimate: The vanishing-point estimate, already past the gate.
+            penalty: Confidence weight from the residual check.
+            note: Explanatory note from the residual check.
+
+        Returns:
+            CheckResult with the weight scaled by consensus.
+        """
+        floor = constants.MINIMUM_VANISHING_POINT_INLIER_FRACTION
+        span = max(1.0 - floor, constants.CONSENSUS_GRADE_MINIMUM_SPAN)
+        above = (estimate.inlier_fraction - floor) / span
+        base = constants.CONFIDENCE_AT_MINIMUM_VANISHING_POINT_CONSENSUS
+        grade = base + (1.0 - base) * float(np.clip(above, 0.0, 1.0))
+
+        graded_note = note
+        if grade < 1.0:
+            graded_note = (
+                f"{note} Vanishing-point consensus is "
+                f"{estimate.inlier_fraction:.0%} of "
+                f"{estimate.total_line_count} lines, above the "
+                f"{floor:.0%} gate but not unanimous, so the vote carries "
+                f"{grade:.2f} of full weight.").strip()
+        return True, penalty * grade, graded_note
 
     @staticmethod
     def _check_residual(estimate: VanishingPointEstimate) -> CheckResult:
