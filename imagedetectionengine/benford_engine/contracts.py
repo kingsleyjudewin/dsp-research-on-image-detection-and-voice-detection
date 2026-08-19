@@ -112,6 +112,16 @@ class DivergenceSample:
     empirical_pmf: np.ndarray
     fitted_pmf: np.ndarray
     fit_parameters: tuple
+    # ENHANCEMENT 1: whether the step applied here was FINER than the one
+    # already in the image. Such a cell is excluded from the score - see the
+    # attribution rule in constants.py. Excluded cells stay in the trace.
+    is_finer_than_native: bool = False
+    # ENHANCEMENT 1: how strongly this cell's coefficients sit on a sublattice.
+    # 1.0 means none. At or below the native quality factor a lattice cannot
+    # have been created by this engine, so it is evidence of the image's own
+    # earlier compression - Singh et al.'s double-compression signal.
+    sublattice_excess: float = 1.0
+    has_residual_lattice: bool = False
 
 
 @dataclass
@@ -129,6 +139,16 @@ class BenfordComputation:
         total_block_count: Number of 8x8 blocks analysed.
         skipped_configuration_count: Grid cells that had too few samples.
         digit_clamp_event_count: Floating-point guard activations.
+        excluded_configuration_count: Grid cells excluded because the step
+            applied there was finer than the image's own quantization.
+        residual_lattice_configuration_count: Scored cells that still carry a
+            lattice, which at or below the native factor is evidence of an
+            earlier compression rather than an artifact.
+        scored_configuration_count: Cells that actually contributed to the
+            aggregates below.
+        native_quality_factor: The image's own quality factor, added to the
+            sweep so at least one cell is free of self-inflicted
+            re-quantization. None when the caller did not supply one.
     """
 
     samples: list[DivergenceSample] = field(default_factory=list)
@@ -139,6 +159,10 @@ class BenfordComputation:
     total_block_count: int = 0
     skipped_configuration_count: int = 0
     digit_clamp_event_count: int = 0
+    excluded_configuration_count: int = 0
+    residual_lattice_configuration_count: int = 0
+    scored_configuration_count: int = 0
+    native_quality_factor: Optional[int] = None
 
 
 @dataclass

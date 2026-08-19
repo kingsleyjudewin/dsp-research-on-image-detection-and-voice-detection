@@ -248,9 +248,36 @@ class BenfordEngine:
         Returns:
             Dictionary of named scalars.
         """
-        return {
+        counts = {
             "evaluated_configurations": len(computation.samples),
+            "scored_configurations": computation.scored_configuration_count,
+            # ENHANCEMENT 1: cells discarded because the step applied there
+            # was finer than the image's own quantization.
+            "excluded_finer_than_native":
+                computation.excluded_configuration_count,
+            # Scored cells still showing a lattice: at or below the native
+            # factor this is the image's own compression history, not an
+            # artifact, and is Singh et al.'s double-compression signature.
+            "residual_lattice_configurations":
+                computation.residual_lattice_configuration_count,
             "skipped_configurations": computation.skipped_configuration_count,
+            # ENHANCEMENT 2: the image's own quantization, added to the sweep.
+            "native_quality_factor": computation.native_quality_factor,
+            "digit_clamp_events": computation.digit_clamp_event_count,
+        }
+        return {**counts, **BenfordEngine._sweep_statistics(computation)}
+
+    @staticmethod
+    def _sweep_statistics(computation: BenfordComputation) -> dict:
+        """Collect the measured statistics and their published references.
+
+        Args:
+            computation: Result of the mathematical core.
+
+        Returns:
+            Dictionary of named scalars and reference ranges.
+        """
+        return {
             "mean_divergence": round(computation.mean_divergence, 6),
             "max_divergence": round(computation.max_divergence, 6),
             "zero_coefficient_rate":
@@ -260,7 +287,9 @@ class BenfordEngine:
             "moin_unaltered_chi_square_reference":
                 [constants.MOIN_UNALTERED_CHI_SQUARE_MINIMUM,
                  constants.MOIN_UNALTERED_CHI_SQUARE_MAXIMUM],
-            "digit_clamp_events": computation.digit_clamp_event_count,
+            "moin_altered_chi_square_reference":
+                [constants.MOIN_ALTERED_CHI_SQUARE_MINIMUM,
+                 constants.MOIN_ALTERED_CHI_SQUARE_MAXIMUM],
         }
 
     def _build_success_output(self,
@@ -318,39 +347,68 @@ class BenfordEngine:
         Returns:
             Tuple of (raw_score, probability, confidence, is_reliable, note).
         """
-        sample_ok, sample_penalty, sample_note = \
-            self.condition_checker.assess_sample_quality(
-                computation.overall_zero_coefficient_rate,
-                len(computation.samples))
+        checks = self._post_computation_checks(computation)
         raw_score = self._select_raw_score(computation)
         probability, route, is_calibrated, calibration_note = \
             self.scorer.to_probability(raw_score, estimated_quality_factor)
-        confidence = self._compose_confidence(report.confidence_weight,
-                                              sample_penalty, is_calibrated)
+        confidence = self._compose_confidence(
+            report.confidence_weight,
+            [penalty for _, penalty, _ in checks], is_calibrated)
         steps.append(self._describe_calibration(
             computation, raw_score, probability, route, is_calibrated,
             calibration_note, confidence))
 
-        notes = [report.reliability_note, sample_note, calibration_note]
+        notes = ([report.reliability_note]
+                 + [note for _, _, note in checks]
+                 + [calibration_note])
+        checks_passed = all(passed for passed, _, _ in checks)
         return (raw_score, probability, confidence,
-                report.is_reliable and sample_ok,
+                report.is_reliable and checks_passed,
                 " ".join(n for n in notes if n))
+
+    def _post_computation_checks(self,
+                                 computation: BenfordComputation) -> list:
+        """Run every gate that can only be evaluated after the transform.
+
+        ENHANCEMENTS 1 and 4 add the second and third of these. They run in
+        order of severity: a sweep with nothing left to score is a harder
+        failure than a sweep whose statistic lands outside the published
+        regime.
+
+        Args:
+            computation: Result of the mathematical core.
+
+        Returns:
+            List of CheckResult tuples.
+        """
+        return [
+            self.condition_checker.assess_sample_quality(
+                computation.overall_zero_coefficient_rate,
+                computation.scored_configuration_count),
+            self.condition_checker.assess_sweep_applicability(
+                computation.excluded_configuration_count,
+                computation.scored_configuration_count,
+                computation.residual_lattice_configuration_count,
+                computation.native_quality_factor),
+            self.condition_checker.assess_published_regime(
+                computation.representative_chi_square),
+        ]
 
     @staticmethod
     def _compose_confidence(condition_weight: float,
-                            sample_penalty: float,
+                            check_penalties: list,
                             is_calibrated: bool) -> float:
         """Fold every confidence penalty into one fusion weight.
 
         Args:
             condition_weight: Weight from the pre-computation gate.
-            sample_penalty: Penalty from post-transform data quality.
+            check_penalties: Penalties from every post-computation check.
             is_calibrated: Whether measured calibration data backed the result.
 
         Returns:
             Composed weight in [0, 1].
         """
-        penalties = [condition_weight, sample_penalty]
+        penalties = [condition_weight] + list(check_penalties)
         if not is_calibrated:
             # An uncalibrated probability expresses ordering, not likelihood,
             # so the fusion layer is told to trust it less.
@@ -503,10 +561,15 @@ class BenfordEngine:
         Returns:
             BGR evidence image, or None when nothing was measured.
         """
-        if not computation.samples:
+        # ENHANCEMENT 1: only scored cells may be plotted. An excluded cell is
+        # the most deviant by construction, so plotting it would illustrate the
+        # engine's own arithmetic as though it were a finding.
+        scored = [sample for sample in computation.samples
+                  if not sample.is_finer_than_native]
+        if not scored:
             return None
 
-        worst = max(computation.samples, key=lambda sample: sample.divergence)
+        worst = max(scored, key=lambda sample: sample.divergence)
         try:
             return self.visualizer.render_evidence_map(worst.empirical_pmf,
                                                        worst.fitted_pmf)
