@@ -47,13 +47,19 @@ class GradientMagnitudeComputer:
                 size numpy.gradient itself requires.
         """
         magnitude = self._gradient_magnitude(grayscale)
-        max_gradient = self._maximum(magnitude)
-        median_gradient = self._median(magnitude)
+        # ENHANCEMENT 3: statistics come from the interior only; see _interior.
+        measured = self._interior(magnitude)
+        max_gradient = self._maximum(measured)
+        median_gradient = self._median(measured)
 
         is_degenerate = (median_gradient
                          < constants.MINIMUM_MEDIAN_GRADIENT_FOR_RATIO)
-        ratio = safe_ratio(max_gradient, median_gradient,
-                           constants.MEDIAN_GRADIENT_FLOOR)
+        # ENHANCEMENT 1: a degenerate image publishes no score at all rather
+        # than max_grad over the 1e-9 floor, measured at 9.7e10 on renders
+        # whose median gradient is exactly zero.
+        ratio = (constants.DEGENERATE_IMAGE_RAW_SCORE if is_degenerate
+                 else safe_ratio(max_gradient, median_gradient,
+                                 constants.MEDIAN_GRADIENT_FLOOR))
 
         return GradientMagnitudeResult(
             gradient_magnitude=magnitude,
@@ -62,6 +68,31 @@ class GradientMagnitudeComputer:
             ratio=ratio,
             is_degenerate=is_degenerate,
         )
+
+    @staticmethod
+    def _interior(gradient_magnitude: np.ndarray) -> np.ndarray:
+        """Drop the boundary rows and columns numpy.gradient computes one-sidedly.
+
+        ENHANCEMENT 3. numpy.gradient uses a centred difference in the interior
+        but a one-sided one on the first and last row and column, so boundary
+        positions come from a different estimator and are not comparable with
+        the rest. Measured, "fake .jpeg" put its maximum at row 0 with 172 tied
+        pixels; excluding the border moved its ratio by -15.50%. The FULL map is
+        still returned by compute(), so the evidence image is unchanged.
+
+        Args:
+            gradient_magnitude: Per-pixel gradient magnitude map.
+
+        Returns:
+            The interior of the map, or the map unchanged when it is too small
+            to have an interior.
+        """
+        width = constants.GRADIENT_BORDER_EXCLUSION_WIDTH
+        minimum = constants.MINIMUM_SIDE_FOR_BORDER_EXCLUSION
+        if (gradient_magnitude.shape[0] < minimum
+                or gradient_magnitude.shape[1] < minimum):
+            return gradient_magnitude
+        return gradient_magnitude[width:-width, width:-width]
 
     @staticmethod
     def _gradient_magnitude(grayscale: np.ndarray) -> np.ndarray:

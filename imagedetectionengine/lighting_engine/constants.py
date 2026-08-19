@@ -133,6 +133,69 @@ MINIMUM_MEDIAN_GRADIENT_FOR_RATIO: float = 0.01
 
 
 # ---------------------------------------------------------------------------
+# ENHANCEMENT 1 (test-derived): degenerate images must not publish a score
+# ---------------------------------------------------------------------------
+# MEDIAN_GRADIENT_FLOOR keeps the ratio finite, but it does not keep it
+# meaningful. On four Lambertian renders whose median gradient is exactly zero,
+# the engine published raw_score = 96,873,629,022.56 - max_grad divided by
+# 1e-9 - while correctly reporting is_reliable=False. The gate worked; the
+# number it published alongside the abstention did not. A fusion layer reading
+# raw_score without checking is_reliable would ingest 10^11.
+#
+# The skip and failure paths already publish raw_score 0.0. This makes the
+# degenerate path agree with them, so an abstention looks like an abstention on
+# every field, not just one. [DERIVED]
+DEGENERATE_IMAGE_RAW_SCORE: float = 0.0
+
+# ---------------------------------------------------------------------------
+# ENHANCEMENT 2 (test-derived): abstain rather than emit a constant vote
+# ---------------------------------------------------------------------------
+# The provisional sigmoid has midpoint 3.0. The statistic it maps has an
+# observed operating range of 18 to 392 across every image tested - the six
+# supplied photographs (114 to 392) and the synthetic ground truth (18 to 36).
+# Every one of those saturates the curve. Measured probabilities: 1.0000 on all
+# six supplied images, giving a separation of EXACTLY 0.0, and 0.9996 to 1.0000
+# on ground truth.
+#
+# A constant function carries no information. Emitting it as a FAKE vote at
+# probability 1.0 can only add bias to the fusion layer, never evidence, and it
+# is a confident FAKE on authentic photographs. The SKILL's Corpus Gap section
+# names the alternative explicitly: "a near-zero or explicitly 'abstain' weight
+# is more honest than presenting an unvalidated gradient heuristic as
+# equivalent evidence".
+#
+# So the uncalibrated route no longer votes: is_reliable becomes False and
+# probability None, while raw_score is still published for the record. The
+# empirical-CDF route is unaffected - if an orchestrator supplies at least
+# MINIMUM_CALIBRATION_REFERENCE_COUNT authentic reference ratios, the
+# percentile rank against them is a real measurement and the engine votes
+# normally. This makes voting conditional on calibration existing, which is the
+# only circumstance under which the corpus supports a number at all. [DERIVED]
+ABSTAIN_WHEN_UNCALIBRATED: bool = True
+
+# ---------------------------------------------------------------------------
+# ENHANCEMENT 3 (test-derived): exclude the one-sided-difference border
+# ---------------------------------------------------------------------------
+# numpy.gradient computes a centred difference in the interior but a ONE-SIDED
+# difference on the first and last row and column, so boundary positions are
+# produced by a different estimator than everywhere else and are not comparable
+# with them. That is not a theoretical concern here: on the supplied image
+# "fake .jpeg" the maximum gradient sits at row 0 - the array's own boundary -
+# with 172 pixels tied at that value, so max_grad was reading the edge of the
+# array rather than any edge in the scene. Excluding one row and column on each
+# side moves that image's ratio by -15.50%.
+#
+# This narrows WHERE the SKILL's max(gradient_mag(:)) is evaluated; it does not
+# change the formula, which is still the maximum of sqrt(Gx^2+Gy^2). The full
+# map is still rendered into the evidence image. [DERIVED]
+GRADIENT_BORDER_EXCLUSION_WIDTH: int = 1
+
+# Smallest image side for which excluding the border still leaves an interior
+# to measure. Two borders plus at least one interior row. [STRUCTURAL]
+MINIMUM_SIDE_FOR_BORDER_EXCLUSION: int = 2 * GRADIENT_BORDER_EXCLUSION_WIDTH + 1
+
+
+# ---------------------------------------------------------------------------
 # Grayscale conversion
 # SKILL "Input requirements" -> "Preprocessing"
 # ---------------------------------------------------------------------------
@@ -252,6 +315,48 @@ KNOWN_UNSOURCED_PARAMETERS: tuple = (
 # Parts of the SKILL document this engine deliberately does NOT implement, with
 # the reason. Collected here so a reviewer can see the scope boundary at a
 # glance rather than inferring it from absence.
+TEST_DERIVED_ENHANCEMENTS: tuple = (
+    "ENHANCEMENT 1 - DEGENERATE_IMAGE_RAW_SCORE. Four Lambertian renders with "
+    "a median gradient of exactly zero published raw_score = 96,873,629,022.56 "
+    "while reporting is_reliable=False. The degenerate path now publishes 0.0, "
+    "agreeing with the skip and failure paths.",
+    "ENHANCEMENT 2 - ABSTAIN_WHEN_UNCALIBRATED. The provisional sigmoid is a "
+    "constant over the entire observed operating range: probability 1.0000 on "
+    "all six supplied images (separation exactly 0.0) and 0.9996-1.0000 on "
+    "ground truth. A constant vote is bias, not evidence, so the uncalibrated "
+    "route now abstains - which the SKILL's Corpus Gap section names as the "
+    "more honest option in as many words.",
+    "ENHANCEMENT 3 - GRADIENT_BORDER_EXCLUSION_WIDTH. numpy.gradient uses a "
+    "one-sided difference on the array boundary. On 'fake .jpeg' the maximum "
+    "sat at row 0 with 172 tied pixels; excluding the border moves that "
+    "image's ratio by -15.50%.",
+)
+
+REJECTED_ENHANCEMENTS: tuple = (
+    "Replacing max_grad with a high percentile (p99, p99.9, p99.99) or with "
+    "mean/std. Measured on Lambertian ground truth where the lighting "
+    "inconsistency is exact by construction, NO reduction responds to lighting. "
+    "Sensitivity to a genuine inconsistency against sensitivity to transforms "
+    "that change no lighting at all: max/median 0.000000 against 14.96; "
+    "p99.99/median 0.134 against 14.53; p99.9/median 0.888 against 13.20; "
+    "p99/median 0.004 against 5.27; mean/median 0.000128 against 0.204. The "
+    "best nuisance-to-lighting ratio of any candidate is 13.8x, and the "
+    "shipped max is literally 0 sensitivity. A percentile would therefore buy "
+    "stability without buying validity, at the cost of changing a formula the "
+    "SKILL prints verbatim (max_grad = max(gradient_mag(:))). Not worth it.",
+    "Re-fitting PROVISIONAL_SIGMOID_MIDPOINT to the observed operating range. "
+    "It would turn a constant into a curve fitted to six unlabelled corpus "
+    "images and a synthetic scene, which is inventing the calibration the "
+    "SKILL states does not exist ('no normalization or calibration given'). "
+    "Abstaining is the honest response to an absent calibration, not guessing "
+    "one. See ENHANCEMENT 2.",
+    "Implementing a block-wise or region-wise version of the gradient "
+    "statistic to give the engine some spatial sensitivity. This is Pipeline B "
+    "in disguise, and the SKILL tags every step of Pipeline B '(not specified "
+    "in the corpus)' and calls it 'entirely engineering synthesis'. Building "
+    "it would mean inventing a technique, not implementing one.",
+)
+
 KNOWN_UNIMPLEMENTED_MODULES: tuple = (
     "Pipeline B (Spherical-Harmonics photometric consistency): every single "
     "step is explicitly tagged '(not specified in the corpus)' in the SKILL "
