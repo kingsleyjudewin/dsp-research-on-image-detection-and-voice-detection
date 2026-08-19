@@ -1,0 +1,98 @@
+================================================================
+BENFORD ENGINE - DIAGNOSTIC SUMMARY   (read this first)
+Engine: benford      Tested: 6 images (2 real, 2 fake, 2 AI-gen)
+================================================================
+
+OVERALL HEALTH:  NEEDS INVESTIGATION BEFORE INTEGRATION
+                 (three real bugs fixed; no discrimination on
+                  this corpus; one detection proven to work)
+
+SEPARATION (fake+AI mean probability minus real mean)
+    before enhancement : -0.4555   (INVERTED - reals scored highest)
+    after  enhancement : -0.0254   (no discrimination, but no longer inverted)
+    raw-score sep      : -0.3697 -> -0.0700
+
+The engine did NOT gain discrimination on this corpus. What it
+gained is honesty: it no longer reports authentic photographs as
+certainly forged.
+
+    authentic photos called FAKE at probability 1.0000:
+        before 2 of 2      after 0 of 2
+
+TOP 3 STRENGTHS (evidence-based)
+ 1. Double JPEG compression is detected strongly and cleanly.
+    Controlled test: single QF95 = 0.0906; QF30->95 = 3.6207 (40x),
+    QF45->95 = 2.3682 (26x), QF60->95 = 1.6389 (18x). The enhancement
+    IMPROVED this from 13x to 40x.
+ 2. No false alarms on clean single-compressed images: QF80/85/90/95/100
+    all score 0.0764-0.0979, flat and low.
+ 3. The residual-lattice counter is a clean binary double-compression
+    flag: 14/14/10 on double-compressed images, 0 on every
+    single-compressed image tested.
+
+TOP 3 WEAKNESSES (honest)
+ 1. NO discrimination on the supplied corpus. Real mean raw 0.1207,
+    fake 0.0508, AI 0.0907 - reals score HIGHEST. 4 of 6 verdicts wrong.
+ 2. The statistic tracks image texture, not authenticity.
+    corr(score, AC energy) = -0.76 to -0.89 across every configuration
+    tested. Smooth heavily-quantized photos score high regardless of
+    provenance.
+ 3. Contrast enhancement is not detected by a single scalar. Moin's own
+    setup: gamma 0.5/0.9/1.5/2.0 at QF90 gave ratios 0.54x, 0.84x,
+    0.85x, 0.40x versus unaltered - i.e. often LOWER.
+
+WHY THIS CORPUS DEFEATS THE ENGINE
+    8 of the 9 supplied images carry the IDENTICAL quantization table
+    [6,6,6,7,6,7,8,8,7] - a flat custom table, not IJG-scaled
+    (mean abs residual 11.047 against the nearest standard table).
+    Real and fake alike passed through the same final encoder, so
+    there is no compression-history difference between the classes -
+    which is the one thing this engine measures well.
+
+BUGS FOUND AND FIXED
+ 1. SELF-INFLICTED DOUBLE QUANTIZATION (severe). The SKILL's sweep
+    quantizes at QF 80-100; on an image already saved at QF74 every one
+    of those is a second, finer quantization. On campic.jpeg the applied
+    step was exactly half the embedded step, forcing all coefficients
+    even and putting 0.674 of the mass on digit 2 (Benford: 0.176).
+    Score inflated 33x, from 0.1143 to 3.8317, on an AUTHENTIC photo.
+ 2. DEGENERATE CURVE FIT. The least-squares fit escaped to beta=3.56e16,
+    gamma=4.07e16, delta=36.3, collapsing to ~1e-17 on digits 4-9 where
+    real mass existed. 97% of the reported divergence came from those
+    bins, at a magnitude set by log(1/1e-12) - a constant in the source
+    file, not anything in the image. Fits are now beta 1.4-2.4,
+    gamma 0.0, delta 1.5-3.0, in the region of Wang's published values.
+ 3. SATURATED CALIBRATION. 5 of 6 probabilities were exactly 1.0000,
+    including both authentic photographs. Now spread 0.157-0.193 on the
+    corpus and 0.18-0.999 across the double-compression sweep.
+
+CHANGES TESTED AND REJECTED (do not re-propose)
+  - hard chi-square gate on Moin's published range: this pipeline does
+    not reproduce that scale (2x-41x off, varying with QF)
+  - sublattice detection as the exclusion rule: misses non-integer step
+    ratios (1.5, 1.75) that distort just as badly
+  - bounding the fit exponent at Wang's 2.55: made separation worse
+  - decades-of-magnitude gate: precondition was not actually violated
+  - tightening the zero-rate gate: no measurable effect
+
+FUSION WEIGHT RECOMMENDATIONS
+    JPEG, double-compression suspected ... HIGH
+    JPEG single-compressed, standard table  MEDIUM
+    JPEG with custom/flat quant table ..... LOW  (this corpus)
+    PNG / never-JPEG ..................... ZERO (engine skips)
+    Resized ............................. LOW
+    AI-generated ........................ LOW  (not reproduced here)
+    Low resolution (<1024 blocks) ....... LOW
+
+FUSION ONE-LINER
+    benford: detects double JPEG compression well (18-40x separation)
+    and never false-alarms on clean single-compressed images; misses
+    splices, contrast enhancement and AI generation entirely, and its
+    score tracks image texture (r ~ -0.86) so it must not be read as a
+    standalone verdict. Weight HIGH on suspected recompression, LOW on
+    custom-quantization-table or single-compressed input, ZERO on
+    never-JPEG input.
+
+PERFORMANCE
+    485-3221 ms per image (mean ~2.3 s). Slowest step is the
+    divergence sweep: 54 grid cells x curve_fit. No memory concern.

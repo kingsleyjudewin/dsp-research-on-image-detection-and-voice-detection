@@ -1,0 +1,538 @@
+==========================================================================
+BENFORD ENGINE DIAGNOSTIC REPORT  [after]
+Generated: 2026-08-18 18:07:45
+==========================================================================
+
+Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case
+--------------------------------------------------------------------------------
+campic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real
+campic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real
+mobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real
+mobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real
+fake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI
+fake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI
+fake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI
+gen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI
+genratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI
+
+NOTICES:
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+
+
+##########################################################################
+CASE 1: Case 1 Real (ground truth REAL)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images
+##########################################################################
+
+==========================================================================
+IMAGE: campic.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 79.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.114344
+  Probability  : 0.187835
+  Confidence   : 0.0900
+  Is reliable  : True
+  Time         : 2896.4 ms
+  Reliability  : Estimated quality factor 74 is below the 80 needed for strongest separation; detection still works here but with reduced deviation. 45 of 54 sweep configurations were excluded because the standard table applied there is finer than this image's own quantization (estimated quality factor 74); re-quantizing more finely than the original encoder cannot recover discarded information and distorts the leading-digit histogram. The score rests on the 9 configurations at or below the image's own quality factor. Chi-square against the classical Benford curve measured 0.9919, which is 12.5x the largest value any paper in this corpus reports for ANY image class (altered images reach 0.0791; unaltered images sit at 0.0112-0.0126). This image's coefficient population is unlike the material the corpus characterises, so confidence is reduced. Note this engine does not reproduce the published chi-square scale even on unmanipulated images, so the gap is NOT itself evidence of tampering. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file against the image's container format, estimated quality factor, resolution, resampling flag and saturation before any computation ran.
+      in=1200x1599x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 0.6
+        estimated_quality_factor = 74.0
+        container_format = JPEG
+    Step 2: Channel selection and blocking
+      Extracted the green channel, the only channel choice stated explicitly in the corpus (Moin & Islam 2017), then cropped to a whole block grid and partitioned into non-overlapping 8x8 blocks.
+      in=1200x1599x3  out=29850x8x8
+        analysis_channel = green
+        block_size = 8
+        block_count = 29850
+    Step 3: Block DCT
+      Applied the JPEG-normalized 2D DCT-II of Thai et al. 2012 Eq. 8 to every block, reproducing libjpeg-compatible coefficient magnitudes.
+      in=29850x8x8  out=29850x8x8
+        dct_type = 2
+        normalisation = ortho
+    Step 4: Digit-divergence sweep
+      For each cell of the sweep grid (bases [10], zig-zag frequencies [1, 2, 3, 4, 5, 6, 7, 8, 9] (DC excluded), quality factors [80, 85, 90, 95, 100]), quantized the coefficients with the standard JPEG table, extracted leading digits, built the empirical pmf, least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)), and measured the unaveraged symmetric KL divergence of Bonettini et al. 2021 Eq. 6. Zero-valued coefficients have no leading digit and were excluded as the SKILL file instructs.
+      in=29850x8x8  out=54 divergence samples
+        evaluated_configurations = 54
+        scored_configurations = 9
+        excluded_finer_than_native = 45
+        residual_lattice_configurations = 0
+        skipped_configurations = 0
+        native_quality_factor = 74
+        digit_clamp_events = 0
+        mean_divergence = 0.068234
+        max_divergence = 0.114344
+        zero_coefficient_rate = 0.7589
+        representative_chi_square = 0.991867
+        moin_unaltered_chi_square_reference = [0.0112, 0.0126]
+        moin_altered_chi_square_reference = [0.0051, 0.0791]
+    Step 5: Calibration
+      Mapped the raw divergence onto a probability using the 'provisional_sigmoid' route. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+      in=scalar raw score  out=scalar probability
+        raw_score = 0.114344
+        aggregation_rule = max
+        mean_divergence = 0.068234
+        max_divergence = 0.114344
+        probability = 0.187835
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.09
+
+  REASONING:
+    Engine measured raw_score=0.114344 (aggregation: max over the sweep grid) from 54 evaluated grid cells over 29850 blocks of 8x8. The worst-conforming cell was frequency 4 at quality factor 74 with divergence 0.114344 and a zero-coefficient rate of 0.7623. Mean divergence across the grid was 0.068234, and the chi-square measured nearest the image's own quality factor was 0.991867 against Moin et al.'s published unaltered range of 0.0112-0.0126. Probability 0.1878 came from the calibration route recorded in the trace, at confidence 0.0900.
+
+  MATHEMATICAL EXPLANATION:
+    The engine quantized every 8x8 DCT block with standard JPEG tables at quality factors 80/85/90/95/100, extracted the leading decimal digit of each surviving non-zero coefficient at zig-zag frequencies 1-9, and least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)) to each histogram. The reported score is the largest unaveraged symmetric KL divergence between an observed histogram and its own fit. Because the curve is refitted per cell, the score measures how badly the digit histogram departs from ANY member of the generalized-Benford family, not from a fixed reference curve. For this image the fit at the worst cell converged to beta=2.3815, gamma=0.0, delta=2.9348, and 75.9% of quantized coefficients were exactly zero and therefore excluded, since a zero coefficient has no leading digit under d=floor(|c|/b^floor(log_b|c|)).
+
+  Engine says   : REAL
+  Ground truth  : REAL
+  Correct       : True
+  Surprise level: EXPECTED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/benford_engine/after/benford_case1_img1_campic_heatmap.png
+
+==========================================================================
+IMAGE: campic2.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 80.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.127081
+  Probability  : 0.192741
+  Confidence   : 0.0900
+  Is reliable  : True
+  Time         : 3220.7 ms
+  Reliability  : Estimated quality factor 74 is below the 80 needed for strongest separation; detection still works here but with reduced deviation. 45 of 54 sweep configurations were excluded because the standard table applied there is finer than this image's own quantization (estimated quality factor 74); re-quantizing more finely than the original encoder cannot recover discarded information and distorts the leading-digit histogram. The score rests on the 9 configurations at or below the image's own quality factor. Chi-square against the classical Benford curve measured 1.0099, which is 12.8x the largest value any paper in this corpus reports for ANY image class (altered images reach 0.0791; unaltered images sit at 0.0112-0.0126). This image's coefficient population is unlike the material the corpus characterises, so confidence is reduced. Note this engine does not reproduce the published chi-square scale even on unmanipulated images, so the gap is NOT itself evidence of tampering. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file against the image's container format, estimated quality factor, resolution, resampling flag and saturation before any computation ran.
+      in=1200x1599x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 0.6
+        estimated_quality_factor = 74.0
+        container_format = JPEG
+    Step 2: Channel selection and blocking
+      Extracted the green channel, the only channel choice stated explicitly in the corpus (Moin & Islam 2017), then cropped to a whole block grid and partitioned into non-overlapping 8x8 blocks.
+      in=1200x1599x3  out=29850x8x8
+        analysis_channel = green
+        block_size = 8
+        block_count = 29850
+    Step 3: Block DCT
+      Applied the JPEG-normalized 2D DCT-II of Thai et al. 2012 Eq. 8 to every block, reproducing libjpeg-compatible coefficient magnitudes.
+      in=29850x8x8  out=29850x8x8
+        dct_type = 2
+        normalisation = ortho
+    Step 4: Digit-divergence sweep
+      For each cell of the sweep grid (bases [10], zig-zag frequencies [1, 2, 3, 4, 5, 6, 7, 8, 9] (DC excluded), quality factors [80, 85, 90, 95, 100]), quantized the coefficients with the standard JPEG table, extracted leading digits, built the empirical pmf, least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)), and measured the unaveraged symmetric KL divergence of Bonettini et al. 2021 Eq. 6. Zero-valued coefficients have no leading digit and were excluded as the SKILL file instructs.
+      in=29850x8x8  out=54 divergence samples
+        evaluated_configurations = 54
+        scored_configurations = 9
+        excluded_finer_than_native = 45
+        residual_lattice_configurations = 0
+        skipped_configurations = 0
+        native_quality_factor = 74
+        digit_clamp_events = 0
+        mean_divergence = 0.069228
+        max_divergence = 0.127081
+        zero_coefficient_rate = 0.7534
+        representative_chi_square = 1.009859
+        moin_unaltered_chi_square_reference = [0.0112, 0.0126]
+        moin_altered_chi_square_reference = [0.0051, 0.0791]
+    Step 5: Calibration
+      Mapped the raw divergence onto a probability using the 'provisional_sigmoid' route. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+      in=scalar raw score  out=scalar probability
+        raw_score = 0.127081
+        aggregation_rule = max
+        mean_divergence = 0.069228
+        max_divergence = 0.127081
+        probability = 0.192741
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.09
+
+  REASONING:
+    Engine measured raw_score=0.127081 (aggregation: max over the sweep grid) from 54 evaluated grid cells over 29850 blocks of 8x8. The worst-conforming cell was frequency 4 at quality factor 74 with divergence 0.127081 and a zero-coefficient rate of 0.7498. Mean divergence across the grid was 0.069228, and the chi-square measured nearest the image's own quality factor was 1.009859 against Moin et al.'s published unaltered range of 0.0112-0.0126. Probability 0.1927 came from the calibration route recorded in the trace, at confidence 0.0900.
+
+  MATHEMATICAL EXPLANATION:
+    The engine quantized every 8x8 DCT block with standard JPEG tables at quality factors 80/85/90/95/100, extracted the leading decimal digit of each surviving non-zero coefficient at zig-zag frequencies 1-9, and least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)) to each histogram. The reported score is the largest unaveraged symmetric KL divergence between an observed histogram and its own fit. Because the curve is refitted per cell, the score measures how badly the digit histogram departs from ANY member of the generalized-Benford family, not from a fixed reference curve. For this image the fit at the worst cell converged to beta=2.4179, gamma=0.0, delta=3.0301, and 75.3% of quantized coefficients were exactly zero and therefore excluded, since a zero coefficient has no leading digit under d=floor(|c|/b^floor(log_b|c|)).
+
+  Engine says   : REAL
+  Ground truth  : REAL
+  Correct       : True
+  Surprise level: EXPECTED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/benford_engine/after/benford_case1_img2_campic2_heatmap.png
+
+  CASE 1 SUMMARY
+    average probability : 0.1903
+    score spread        : 0.0049
+    correct verdicts    : 2 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 2: Case 2 Manipulated (ground truth FAKE)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: fake .jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg
+==========================================================================
+  Resolution   : 728x1600
+  Format       : JPEG
+  File size    : 157.8 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.029799
+  Probability  : 0.157692
+  Confidence   : 0.3000
+  Is reliable  : True
+  Time         : 485.4 ms
+  Reliability  : Estimated quality factor 74 is below the 80 needed for strongest separation; detection still works here but with reduced deviation. 45 of 54 sweep configurations were excluded because the standard table applied there is finer than this image's own quantization (estimated quality factor 74); re-quantizing more finely than the original encoder cannot recover discarded information and distorts the leading-digit histogram. The score rests on the 9 configurations at or below the image's own quality factor. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file against the image's container format, estimated quality factor, resolution, resampling flag and saturation before any computation ran.
+      in=1600x728x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 0.6
+        estimated_quality_factor = 74.0
+        container_format = JPEG
+    Step 2: Channel selection and blocking
+      Extracted the green channel, the only channel choice stated explicitly in the corpus (Moin & Islam 2017), then cropped to a whole block grid and partitioned into non-overlapping 8x8 blocks.
+      in=1600x728x3  out=18200x8x8
+        analysis_channel = green
+        block_size = 8
+        block_count = 18200
+    Step 3: Block DCT
+      Applied the JPEG-normalized 2D DCT-II of Thai et al. 2012 Eq. 8 to every block, reproducing libjpeg-compatible coefficient magnitudes.
+      in=18200x8x8  out=18200x8x8
+        dct_type = 2
+        normalisation = ortho
+    Step 4: Digit-divergence sweep
+      For each cell of the sweep grid (bases [10], zig-zag frequencies [1, 2, 3, 4, 5, 6, 7, 8, 9] (DC excluded), quality factors [80, 85, 90, 95, 100]), quantized the coefficients with the standard JPEG table, extracted leading digits, built the empirical pmf, least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)), and measured the unaveraged symmetric KL divergence of Bonettini et al. 2021 Eq. 6. Zero-valued coefficients have no leading digit and were excluded as the SKILL file instructs.
+      in=18200x8x8  out=54 divergence samples
+        evaluated_configurations = 54
+        scored_configurations = 9
+        excluded_finer_than_native = 45
+        residual_lattice_configurations = 0
+        skipped_configurations = 0
+        native_quality_factor = 74
+        digit_clamp_events = 0
+        mean_divergence = 0.014562
+        max_divergence = 0.029799
+        zero_coefficient_rate = 0.6282
+        representative_chi_square = 0.072485
+        moin_unaltered_chi_square_reference = [0.0112, 0.0126]
+        moin_altered_chi_square_reference = [0.0051, 0.0791]
+    Step 5: Calibration
+      Mapped the raw divergence onto a probability using the 'provisional_sigmoid' route. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+      in=scalar raw score  out=scalar probability
+        raw_score = 0.029799
+        aggregation_rule = max
+        mean_divergence = 0.014562
+        max_divergence = 0.029799
+        probability = 0.157692
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.3
+
+  REASONING:
+    Engine measured raw_score=0.029799 (aggregation: max over the sweep grid) from 54 evaluated grid cells over 18200 blocks of 8x8. The worst-conforming cell was frequency 8 at quality factor 74 with divergence 0.029799 and a zero-coefficient rate of 0.7043. Mean divergence across the grid was 0.014562, and the chi-square measured nearest the image's own quality factor was 0.072485 against Moin et al.'s published unaltered range of 0.0112-0.0126. Probability 0.1577 came from the calibration route recorded in the trace, at confidence 0.3000.
+
+  MATHEMATICAL EXPLANATION:
+    The engine quantized every 8x8 DCT block with standard JPEG tables at quality factors 80/85/90/95/100, extracted the leading decimal digit of each surviving non-zero coefficient at zig-zag frequencies 1-9, and least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)) to each histogram. The reported score is the largest unaveraged symmetric KL divergence between an observed histogram and its own fit. Because the curve is refitted per cell, the score measures how badly the digit histogram departs from ANY member of the generalized-Benford family, not from a fixed reference curve. For this image the fit at the worst cell converged to beta=1.4014, gamma=0.0, delta=1.4884, and 62.8% of quantized coefficients were exactly zero and therefore excluded, since a zero coefficient has no leading digit under d=floor(|c|/b^floor(log_b|c|)).
+
+  Engine says   : REAL
+  Ground truth  : FAKE
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/benford_engine/after/benford_case2_img1_fake__heatmap.png
+
+==========================================================================
+IMAGE: fake.jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg
+==========================================================================
+  Resolution   : 928x1152
+  Format       : JPEG
+  File size    : 67.4 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.071706
+  Probability  : 0.172112
+  Confidence   : 0.0900
+  Is reliable  : True
+  Time         : 1871.7 ms
+  Reliability  : Estimated quality factor 74 is below the 80 needed for strongest separation; detection still works here but with reduced deviation. 45 of 54 sweep configurations were excluded because the standard table applied there is finer than this image's own quantization (estimated quality factor 74); re-quantizing more finely than the original encoder cannot recover discarded information and distorts the leading-digit histogram. The score rests on the 9 configurations at or below the image's own quality factor. Chi-square against the classical Benford curve measured 0.4961, which is 6.3x the largest value any paper in this corpus reports for ANY image class (altered images reach 0.0791; unaltered images sit at 0.0112-0.0126). This image's coefficient population is unlike the material the corpus characterises, so confidence is reduced. Note this engine does not reproduce the published chi-square scale even on unmanipulated images, so the gap is NOT itself evidence of tampering. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file against the image's container format, estimated quality factor, resolution, resampling flag and saturation before any computation ran.
+      in=1152x928x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 0.6
+        estimated_quality_factor = 74.0
+        container_format = JPEG
+    Step 2: Channel selection and blocking
+      Extracted the green channel, the only channel choice stated explicitly in the corpus (Moin & Islam 2017), then cropped to a whole block grid and partitioned into non-overlapping 8x8 blocks.
+      in=1152x928x3  out=16704x8x8
+        analysis_channel = green
+        block_size = 8
+        block_count = 16704
+    Step 3: Block DCT
+      Applied the JPEG-normalized 2D DCT-II of Thai et al. 2012 Eq. 8 to every block, reproducing libjpeg-compatible coefficient magnitudes.
+      in=16704x8x8  out=16704x8x8
+        dct_type = 2
+        normalisation = ortho
+    Step 4: Digit-divergence sweep
+      For each cell of the sweep grid (bases [10], zig-zag frequencies [1, 2, 3, 4, 5, 6, 7, 8, 9] (DC excluded), quality factors [80, 85, 90, 95, 100]), quantized the coefficients with the standard JPEG table, extracted leading digits, built the empirical pmf, least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)), and measured the unaveraged symmetric KL divergence of Bonettini et al. 2021 Eq. 6. Zero-valued coefficients have no leading digit and were excluded as the SKILL file instructs.
+      in=16704x8x8  out=54 divergence samples
+        evaluated_configurations = 54
+        scored_configurations = 9
+        excluded_finer_than_native = 45
+        residual_lattice_configurations = 0
+        skipped_configurations = 0
+        native_quality_factor = 74
+        digit_clamp_events = 0
+        mean_divergence = 0.02713
+        max_divergence = 0.071706
+        zero_coefficient_rate = 0.7009
+        representative_chi_square = 0.496102
+        moin_unaltered_chi_square_reference = [0.0112, 0.0126]
+        moin_altered_chi_square_reference = [0.0051, 0.0791]
+    Step 5: Calibration
+      Mapped the raw divergence onto a probability using the 'provisional_sigmoid' route. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+      in=scalar raw score  out=scalar probability
+        raw_score = 0.071706
+        aggregation_rule = max
+        mean_divergence = 0.02713
+        max_divergence = 0.071706
+        probability = 0.172112
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.09
+
+  REASONING:
+    Engine measured raw_score=0.071706 (aggregation: max over the sweep grid) from 54 evaluated grid cells over 16704 blocks of 8x8. The worst-conforming cell was frequency 4 at quality factor 74 with divergence 0.071706 and a zero-coefficient rate of 0.7471. Mean divergence across the grid was 0.02713, and the chi-square measured nearest the image's own quality factor was 0.496102 against Moin et al.'s published unaltered range of 0.0112-0.0126. Probability 0.1721 came from the calibration route recorded in the trace, at confidence 0.0900.
+
+  MATHEMATICAL EXPLANATION:
+    The engine quantized every 8x8 DCT block with standard JPEG tables at quality factors 80/85/90/95/100, extracted the leading decimal digit of each surviving non-zero coefficient at zig-zag frequencies 1-9, and least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)) to each histogram. The reported score is the largest unaveraged symmetric KL divergence between an observed histogram and its own fit. Because the curve is refitted per cell, the score measures how badly the digit histogram departs from ANY member of the generalized-Benford family, not from a fixed reference curve. For this image the fit at the worst cell converged to beta=2.1412, gamma=0.0, delta=2.4608, and 70.1% of quantized coefficients were exactly zero and therefore excluded, since a zero coefficient has no leading digit under d=floor(|c|/b^floor(log_b|c|)).
+
+  Engine says   : REAL
+  Ground truth  : FAKE
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/benford_engine/after/benford_case2_img2_fake_heatmap.png
+
+  CASE 2 SUMMARY
+    average probability : 0.1649
+    score spread        : 0.0144
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 3: Case 3 AI-generated (ground truth AI-GENERATED)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: gen.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg
+==========================================================================
+  Resolution   : 800x1006
+  Format       : JPEG
+  File size    : 44.6 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.089201
+  Probability  : 0.178433
+  Confidence   : 0.0900
+  Is reliable  : True
+  Time         : 2738.7 ms
+  Reliability  : Estimated quality factor 74 is below the 80 needed for strongest separation; detection still works here but with reduced deviation. 45 of 54 sweep configurations were excluded because the standard table applied there is finer than this image's own quantization (estimated quality factor 74); re-quantizing more finely than the original encoder cannot recover discarded information and distorts the leading-digit histogram. The score rests on the 9 configurations at or below the image's own quality factor. Chi-square against the classical Benford curve measured 0.4992, which is 6.3x the largest value any paper in this corpus reports for ANY image class (altered images reach 0.0791; unaltered images sit at 0.0112-0.0126). This image's coefficient population is unlike the material the corpus characterises, so confidence is reduced. Note this engine does not reproduce the published chi-square scale even on unmanipulated images, so the gap is NOT itself evidence of tampering. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file against the image's container format, estimated quality factor, resolution, resampling flag and saturation before any computation ran.
+      in=1006x800x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 0.6
+        estimated_quality_factor = 74.0
+        container_format = JPEG
+    Step 2: Channel selection and blocking
+      Extracted the green channel, the only channel choice stated explicitly in the corpus (Moin & Islam 2017), then cropped to a whole block grid and partitioned into non-overlapping 8x8 blocks.
+      in=1006x800x3  out=12500x8x8
+        analysis_channel = green
+        block_size = 8
+        block_count = 12500
+    Step 3: Block DCT
+      Applied the JPEG-normalized 2D DCT-II of Thai et al. 2012 Eq. 8 to every block, reproducing libjpeg-compatible coefficient magnitudes.
+      in=12500x8x8  out=12500x8x8
+        dct_type = 2
+        normalisation = ortho
+    Step 4: Digit-divergence sweep
+      For each cell of the sweep grid (bases [10], zig-zag frequencies [1, 2, 3, 4, 5, 6, 7, 8, 9] (DC excluded), quality factors [80, 85, 90, 95, 100]), quantized the coefficients with the standard JPEG table, extracted leading digits, built the empirical pmf, least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)), and measured the unaveraged symmetric KL divergence of Bonettini et al. 2021 Eq. 6. Zero-valued coefficients have no leading digit and were excluded as the SKILL file instructs.
+      in=12500x8x8  out=54 divergence samples
+        evaluated_configurations = 54
+        scored_configurations = 9
+        excluded_finer_than_native = 45
+        residual_lattice_configurations = 0
+        skipped_configurations = 0
+        native_quality_factor = 74
+        digit_clamp_events = 0
+        mean_divergence = 0.042563
+        max_divergence = 0.089201
+        zero_coefficient_rate = 0.754
+        representative_chi_square = 0.49921
+        moin_unaltered_chi_square_reference = [0.0112, 0.0126]
+        moin_altered_chi_square_reference = [0.0051, 0.0791]
+    Step 5: Calibration
+      Mapped the raw divergence onto a probability using the 'provisional_sigmoid' route. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+      in=scalar raw score  out=scalar probability
+        raw_score = 0.089201
+        aggregation_rule = max
+        mean_divergence = 0.042563
+        max_divergence = 0.089201
+        probability = 0.178433
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.09
+
+  REASONING:
+    Engine measured raw_score=0.089201 (aggregation: max over the sweep grid) from 54 evaluated grid cells over 12500 blocks of 8x8. The worst-conforming cell was frequency 5 at quality factor 74 with divergence 0.089201 and a zero-coefficient rate of 0.7292. Mean divergence across the grid was 0.042563, and the chi-square measured nearest the image's own quality factor was 0.49921 against Moin et al.'s published unaltered range of 0.0112-0.0126. Probability 0.1784 came from the calibration route recorded in the trace, at confidence 0.0900.
+
+  MATHEMATICAL EXPLANATION:
+    The engine quantized every 8x8 DCT block with standard JPEG tables at quality factors 80/85/90/95/100, extracted the leading decimal digit of each surviving non-zero coefficient at zig-zag frequencies 1-9, and least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)) to each histogram. The reported score is the largest unaveraged symmetric KL divergence between an observed histogram and its own fit. Because the curve is refitted per cell, the score measures how badly the digit histogram departs from ANY member of the generalized-Benford family, not from a fixed reference curve. For this image the fit at the worst cell converged to beta=1.4993, gamma=0.0, delta=1.6102, and 75.4% of quantized coefficients were exactly zero and therefore excluded, since a zero coefficient has no leading digit under d=floor(|c|/b^floor(log_b|c|)).
+
+  Engine says   : REAL
+  Ground truth  : AI-GENERATED
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/benford_engine/after/benford_case3_img1_gen_heatmap.png
+
+==========================================================================
+IMAGE: genratedimage.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg
+==========================================================================
+  Resolution   : 768x1376
+  Format       : JPEG
+  File size    : 71.2 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.092260
+  Probability  : 0.179557
+  Confidence   : 0.0900
+  Is reliable  : True
+  Time         : 2662.2 ms
+  Reliability  : Estimated quality factor 74 is below the 80 needed for strongest separation; detection still works here but with reduced deviation. 45 of 54 sweep configurations were excluded because the standard table applied there is finer than this image's own quantization (estimated quality factor 74); re-quantizing more finely than the original encoder cannot recover discarded information and distorts the leading-digit histogram. The score rests on the 9 configurations at or below the image's own quality factor. Chi-square against the classical Benford curve measured 0.2997, which is 3.8x the largest value any paper in this corpus reports for ANY image class (altered images reach 0.0791; unaltered images sit at 0.0112-0.0126). This image's coefficient population is unlike the material the corpus characterises, so confidence is reduced. Note this engine does not reproduce the published chi-square scale even on unmanipulated images, so the gap is NOT itself evidence of tampering. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+
+  COMPUTATION TRACE:
+    Step 1: Condition check
+      Evaluated every unreliability condition documented in the SKILL file against the image's container format, estimated quality factor, resolution, resampling flag and saturation before any computation ran.
+      in=1376x768x3  out=condition report
+        is_reliable = True
+        skip_engine = False
+        confidence_weight = 0.6
+        estimated_quality_factor = 74.0
+        container_format = JPEG
+    Step 2: Channel selection and blocking
+      Extracted the green channel, the only channel choice stated explicitly in the corpus (Moin & Islam 2017), then cropped to a whole block grid and partitioned into non-overlapping 8x8 blocks.
+      in=1376x768x3  out=16512x8x8
+        analysis_channel = green
+        block_size = 8
+        block_count = 16512
+    Step 3: Block DCT
+      Applied the JPEG-normalized 2D DCT-II of Thai et al. 2012 Eq. 8 to every block, reproducing libjpeg-compatible coefficient magnitudes.
+      in=16512x8x8  out=16512x8x8
+        dct_type = 2
+        normalisation = ortho
+    Step 4: Digit-divergence sweep
+      For each cell of the sweep grid (bases [10], zig-zag frequencies [1, 2, 3, 4, 5, 6, 7, 8, 9] (DC excluded), quality factors [80, 85, 90, 95, 100]), quantized the coefficients with the standard JPEG table, extracted leading digits, built the empirical pmf, least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)), and measured the unaveraged symmetric KL divergence of Bonettini et al. 2021 Eq. 6. Zero-valued coefficients have no leading digit and were excluded as the SKILL file instructs.
+      in=16512x8x8  out=54 divergence samples
+        evaluated_configurations = 54
+        scored_configurations = 9
+        excluded_finer_than_native = 45
+        residual_lattice_configurations = 0
+        skipped_configurations = 0
+        native_quality_factor = 74
+        digit_clamp_events = 0
+        mean_divergence = 0.038602
+        max_divergence = 0.09226
+        zero_coefficient_rate = 0.7729
+        representative_chi_square = 0.299686
+        moin_unaltered_chi_square_reference = [0.0112, 0.0126]
+        moin_altered_chi_square_reference = [0.0051, 0.0791]
+    Step 5: Calibration
+      Mapped the raw divergence onto a probability using the 'provisional_sigmoid' route. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied for bucket 'qf_medium', so a placeholder logistic curve was used. The SKILL file states no calibration function exists in the corpus for this statistic, so this probability expresses relative ordering only and must not be read as a literal likelihood. The raw score is the trustworthy quantity.
+      in=scalar raw score  out=scalar probability
+        raw_score = 0.09226
+        aggregation_rule = max
+        mean_divergence = 0.038602
+        max_divergence = 0.09226
+        probability = 0.179557
+        calibration_route = provisional_sigmoid
+        is_calibrated = False
+        confidence = 0.09
+
+  REASONING:
+    Engine measured raw_score=0.092260 (aggregation: max over the sweep grid) from 54 evaluated grid cells over 16512 blocks of 8x8. The worst-conforming cell was frequency 1 at quality factor 74 with divergence 0.09226 and a zero-coefficient rate of 0.6026. Mean divergence across the grid was 0.038602, and the chi-square measured nearest the image's own quality factor was 0.299686 against Moin et al.'s published unaltered range of 0.0112-0.0126. Probability 0.1796 came from the calibration route recorded in the trace, at confidence 0.0900.
+
+  MATHEMATICAL EXPLANATION:
+    The engine quantized every 8x8 DCT block with standard JPEG tables at quality factors 80/85/90/95/100, extracted the leading decimal digit of each surviving non-zero coefficient at zig-zag frequencies 1-9, and least-squares fitted the generalized Benford curve p(d)=beta*log_b(1+1/(gamma+d^delta)) to each histogram. The reported score is the largest unaveraged symmetric KL divergence between an observed histogram and its own fit. Because the curve is refitted per cell, the score measures how badly the digit histogram departs from ANY member of the generalized-Benford family, not from a fixed reference curve. For this image the fit at the worst cell converged to beta=1.8528, gamma=0.0, delta=2.1069, and 77.3% of quantized coefficients were exactly zero and therefore excluded, since a zero coefficient has no leading digit under d=floor(|c|/b^floor(log_b|c|)).
+
+  Engine says   : REAL
+  Ground truth  : AI-GENERATED
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/benford_engine/after/benford_case3_img2_genratedimage_heatmap.png
+
+  CASE 3 SUMMARY
+    average probability : 0.1790
+    score spread        : 0.0011
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+==========================================================================
+OVERALL
+==========================================================================
+  real average probability     : 0.19028800824074785
+  manipulated average          : 0.16490187183275015
+  ai-generated average         : 0.1789952398153496
+  separation (fake - real)     : -0.025386136407997695
+  raw-score separation         : -0.06995989287518525
+  reliable results             : 6 / 6
+  average processing time (ms) : 2312.501991833301

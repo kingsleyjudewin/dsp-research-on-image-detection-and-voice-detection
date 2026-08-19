@@ -1,0 +1,31 @@
+BENFORD ENGINE - DIAGNOSTIC SUMMARY
+run tag       : after
+generated     : 2026-08-18 18:07:45
+
+images tested : 6
+reliable      : 6 / 6
+correct       : 2 / 6
+wrong         : 4 / 6
+abstained     : 0 / 6
+
+PROBABILITY BY CASE
+  real        : 0.19028800824074785
+  manipulated : 0.16490187183275015
+  ai-generated: 0.1789952398153496
+  separation  : -0.025386136407997695
+
+RAW SCORE BY CASE
+  real        : 0.12071265357379961
+  manipulated : 0.050752760698614355
+  separation  : -0.06995989287518525
+
+NOTICES
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+
+PER-IMAGE
+  campic.jpeg            truth=REAL          raw=0.1143 prob=0.1878 conf=0.090 verdict=REAL
+  campic2.jpeg           truth=REAL          raw=0.1271 prob=0.1927 conf=0.090 verdict=REAL
+  fake .jpeg             truth=FAKE          raw=0.0298 prob=0.1577 conf=0.300 verdict=REAL
+  fake.jpeg              truth=FAKE          raw=0.0717 prob=0.1721 conf=0.090 verdict=REAL
+  gen.jpeg               truth=AI-GENERATED  raw=0.0892 prob=0.1784 conf=0.090 verdict=REAL
+  genratedimage.jpeg     truth=AI-GENERATED  raw=0.0923 prob=0.1796 conf=0.090 verdict=REAL

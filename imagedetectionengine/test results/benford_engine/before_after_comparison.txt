@@ -1,0 +1,20 @@
+BEFORE vs AFTER  (6 diagnostic images)
+
+Image                 truth          before prob  after prob  before raw  after raw    change
+---------------------------------------------------------------------------------------------
+campic.jpeg           REAL                1.0000      0.1878      3.8317     0.1143    better
+campic2.jpeg          REAL                1.0000      0.1927      3.8114     0.1271    better
+fake .jpeg            FAKE                0.0891      0.1577      0.0675     0.0298    better
+fake.jpeg             FAKE                1.0000      0.1721      6.8361     0.0717     lower
+gen.jpeg              AI-GENERATED        1.0000      0.1784      5.6382     0.0892     lower
+genratedimage.jpeg    AI-GENERATED        1.0000      0.1796      7.2824     0.0923     lower
+
+  REAL  raw  before=3.8216  after=0.1207
+  FAKE  raw  before=3.4518  after=0.0508
+  AI    raw  before=6.4603  after=0.0907
+
+  probability separation  before=-0.4555  after=-0.0254
+  raw-score separation    before=-0.3697  after=-0.0700
+  correct verdicts        before=3/6  after=2/6
+  WRONG verdicts          before=n/a/6  after=4/6
+  authentic photos called FAKE   before=2/2   after=0/2

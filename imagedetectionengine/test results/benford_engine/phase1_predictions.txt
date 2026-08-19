@@ -1,0 +1,86 @@
+PHASE 1 - PRE-TEST EXPECTATIONS (written BEFORE the engine was run)
+===================================================================
+
+STEP 1.1 - CORE ENGINE CAPABILITY (extracted from the SKILL file)
+
+Property measured:
+  The leading-significant-digit distribution of QUANTIZED 8x8 block-DCT
+  coefficients, and how far that distribution departs from the best-fitting
+  member of the generalized Benford family
+  p(d) = beta * log_b(1 + 1/(gamma + d^delta)).
+  Raw score = max, over the sweep grid (base 10) x (zig-zag frequency 1..9) x
+  (JPEG quality factor 80/85/90/95/100), of the UNAVERAGED symmetric KL
+  divergence D_KL(p_hat||p_fit) + D_KL(p_fit||p_hat).
+
+Signal present in FAKE, absent/weaker in REAL:
+  A second quantization at a different step size, a contrast/gamma remap, or a
+  GAN's feed-forward synthesis all disturb the coefficient-generation process,
+  so the empirical digit histogram no longer lies on any generalized-Benford
+  curve. Divergence rises.
+
+Signal present in REAL:
+  Thai et al. 2012 derive that natural camera DCT coefficients follow a
+  Gamma-mixture (Bessel) law that is sharply peaked and heavy-tailed; such
+  populations are spread across orders of magnitude and are therefore
+  Benford-conforming. Divergence stays near 0.
+
+Raw score meaning:
+  0 = perfect conformance (natural). Unbounded above. No paper publishes any
+  divergence magnitude, so no corpus-backed cutoff exists.
+
+STEP 1.2 - PER-CASE PREDICTIONS
+
+CASE 1 - REAL (campic.jpeg, campic2.jpeg)
+  Expected probability : 0.0 - 0.30
+  Expected raw_score   : low; the provisional sigmoid midpoint is 0.30, so
+                         "low" means below ~0.30 for probability < 0.5
+  Expected is_reliable : True. Both are JPEG with a readable quantization
+                         table, so the block-transform premise is satisfied.
+  Expected evidence    : histogram sitting close to its fitted curve
+  Signal ABSENT        : no re-quantization / no remap
+  Likely failure mode  : a camera JPEG at high quality has many near-zero
+                         high-frequency coefficients; the max aggregation
+                         picks the single worst grid cell, and the worst cell
+                         is likely to be a high frequency with a thin sample.
+                         A false alarm driven by counting noise is the risk.
+
+CASE 2 - FAKE / MANIPULATED
+  Expected probability : 0.60 - 1.0
+  Expected raw_score   : above the real baseline
+  Expected is_reliable : True if JPEG and QF > 50
+  Signal PRESENT       : double quantization, splice mixing two coefficient
+                         populations, or contrast enhancement
+  Likely failure mode  : the SKILL contains an EXPLICIT negative result -
+                         Singh 2015 shows first-digit statistics do NOT detect
+                         copy-move / splice tampering; tampered and original
+                         Benford curves are "visually near-identical". If
+                         these images are local splices rather than global
+                         re-encodes or remaps, the engine SHOULD miss them,
+                         and that miss is documented behaviour, not a bug.
+
+CASE 3 - AI-GENERATED
+  Expected probability : uncertain, but leaning high
+  Expected is_reliable : True if JPEG
+  AI detection in SKILL scope: YES - explicitly the BEST-supported use case.
+                         Bonettini et al. 2021 report 99.83% average accuracy
+                         separating GAN images from natural ones, and it is
+                         the primary pipeline this engine implements.
+  Caveat that matters  : Bonettini's 99.83% comes from a RANDOM FOREST over a
+                         concatenated feature vector of up to 540 divergences.
+                         This engine has no classifier - it reduces the grid to
+                         ONE scalar. The SKILL states a single-threshold rule
+                         "would be expected to sit below the 3-feature RF
+                         number" (which was >0.75). So expect degraded, not
+                         99.83%, performance.
+  Likely failure mode  : Bonettini's classifier "collapses to near-random
+                         accuracy" when test images are JPEG-recompressed at
+                         quality factors unseen in training. Every Case 3 image
+                         here is a JPEG, i.e. recompressed after generation.
+                         This is the single most likely cause of a miss.
+
+CROSS-CUTTING PREDICTION
+  The calibration is uncalibrated by construction (no reference scores are
+  supplied), so every probability comes from the provisional sigmoid whose
+  midpoint 0.30 and slope 10.0 are flagged UNSOURCED in constants.py and were
+  set on SYNTHETIC imagery. Probabilities should therefore be read as ordering
+  only. The quantity worth judging is the RAW SCORE separation.
