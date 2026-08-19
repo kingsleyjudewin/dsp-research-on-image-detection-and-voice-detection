@@ -15,7 +15,7 @@ import logging
 import cv2
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
-from skimage.filters import threshold_otsu
+from skimage.filters import threshold_multiotsu, threshold_otsu
 from skimage.segmentation import slic
 
 from . import constants
@@ -159,8 +159,32 @@ class GhostDetector:
 
         if float(np.ptp(means)) <= 0.0:
             return np.zeros(difference_map.shape, dtype=np.int64)
-        split = float(threshold_otsu(means))
-        return two_class_split_by_threshold(means, split)[superpixels]
+        # ENHANCEMENT 1: the cut comes from a THREE-class threshold and the
+        # ghost is the lowest band. A two-class cut spends itself separating
+        # the textured-background tail and leaves the ghost inside a majority
+        # class. See constants.SEGMENTATION_CLASS_COUNT for the measurement.
+        return two_class_split_by_threshold(
+            means, GhostDetector._lowest_band_threshold(means))[superpixels]
+
+    @staticmethod
+    def _lowest_band_threshold(means: np.ndarray) -> float:
+        """Find the cut below which superpixels form the lowest of three bands.
+
+        Args:
+            means: 1-D array of per-superpixel mean difference values.
+
+        Returns:
+            The lowest multi-Otsu cut, falling back to the two-class cut when
+            the values cannot support three distinct classes.
+        """
+        try:
+            cuts = threshold_multiotsu(means,
+                                       classes=constants.SEGMENTATION_CLASS_COUNT)
+        except ValueError:
+            # Too few distinct values for three classes; the two-class cut is
+            # the only one defined, and the validity test still guards it.
+            return float(threshold_otsu(means))
+        return float(cuts[0])
 
     @staticmethod
     def is_valid_ghost_candidate(labels: np.ndarray) -> bool:
@@ -286,26 +310,84 @@ class GhostDetector:
         Returns:
             List of GhostCandidate, one per candidate quality.
         """
+        maps = self._normalised_maps(image_rgb, shift_x, shift_y,
+                                     quality_factors)
+        candidates = []
+        for index, quality in enumerate(quality_factors):
+            difference_map = maps[index]
+            if difference_map.size == 0:
+                continue
+            labels = self.segment_difference_map(difference_map)
+            distance = self.bhattacharyya_distance(difference_map, labels)
+            # ENHANCEMENT 2: a separable split is not yet a ghost. The SKILL
+            # identifies the ghost as a LOCAL MINIMUM in q2, so a candidate
+            # that is merely separable at this quality - and no lower here
+            # than at the qualities either side of it - is discarded.
+            if distance > 0.0 and not self._is_quality_local_minimum(
+                    maps, index, labels):
+                distance = 0.0
+            candidates.append(GhostCandidate(
+                quality_factor=quality, shift_x=shift_x, shift_y=shift_y,
+                bhattacharyya_distance=distance,
+                mask=self._place_mask(labels, image_rgb.shape[:2])))
+        return candidates
+
+    def _normalised_maps(self, image_rgb: np.ndarray, shift_x: int,
+                         shift_y: int, quality_factors: list) -> list:
+        """Build the analysis-region difference map for every candidate quality.
+
+        Args:
+            image_rgb: uint8 H x W x 3 RGB image.
+            shift_x: Horizontal grid shift, 0..7.
+            shift_y: Vertical grid shift, 0..7.
+            quality_factors: Candidate q2 values to sweep.
+
+        Returns:
+            List of float64 maps, one per candidate quality, each already
+            cropped to the analysis region.
+        """
         shifted = self.preprocessor.shift_image(image_rgb, shift_x, shift_y)
         energies = np.stack([
             self.difference_energy(shifted, self.preprocessor.recompress(
                 shifted, quality))
             for quality in quality_factors])
         normalised = self.normalise_across_qualities(energies)
+        return [self._crop_to_analysis_region(normalised[index], shift_x,
+                                              shift_y, image_rgb.shape[:2])
+                for index in range(len(quality_factors))]
 
-        candidates = []
-        for index, quality in enumerate(quality_factors):
-            difference_map = self._crop_to_analysis_region(
-                normalised[index], shift_x, shift_y, image_rgb.shape[:2])
-            if difference_map.size == 0:
-                continue
-            labels = self.segment_difference_map(difference_map)
-            distance = self.bhattacharyya_distance(difference_map, labels)
-            candidates.append(GhostCandidate(
-                quality_factor=quality, shift_x=shift_x, shift_y=shift_y,
-                bhattacharyya_distance=distance,
-                mask=self._place_mask(labels, image_rgb.shape[:2])))
-        return candidates
+    @staticmethod
+    def _is_quality_local_minimum(maps: list, index: int,
+                                  labels: np.ndarray) -> bool:
+        """Check the candidate region dips at this quality relative to its neighbours.
+
+        SKILL B1: "A genuinely double-quantized region shows a local minimum
+        in d at q2 equal to its true original quality q0." The comparison is
+        made over the candidate's OWN class-0 pixels, so it asks whether that
+        region turns over here rather than whether the frame as a whole does.
+
+        Args:
+            maps: The analysis-region difference map for every swept quality.
+            index: Position of the candidate quality within that list.
+            labels: Integer 0/1 class labels for the candidate.
+
+        Returns:
+            True when class-0's mean is strictly lower here than at the
+            qualities either side; False at the sweep endpoints, where a local
+            minimum is undefined for want of a neighbour.
+        """
+        if not constants.REQUIRE_GHOST_LOCAL_MINIMUM:
+            return True
+        offset = constants.LOCAL_MINIMUM_NEIGHBOUR_OFFSET
+        if index - offset < 0 or index + offset >= len(maps):
+            return False
+        selection = (labels == 0)
+        if not selection.any():
+            return False
+        before = float(maps[index - offset][selection].mean())
+        here = float(maps[index][selection].mean())
+        after = float(maps[index + offset][selection].mean())
+        return here < before and here < after
 
     @staticmethod
     def _crop_to_analysis_region(difference_map: np.ndarray, shift_x: int,
