@@ -71,6 +71,11 @@ class CfaPhaseEstimator:
         red_sums, blue_sums = self._colour_difference_sums(centre, block_size)
 
         leader, diagonal_scores = self._select_diagonal_pair(red_sums, blue_sums)
+        if leader == constants.UNRESOLVED_DIAGONAL_LEADER:
+            return self._unverified_estimate(
+                f"Eq. 9's diagonal scores came out at {diagonal_scores}, "
+                f"indistinguishable, so no diagonal carries the R/B signature "
+                f"and the phase is reported unverified rather than guessed.")
         red_index = self._resolve_within_pair(red_sums, leader)
         name = self._configuration_from_red_index(red_index)
 
@@ -81,12 +86,26 @@ class CfaPhaseEstimator:
             block_size=block_size,
             diagonal_scores=diagonal_scores,
             was_estimated=True,
-            note=(f"CFA configuration identified as {name} by the SVD "
-                  f"colour-difference estimator of Jeon et al. 2017 on a "
-                  f"{block_size}x{block_size} centre block, placing acquired "
-                  f"green samples where (row + column) is "
-                  f"{'odd' if constants.GREEN_ACQUIRED_PARITY_BY_CONFIGURATION[name] else 'even'}."),
+            note=self._describe_estimate(name, block_size),
         )
+
+    @staticmethod
+    def _describe_estimate(name: str, block_size: int) -> str:
+        """Word the phase estimate for the report.
+
+        Args:
+            name: Identified Bayer configuration.
+            block_size: Centre block the estimate was made on.
+
+        Returns:
+            Human-readable explanation.
+        """
+        parity = constants.GREEN_ACQUIRED_PARITY_BY_CONFIGURATION[name]
+        return (f"CFA configuration identified as {name} by the SVD "
+                f"colour-difference estimator of Jeon et al. 2017 on a "
+                f"{block_size}x{block_size} centre block, placing acquired "
+                f"green samples where (row + column) is "
+                f"{'odd' if parity else 'even'}.")
 
     @staticmethod
     def _select_block_size(shape: tuple) -> Optional[int]:
@@ -270,8 +289,13 @@ class CfaPhaseEstimator:
             partner = constants.DIAGONAL_PARTNER_INDEX[leader]
             scores.append(abs(red_sums[leader] - red_sums[partner])
                           + abs(blue_sums[leader] - blue_sums[partner]))
+        # ENHANCEMENT 5: indistinguishable scores mean the argmax is arbitrary,
+        # so no phase was actually resolved. See the constant's note.
+        score_pair = tuple(float(score) for score in scores)
+        if max(score_pair) <= constants.DEGENERATE_DIAGONAL_SCORE_FLOOR:
+            return constants.UNRESOLVED_DIAGONAL_LEADER, score_pair
         winning_leader = int(constants.DIAGONAL_PAIR_LEADERS[int(np.argmax(scores))])
-        return winning_leader, tuple(float(score) for score in scores)
+        return winning_leader, score_pair
 
     @staticmethod
     def _resolve_within_pair(red_sums: np.ndarray, leader: int) -> int:
@@ -292,25 +316,19 @@ class CfaPhaseEstimator:
         #            the winning diagonal; d(.) = diagonally opposite position.
         # Source: Jeon, Shin & Eom 2017 - SKILL Pipeline C step 6.
         # Expected range: an index in {0,1,2,3}.
-        # DOCUMENTED CORRECTION - implemented with the comparison REVERSED,
-        # because the printed formula is transcribed wrongly. As printed, the
-        # term S_F[d(b_tilde)] sits on BOTH sides and cancels, collapsing the
-        # test to S_D[b_tilde] > S_D[d(b_tilde)]; a term that cancels cannot
-        # have been intended. That collapsed test was then measured and is wrong
-        # 100% of the time - it picked the diagonal PARTNER of the true red
-        # position in 24 of 24 cases (4 configurations x 6 scenes). Probing the
-        # quantity itself shows why: S_D at the true red position averages 215.4
-        # against 339.9 at the other three phases, a consistent MINIMUM, because
-        # the colour-difference plane R-G carries the least high-frequency
-        # residual exactly where the red sample is genuine rather than
-        # interpolated. Reversed, the estimator scores 24/24.
-        # Blast radius: no score was ever affected. Both members of a diagonal
-        # pair share the same green parity, which is the only thing Pipeline A
-        # consumes, and parity measured 24/24 even under the inverted test.
-        # See constants.KNOWN_SKILL_AMBIGUITIES.
+        # CORPUS TRANSCRIPTION DEFECT, and a correction of this engine's own
+        # earlier correction. As printed, S_F[d(b_tilde)] sits on BOTH sides and
+        # cancels, so the printed line is transcribed wrongly. This engine
+        # previously REVERSED the collapsed test on the strength of a ground
+        # truth that was itself R/B-swapped; against a hand-built Bayer ground
+        # truth the reversed test scores 0/4 and the printed direction 4/4, so
+        # the comparison is restored. Only the reported configuration NAME was
+        # ever wrong - green parity, the sole quantity Pipeline A consumes, was
+        # correct either way. Measurements in
+        # constants.JEON_WITHIN_PAIR_SELECTION_EVIDENCE.
         # ────────────────────────────────────────────────────
         partner = constants.DIAGONAL_PARTNER_INDEX[leader]
-        return leader if red_sums[leader] < red_sums[partner] else partner
+        return leader if red_sums[leader] > red_sums[partner] else partner
 
     @staticmethod
     def _configuration_from_red_index(red_index: int) -> str:
