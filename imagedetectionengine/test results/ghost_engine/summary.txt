@@ -1,0 +1,127 @@
+================================================================
+FOURIER / JPEG-GHOST ENGINE (fourier_jpeg_ghost) - DIAGNOSTIC SUMMARY
+Tested: 6 supplied images + 11 ground-truth cases built to the source
+paper's own experimental setup. Generated 2026-08-19.
+================================================================
+
+OVERALL HEALTH:  NEEDS INVESTIGATION BEFORE INTEGRATION
+   The engine was found INVERTED and has been substantially repaired, but it
+   is not fixed on the supplied corpus and its recall is below the paper's.
+
+SEPARATION
+   Six supplied images : -0.5000 before, -0.5000 after. Unchanged, and the
+                         sign is the point - the fake average is BELOW the
+                         real average. This number is uninterpretable for
+                         this engine: eight of the nine supplied files carry
+                         byte-identical JPEG quantization tables, so the
+                         "real" images are themselves re-encoded and cannot
+                         serve as single-compression negative controls for a
+                         double-compression detector.
+   Ground truth        : 0 of 9 correct before, 6 of 9 after. Both authentic
+                         images went from a confident FAKE (D_max 1.65 and
+                         1.25) to exactly 0.0000, and detections moved from
+                         q2=6 with texture-driven masks to the true quality
+                         with masks of IoU 0.858 and 0.867.
+
+TOP 3 STRENGTHS (evidence-based)
+ 1. The underlying mathematics is sound and the ghost is genuinely there.
+    Thresholding the normalised difference map directly against the known
+    paste gives AUC 0.9927 at q2=51 for a true q0 of 50, and 0.9876 at q2=71
+    for a true q0 of 70. Eq. 10 with the true mask returns B = 1.19 and 1.04.
+ 2. Localisation is the best in this system, and it is corpus-backed rather
+    than an engineering extension - the SKILL calls the segmentation mask
+    "literally a segmented binary tamper mask". Measured mask IoU against a
+    known paste: 0.858 and 0.867 at 512x384, still 0.820 at 1200x1600.
+ 3. It correctly declines the cases the SKILL says it cannot resolve. A
+    genuine q0=95-into-q1=70 splice returns 0.0000, matching the SKILL's
+    statement that the method "does not resolve the reverse case", and a
+    quality gap of 2 also returns 0.0000.
+
+TOP 3 WEAKNESSES (honest)
+ 1. STILL WRONG ON BOTH SUPPLIED REAL PHOTOGRAPHS. Both read FAKE at
+    probability 1.0000 as reliable, before and after. The statistic roughly
+    halved (0.6797 -> 0.4223 and 0.7271 -> 0.3386) and the winning quality
+    left the degenerate low end of the sweep, but neither crossed Th = 0.19.
+ 2. RECALL BELOW THE PAPER'S CLAIM. Azarian-Pour report >95% sensitivity once
+    the quality gap exceeds 22; this pipeline misses a gap of 30 (q0=60) and
+    a gap of 10 (q0=80) entirely. A finer sweep finds both but false-alarms
+    on both authentic images, so the conservative setting was kept.
+ 3. raw_score SATURATES AND CARRIES NO MAGNITUDE. Measured D_max runs 0.6 to
+    1.8 against Th = 0.19, so every positive reports exactly 1.0. The engine
+    is effectively binary. Left alone because clip(D_max/Th, 0, 1) is the
+    SKILL's own recommendation and the corpus offers no alternative.
+
+BUGS FOUND
+  No crash, no contract violation. EngineOutput holds all 11 fields at every
+  construction site and probability is None exactly when is_reliable is
+  False, verified across four input classes including a null image.
+  ONE REAL DEFECT, now fixed: the segmentation's two-class Otsu cut spent
+  itself separating textured background rather than isolating the ghost,
+  which left class-0 covering a median 0.607-0.781 of the frame on all six
+  supplied images. 18-20 of every 20 candidates were then discarded by the
+  area test as too large, so the ONLY candidates that ever survived were the
+  degenerate ones at the extreme low-quality end - and the engine's winning
+  q2 was 1 or 6 on all six supplied images and all nine ground-truth cases.
+  NOTED, NOT FIXED: Pipeline A's EM loop hit its 30-iteration cap without
+  converging on 3 of the 6 supplied images. Pipeline A does not score, so
+  this changes no verdict; it is reported in every trace as em_converged.
+  PRE-EXISTING, NOT FIXED: one numeric literal outside constants.py
+  (condition.py, the 0.5 exponent in coverage ** 0.5). Present in HEAD before
+  this work; out of scope.
+
+CHANGES APPLIED (all evidence-cited; see enhancement_plan.txt)
+  1. Three-class segmentation, lowest band is the ghost.
+  2. Candidate must sit at an interior local minimum of its own q2 profile -
+     implements a SKILL sentence the engine did not act on.
+  3. Null ghost results vote at half confidence, because an authentic image
+     and a reverse-direction splice both produce exactly D_max = 0.0000.
+
+CHANGES TESTED AND REJECTED (do not re-propose)
+  - Finer quality sweep (step 5 -> 1): detects 5 of 6 splices instead of 3,
+    at the exact quality with IoU 0.923, but false-alarms on BOTH authentic
+    images (0.6683, 0.5928) and on the reverse-direction case (0.7150).
+    Scored over all nine with Th fixed: step 5 right 6 times, step 1 five.
+  - Fewer grid shifts (step 2 -> 4): extra shifts never once improved a
+    genuine detection - 1, 4 and 16 shifts gave identical D_max at identical
+    q2 for all five detectable splices, every winner at shift (0,0) - but
+    they do inflate the spurious maximum on undetectable images (0.7150 ->
+    0.7150 -> 1.1457). Reverted anyway, because at the shipped quality step
+    those cases already return 0.0000 and the SKILL sanctions this pruning
+    only for a paste known to be block-aligned.
+  - Segmenting a local-minimum DEPTH map instead of d: all nine still
+    saturated, winning quality moved only 6 -> 16, mask IoU fell to 0.000.
+  - Re-fitting Th away from 0.19: it was fitted at FP=FN on 2000 UCID images;
+    nine self-built cases are not grounds to replace it.
+  - Replacing raw_score's saturating clip: real problem, but the corpus
+    offers no alternative normalisation to replace it with.
+
+FUSION WEIGHT RECOMMENDATIONS
+    JPEG, splice from LOWER-quality source, gap > 22 ......... MEDIUM
+    JPEG, quality gap under 20 .............................. LOW
+    JPEG, splice from HIGHER-quality source ................. ZERO (blind)
+    PNG / any non-JPEG ...................................... ZERO (skips)
+    Resized image ........................................... LOW
+    AI-generated ............................................ ZERO (out of scope)
+    Low resolution (below 16x16) ............................ ZERO (skips)
+    A LOW score from this engine ............................ NEVER evidence
+                                                              of authenticity
+  MEDIUM rather than HIGH even in its best case: the engine still reads both
+  supplied real photographs as FAKE at probability 1.0.
+
+FUSION ONE-LINER
+    fourier_jpeg_ghost: localises a splice better than anything else in this
+    system - mask IoU 0.82-0.87 against a known paste, with the region's
+    original quality recovered to within one sweep step - but only when the
+    pasted content came from a LOWER-quality JPEG than the host was re-saved
+    at, it is blind by construction to the reverse case and to quality gaps
+    below about 20, its score saturates so every positive reads 1.0, and it
+    still calls both supplied authentic photographs FAKE. Weight MEDIUM on
+    JPEG input with a wide quality gap, ZERO on non-JPEG, AI-generated, or
+    any use of a low score as evidence of authenticity.
+
+PERFORMANCE
+    94.3 s per image before, 84.2 s after, on 0.8-2.6 megapixel JPEGs - no
+    regression. Dominated by Pipeline B's 320 recompress-and-segment
+    combinations. Memory: the sweep holds 20 full-resolution float64 maps at
+    once, about 300 MB for a 1200x1600 image; larger inputs will scale that
+    linearly and should be watched.

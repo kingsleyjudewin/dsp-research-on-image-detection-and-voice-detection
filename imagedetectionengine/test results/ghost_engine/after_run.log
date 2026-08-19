@@ -1,0 +1,40 @@
+==========================================================================
+PHASE 0 - PRE-RUN IMAGE SUMMARY
+==========================================================================
+Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case
+--------------------------------------------------------------------------------
+campic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real
+campic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real
+mobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real
+mobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real
+fake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI
+fake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI
+fake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI
+gen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI
+genratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI
+
+--- CASE 1: Case 1 Real ---
+  [1] campic.jpeg  1599x1200 QF~74
+      raw=1.000000  prob=1.0000  conf=0.224  reliable=True  verdict=FAKE  (WRONG)
+  [2] campic2.jpeg  1599x1200 QF~74
+      raw=1.000000  prob=1.0000  conf=0.224  reliable=True  verdict=FAKE  (WRONG)
+
+--- CASE 2: Case 2 Manipulated ---
+  [1] fake .jpeg  728x1600 QF~74
+      raw=1.000000  prob=1.0000  conf=0.224  reliable=True  verdict=FAKE  (EXPECTED)
+  [2] fake.jpeg  928x1152 QF~74
+      raw=0.000000  prob=0.0000  conf=0.112  reliable=True  verdict=REAL  (WRONG)
+
+--- CASE 3: Case 3 AI-generated ---
+  [1] gen.jpeg  800x1006 QF~74
+      raw=0.000000  prob=0.0000  conf=0.112  reliable=True  verdict=REAL  (WRONG)
+  [2] genratedimage.jpeg  768x1376 QF~74
+      raw=0.000000  prob=0.0000  conf=0.112  reliable=True  verdict=REAL  (WRONG)
+
+==========================================================================
+real avg prob = 1.0
+fake avg prob = 0.5
+ai   avg prob = 0.0
+separation    = -0.5
+raw separation= -0.5
+written to    : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after

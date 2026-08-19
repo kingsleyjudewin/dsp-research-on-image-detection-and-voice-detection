@@ -1,0 +1,117 @@
+BEFORE vs AFTER - FOURIER / JPEG-GHOST ENGINE
+=============================================
+
+PART 1 - THE SIX SUPPLIED IMAGES (Phase 7.4 table)
+
+  Image                 truth          before prob  after prob  change
+  ---------------------------------------------------------------------
+  campic.jpeg           REAL                1.0000      1.0000  =
+  campic2.jpeg          REAL                1.0000      1.0000  =
+  fake .jpeg            FAKE                1.0000      1.0000  =
+  fake.jpeg             FAKE                0.0000      0.0000  =
+  gen.jpeg              AI-GENERATED        1.0000      0.0000  -
+  genratedimage.jpeg    AI-GENERATED        1.0000      0.0000  -
+  ---------------------------------------------------------------------
+  separation (fake-real)                     -0.5000     -0.5000  =
+  correct verdicts                              3/6         1/6
+  reliable                                      6/6         6/6
+
+  The probability column hides the movement, because raw_score is
+  clip(D_max / 0.19, 0, 1) and every D_max above 0.19 clips to 1.0. The
+  underlying statistic did move, and in the right direction:
+
+  Image                 before D_max  after D_max  before q2  after q2
+  ---------------------------------------------------------------------
+  campic.jpeg  (REAL)         0.6797       0.4223          6        26
+  campic2.jpeg (REAL)         0.7271       0.3386          6        36
+  fake .jpeg                  0.8175       0.8582          6         6
+  fake.jpeg                   0.0000       0.0000          1         1
+  gen.jpeg                    1.2161       0.0000          1         1
+  genratedimage.jpeg          1.1911       0.0000          1         1
+
+  Both authentic photographs roughly halved, and their winning quality moved
+  off the degenerate low end of the sweep. Neither fell below Th = 0.19, so
+  neither verdict changed. That is a partial fix and is reported as one.
+
+  WHY THIS TABLE CANNOT SETTLE ANYTHING, AND IT IS NOT THE ENGINE'S FAULT.
+  Eight of the nine files in the two folders carry BYTE-IDENTICAL JPEG
+  quantization tables (md5 49b048154bc1, luminance row 0 = 6,6,6,7,10,15,22,34),
+  real and fake alike; only fake2.jpeg differs. Photographs from different
+  cameras cannot share a quantization table. Every one of these files has
+  therefore been re-encoded by one common pipeline on top of whatever
+  compression it already carried, which means the "real" images are NOT
+  single-compressed and cannot serve as negative controls for a
+  double-compression detector. Whether the residual 0.34-0.42 on them is
+  genuine double-quantization structure or leftover segmentation artefact is
+  not determinable from these files. It is worth noting that the
+  ground-truth authentic images, single-compressed by construction, return
+  exactly 0.0000.
+
+PART 2 - GROUND TRUTH (where the engine can actually be measured)
+Built to Azarian-Pour's own setup: a 512x384 UCID-sized host with a 200x200
+paste (20.3% of the frame), the pasted content given its own compression
+history at q0 before being composited and re-saved at q1. Both quantities are
+known exactly, so the true ghost quality AND the true tamper location are known.
+
+  case                        before D_max   after D_max   q2 (true)   mask IoU
+  --------------------------------------------------------------------------
+  authentic q1=70                  1.6522        0.0000    - (-)         -
+  authentic q1=90                  1.2527        0.0000    - (-)         -
+  splice q0=50 -> q1=90 (dq=40)    1.2733        0.9684    51 (50)     0.858
+  splice q0=50 misaligned          1.2836        1.0315    51 (50)     0.867
+  splice q0=60 -> q1=90 (dq=30)    1.1766        0.0000    MISSED        -
+  splice q0=70 -> q1=90 (dq=20)    1.1740        0.6126    71 (70)     0.628
+  splice q0=80 -> q1=90 (dq=10)    1.2240        0.0000    MISSED        -
+  splice q0=88 -> q1=90 (dq=2)     1.2013        0.0000    (SKILL: near-blind)
+  splice q0=95 -> q1=70 REVERSE    1.3509        0.0000    (SKILL: blind)
+  --------------------------------------------------------------------------
+  correct calls                       0/9           6/9
+
+  BEFORE, the engine was not merely weak, it was inverted and saturated:
+  every one of the nine returned D_max 1.17-1.65, three to nine times the
+  threshold, EVERY winner sat at q2=6, and the authentic q1=70 image scored
+  HIGHER (1.6522) than any genuine splice. Mask IoU hovered near 0.48 on the
+  splices for the wrong reason - at extreme quality the recompression error
+  tracks image content, so the segmenter was finding the pasted photograph's
+  different texture, not its different compression history. The same 0.48-0.51
+  IoU appeared on the reverse-direction case the SKILL says is unresolvable,
+  which is the proof that it was texture and not ghost.
+
+  AFTER, the two authentic images and the reverse-direction splice return
+  exactly 0.0000, and the three detections land at the correct quality within
+  one step of the sweep with masks that genuinely cover the paste.
+
+  MEASURED, NOT ASSUMED - the ghost is really there and the maths really works.
+  Segmenter-free check, thresholding the normalised difference map directly
+  against the known paste: AUC peaks at 0.9927 at q2=51 for a true q0 of 50,
+  and 0.9876 at q2=71 for a true q0 of 70. Eq. 10 evaluated with the TRUE mask
+  gives B = 1.19 and 1.04 at those qualities. The signal was always present;
+  the segmenter was the failure.
+
+PART 3 - DOES IT HOLD AT THE RESOLUTION OF THE ACTUAL CORPUS?
+The ground truth above is UCID-sized. The supplied photographs are eight times
+larger, and SEGMENTATION_SUPERPIXEL_COUNT is a fixed 150 regardless, so each
+superpixel covers eight times more area. The same q0=50-into-q1=90 case rebuilt
+at 1200x1600 with a proportionally sized paste:
+
+  fullres authentic q1=90     D_max 0.0000  prob 0.0  0 flagged regions
+  fullres splice q0=50        D_max 0.7201  prob 1.0  mask IoU 0.8198
+
+  The fix scales: the authentic image is still silent and the paste is still
+  localised well. But the QUALITY ESTIMATE degrades - the winner sits at q2=76
+  against a true q0 of 50, where the small-image version put it at 51. At this
+  resolution the reported q2,m should not be trusted as the region's original
+  quality even when the mask is right.
+
+HONEST RESIDUAL DEFECTS
+  - Recall is worse than the paper's. Azarian-Pour report >95% sensitivity
+    once dq > 22; this pipeline misses dq=30 (q0=60) and dq=10 (q0=80)
+    outright. A finer quality sweep recovers both - and false-alarms on both
+    authentic images while doing so. That trade was measured and the
+    conservative side chosen; see the rejected-changes list.
+  - The two supplied real photographs still read FAKE at probability 1.0. The
+    statistic halved but did not cross the threshold.
+  - raw_score saturates. Measured D_max runs 0.6-1.8 against Th=0.19, so every
+    positive reports exactly 1.0 and the fusion layer receives no magnitude.
+  - Localisation is fragmented on the harder splice: dq=20 produced 5 regions
+    for one paste, against 1 region at dq=40.

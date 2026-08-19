@@ -1,0 +1,1794 @@
+{
+  "tag": "after",
+  "engine": "fourier_jpeg_ghost",
+  "generated_at": "2026-08-19 00:13:07",
+  "pre_run_table": "Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case\n--------------------------------------------------------------------------------\ncampic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real\ncampic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real\nmobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real\nmobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real\nfake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI\nfake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI\nfake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI\ngen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI\ngenratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI",
+  "notices": [
+    "The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.",
+    "Pipeline B ran the SKILL-sanctioned pruned sweep: 20 quality factors x 16 grid shifts = 320 of the paper's 6400 combinations. Pipeline A ran its full 692-map search set but cannot score, because this SKILL prints no numeric value for its decision threshold rho_T."
+  ],
+  "cases": [
+    {
+      "case_number": 1,
+      "case_type": "Case 1 Real",
+      "ground_truth": "REAL",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg",
+            "filename": "campic.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 81624,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 1.0,
+          "probability": 1.0,
+          "confidence": 0.22360679774997896,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.",
+          "processing_time_ms": 101163.25153399975,
+          "engine_verdict": "FAKE",
+          "verdict_correct": false,
+          "surprise_level": "WRONG",
+          "reasoning": "Engine reported raw_score=1.000000 = clip(D_max/Th, 0, 1) with D_max=0.4223 against the paper's Th=0.19, at confidence 0.2236, is_reliable=True, with 7 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 314 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=26 with grid shift (0, 6). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 0.6619 at q2=6, from a candidate whose class-0 region held a median 0.429 of the frame at median coherence 0.8854; 7 of those candidates passed the gate (13 rejected as covering more than 0.4 of the frame, 0 as covering less than 0.02, 1 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 3028.8051, 'best_transform_kind': 'scaling', 'best_transform_value': 0.75, 'em_iterations': 13, 'em_converged': True, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.",
+          "mathematical_explanation": "This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=0.4223, so raw_score=1.000000 and the engine cleared the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Image preparation",
+              "description": "Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "original_shape": "(1200, 1599, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)",
+              "description": "For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.4223,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": true,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 314,
+                "estimated_region_quality_factor": 26,
+                "detected_grid_shift": [
+                  0,
+                  6
+                ]
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)",
+              "description": "Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 3028.8051,
+                "best_transform_kind": "scaling",
+                "best_transform_value": 0.75,
+                "em_iterations": 13,
+                "em_converged": true,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              }
+            },
+            {
+              "step": 4,
+              "name": "Scoring",
+              "description": "D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.4223,
+                "threshold_Th": 0.19,
+                "raw_score": 1.0,
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case1_img1_campic_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case1_img1_campic_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Image preparation": {
+                "original_shape": "(1200, 1599, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              },
+              "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)": {
+                "D_max": 0.4223,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": true,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 314,
+                "estimated_region_quality_factor": 26,
+                "detected_grid_shift": [
+                  0,
+                  6
+                ]
+              },
+              "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 3028.8051,
+                "best_transform_kind": "scaling",
+                "best_transform_value": 0.75,
+                "em_iterations": 13,
+                "em_converged": true,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              },
+              "Scoring": {
+                "D_max": 0.4223,
+                "threshold_Th": 0.19,
+                "raw_score": 1.0,
+                "is_calibrated": false
+              }
+            },
+            "flagged_regions": 7,
+            "ungated_shift00": {
+              "candidates": [
+                {
+                  "q2": 1,
+                  "ungated_B": 0.5192,
+                  "area_fraction": 0.5531,
+                  "coherence": 0.6455,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 6,
+                  "ungated_B": 0.6619,
+                  "area_fraction": 0.1346,
+                  "coherence": 1.0,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 11,
+                  "ungated_B": 0.3684,
+                  "area_fraction": 0.2482,
+                  "coherence": 0.9766,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 16,
+                  "ungated_B": 0.2523,
+                  "area_fraction": 0.5759,
+                  "coherence": 0.7735,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 21,
+                  "ungated_B": 0.2497,
+                  "area_fraction": 0.5237,
+                  "coherence": 0.843,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 26,
+                  "ungated_B": 0.4451,
+                  "area_fraction": 0.4259,
+                  "coherence": 0.8892,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 31,
+                  "ungated_B": 0.5337,
+                  "area_fraction": 0.393,
+                  "coherence": 0.8834,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 36,
+                  "ungated_B": 0.3892,
+                  "area_fraction": 0.4697,
+                  "coherence": 0.8499,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 41,
+                  "ungated_B": 0.4556,
+                  "area_fraction": 0.3887,
+                  "coherence": 0.8788,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 46,
+                  "ungated_B": 0.499,
+                  "area_fraction": 0.5134,
+                  "coherence": 0.8809,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 51,
+                  "ungated_B": 0.5112,
+                  "area_fraction": 0.3984,
+                  "coherence": 0.9148,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 56,
+                  "ungated_B": 0.3698,
+                  "area_fraction": 0.4322,
+                  "coherence": 0.8999,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 61,
+                  "ungated_B": 0.3755,
+                  "area_fraction": 0.422,
+                  "coherence": 0.9097,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 66,
+                  "ungated_B": 0.2834,
+                  "area_fraction": 0.4046,
+                  "coherence": 0.8788,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 71,
+                  "ungated_B": 0.2148,
+                  "area_fraction": 0.3363,
+                  "coherence": 0.9546,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 76,
+                  "ungated_B": 0.2197,
+                  "area_fraction": 0.3833,
+                  "coherence": 0.8874,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 81,
+                  "ungated_B": 0.2102,
+                  "area_fraction": 0.446,
+                  "coherence": 0.8141,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 86,
+                  "ungated_B": 0.2175,
+                  "area_fraction": 0.4362,
+                  "coherence": 0.9469,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 91,
+                  "ungated_B": 0.1686,
+                  "area_fraction": 0.4596,
+                  "coherence": 0.4286,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 96,
+                  "ungated_B": 0.2925,
+                  "area_fraction": 0.7136,
+                  "coherence": 0.9639,
+                  "passes_gate": false
+                }
+              ],
+              "max_ungated_B": 0.6619,
+              "max_ungated_at_q2": 6,
+              "gate_survivors": 7,
+              "rejected_area_too_large": 13,
+              "rejected_area_too_small": 0,
+              "rejected_incoherent": 1,
+              "median_area_fraction": 0.429,
+              "median_coherence": 0.8854
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg",
+            "filename": "campic2.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 82589,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 1.0,
+          "probability": 1.0,
+          "confidence": 0.22360679774997896,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.",
+          "processing_time_ms": 157933.90372500016,
+          "engine_verdict": "FAKE",
+          "verdict_correct": false,
+          "surprise_level": "WRONG",
+          "reasoning": "Engine reported raw_score=1.000000 = clip(D_max/Th, 0, 1) with D_max=0.3386 against the paper's Th=0.19, at confidence 0.2236, is_reliable=True, with 10 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 319 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=36 with grid shift (6, 6). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 0.7426 at q2=1, from a candidate whose class-0 region held a median 0.432 of the frame at median coherence 0.9005; 4 of those candidates passed the gate (16 rejected as covering more than 0.4 of the frame, 0 as covering less than 0.02, 0 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 2978.464, 'best_transform_kind': 'scaling', 'best_transform_value': 0.75, 'em_iterations': 13, 'em_converged': True, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.",
+          "mathematical_explanation": "This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=0.3386, so raw_score=1.000000 and the engine cleared the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Image preparation",
+              "description": "Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "original_shape": "(1200, 1599, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)",
+              "description": "For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.3386,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": true,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 319,
+                "estimated_region_quality_factor": 36,
+                "detected_grid_shift": [
+                  6,
+                  6
+                ]
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)",
+              "description": "Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 2978.464,
+                "best_transform_kind": "scaling",
+                "best_transform_value": 0.75,
+                "em_iterations": 13,
+                "em_converged": true,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              }
+            },
+            {
+              "step": 4,
+              "name": "Scoring",
+              "description": "D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.3386,
+                "threshold_Th": 0.19,
+                "raw_score": 1.0,
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case1_img2_campic2_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case1_img2_campic2_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Image preparation": {
+                "original_shape": "(1200, 1599, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              },
+              "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)": {
+                "D_max": 0.3386,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": true,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 319,
+                "estimated_region_quality_factor": 36,
+                "detected_grid_shift": [
+                  6,
+                  6
+                ]
+              },
+              "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 2978.464,
+                "best_transform_kind": "scaling",
+                "best_transform_value": 0.75,
+                "em_iterations": 13,
+                "em_converged": true,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              },
+              "Scoring": {
+                "D_max": 0.3386,
+                "threshold_Th": 0.19,
+                "raw_score": 1.0,
+                "is_calibrated": false
+              }
+            },
+            "flagged_regions": 10,
+            "ungated_shift00": {
+              "candidates": [
+                {
+                  "q2": 1,
+                  "ungated_B": 0.7426,
+                  "area_fraction": 0.6918,
+                  "coherence": 0.9717,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 6,
+                  "ungated_B": 0.5834,
+                  "area_fraction": 0.0759,
+                  "coherence": 0.5436,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 11,
+                  "ungated_B": 0.2596,
+                  "area_fraction": 0.2516,
+                  "coherence": 0.9165,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 16,
+                  "ungated_B": 0.2182,
+                  "area_fraction": 0.5763,
+                  "coherence": 0.9646,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 21,
+                  "ungated_B": 0.3421,
+                  "area_fraction": 0.484,
+                  "coherence": 0.7871,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 26,
+                  "ungated_B": 0.3072,
+                  "area_fraction": 0.7123,
+                  "coherence": 0.9095,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 31,
+                  "ungated_B": 0.387,
+                  "area_fraction": 0.4123,
+                  "coherence": 0.9555,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 36,
+                  "ungated_B": 0.3136,
+                  "area_fraction": 0.4568,
+                  "coherence": 0.8922,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 41,
+                  "ungated_B": 0.4095,
+                  "area_fraction": 0.4279,
+                  "coherence": 0.8786,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 46,
+                  "ungated_B": 0.4638,
+                  "area_fraction": 0.5881,
+                  "coherence": 0.9463,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 51,
+                  "ungated_B": 0.4863,
+                  "area_fraction": 0.3844,
+                  "coherence": 0.8872,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 56,
+                  "ungated_B": 0.3904,
+                  "area_fraction": 0.4198,
+                  "coherence": 0.8532,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 61,
+                  "ungated_B": 0.4222,
+                  "area_fraction": 0.4087,
+                  "coherence": 0.9107,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 66,
+                  "ungated_B": 0.2368,
+                  "area_fraction": 0.4534,
+                  "coherence": 0.9089,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 71,
+                  "ungated_B": 0.1897,
+                  "area_fraction": 0.4078,
+                  "coherence": 0.8711,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 76,
+                  "ungated_B": 0.2305,
+                  "area_fraction": 0.4361,
+                  "coherence": 0.8299,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 81,
+                  "ungated_B": 0.24,
+                  "area_fraction": 0.4135,
+                  "coherence": 0.87,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 86,
+                  "ungated_B": 0.2419,
+                  "area_fraction": 0.3764,
+                  "coherence": 0.9438,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 91,
+                  "ungated_B": 0.1564,
+                  "area_fraction": 0.596,
+                  "coherence": 0.9613,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 96,
+                  "ungated_B": 0.3942,
+                  "area_fraction": 0.5679,
+                  "coherence": 0.8613,
+                  "passes_gate": false
+                }
+              ],
+              "max_ungated_B": 0.7426,
+              "max_ungated_at_q2": 1,
+              "gate_survivors": 4,
+              "rejected_area_too_large": 16,
+              "rejected_area_too_small": 0,
+              "rejected_incoherent": 0,
+              "median_area_fraction": 0.432,
+              "median_coherence": 0.9005
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": 1.0,
+      "score_spread": 0.0,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 2,
+      "case_type": "Case 2 Manipulated",
+      "ground_truth": "FAKE",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg",
+            "filename": "fake .jpeg",
+            "format": "JPEG",
+            "height": 1600,
+            "width": 728,
+            "file_size_bytes": 161570,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 1.0,
+          "probability": 1.0,
+          "confidence": 0.22360679774997896,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.",
+          "processing_time_ms": 55369.83802100031,
+          "engine_verdict": "FAKE",
+          "verdict_correct": true,
+          "surprise_level": "EXPECTED",
+          "reasoning": "Engine reported raw_score=1.000000 = clip(D_max/Th, 0, 1) with D_max=0.8582 against the paper's Th=0.19, at confidence 0.2236, is_reliable=True, with 2 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 312 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=6 with grid shift (2, 4). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 1.2649 at q2=16, from a candidate whose class-0 region held a median 0.5918 of the frame at median coherence 0.6178; 0 of those candidates passed the gate (16 rejected as covering more than 0.4 of the frame, 0 as covering less than 0.02, 5 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 2904.0136, 'best_transform_kind': 'rotation', 'best_transform_value': 0.5672, 'em_iterations': 30, 'em_converged': False, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.",
+          "mathematical_explanation": "This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=0.8582, so raw_score=1.000000 and the engine cleared the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Image preparation",
+              "description": "Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "original_shape": "(1600, 728, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)",
+              "description": "For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.8582,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": true,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 312,
+                "estimated_region_quality_factor": 6,
+                "detected_grid_shift": [
+                  2,
+                  4
+                ]
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)",
+              "description": "Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 2904.0136,
+                "best_transform_kind": "rotation",
+                "best_transform_value": 0.5672,
+                "em_iterations": 30,
+                "em_converged": false,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              }
+            },
+            {
+              "step": 4,
+              "name": "Scoring",
+              "description": "D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.8582,
+                "threshold_Th": 0.19,
+                "raw_score": 1.0,
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case2_img1_fake__heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case2_img1_fake__heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Image preparation": {
+                "original_shape": "(1600, 728, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              },
+              "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)": {
+                "D_max": 0.8582,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": true,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 312,
+                "estimated_region_quality_factor": 6,
+                "detected_grid_shift": [
+                  2,
+                  4
+                ]
+              },
+              "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 2904.0136,
+                "best_transform_kind": "rotation",
+                "best_transform_value": 0.5672,
+                "em_iterations": 30,
+                "em_converged": false,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              },
+              "Scoring": {
+                "D_max": 0.8582,
+                "threshold_Th": 0.19,
+                "raw_score": 1.0,
+                "is_calibrated": false
+              }
+            },
+            "flagged_regions": 2,
+            "ungated_shift00": {
+              "candidates": [
+                {
+                  "q2": 1,
+                  "ungated_B": 0.0739,
+                  "area_fraction": 0.15,
+                  "coherence": 0.3605,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 6,
+                  "ungated_B": 0.241,
+                  "area_fraction": 0.069,
+                  "coherence": 0.4373,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 11,
+                  "ungated_B": 0.2971,
+                  "area_fraction": 0.1019,
+                  "coherence": 0.3651,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 16,
+                  "ungated_B": 1.2649,
+                  "area_fraction": 0.5874,
+                  "coherence": 0.5407,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 21,
+                  "ungated_B": 0.4323,
+                  "area_fraction": 0.3957,
+                  "coherence": 0.2946,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 26,
+                  "ungated_B": 0.4551,
+                  "area_fraction": 0.4161,
+                  "coherence": 0.5338,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 31,
+                  "ungated_B": 0.5722,
+                  "area_fraction": 0.5962,
+                  "coherence": 0.8746,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 36,
+                  "ungated_B": 0.5232,
+                  "area_fraction": 0.5162,
+                  "coherence": 0.5745,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 41,
+                  "ungated_B": 0.1165,
+                  "area_fraction": 0.4276,
+                  "coherence": 0.4162,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 46,
+                  "ungated_B": 0.5803,
+                  "area_fraction": 0.532,
+                  "coherence": 0.6185,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 51,
+                  "ungated_B": 0.1204,
+                  "area_fraction": 0.4883,
+                  "coherence": 0.5961,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 56,
+                  "ungated_B": 0.2368,
+                  "area_fraction": 0.682,
+                  "coherence": 0.8569,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 61,
+                  "ungated_B": 0.1769,
+                  "area_fraction": 0.5977,
+                  "coherence": 0.6642,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 66,
+                  "ungated_B": 0.4406,
+                  "area_fraction": 0.6058,
+                  "coherence": 0.6171,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 71,
+                  "ungated_B": 0.3223,
+                  "area_fraction": 0.7428,
+                  "coherence": 0.8234,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 76,
+                  "ungated_B": 0.2595,
+                  "area_fraction": 0.716,
+                  "coherence": 0.8446,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 81,
+                  "ungated_B": 0.5163,
+                  "area_fraction": 0.7981,
+                  "coherence": 0.8056,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 86,
+                  "ungated_B": 0.581,
+                  "area_fraction": 0.7621,
+                  "coherence": 0.8206,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 91,
+                  "ungated_B": 0.5386,
+                  "area_fraction": 0.8178,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 96,
+                  "ungated_B": 0.6764,
+                  "area_fraction": 0.9465,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                }
+              ],
+              "max_ungated_B": 1.2649,
+              "max_ungated_at_q2": 16,
+              "gate_survivors": 0,
+              "rejected_area_too_large": 16,
+              "rejected_area_too_small": 0,
+              "rejected_incoherent": 5,
+              "median_area_fraction": 0.5918,
+              "median_coherence": 0.6178
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg",
+            "filename": "fake.jpeg",
+            "format": "JPEG",
+            "height": 1152,
+            "width": 928,
+            "file_size_bytes": 68990,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 0.0,
+          "probability": 0.0,
+          "confidence": 0.11180339887498948,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. No ghost candidate survived validation across any of the 320 swept combinations - no region behaved like a separately-quantized paste. Read this as an absence of detectable ghost evidence, NOT as evidence of authenticity: the method is blind by construction to a paste whose original quality exceeded the re-save quality, and faint when the two are close. Ground truth confirms the ambiguity is structural rather than incidental: an authentic single-compression image and a genuine splice of higher-quality content into a lower-quality host both return exactly this null result, so its confidence is weighted at 0.5. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.",
+          "processing_time_ms": 66492.2356699999,
+          "engine_verdict": "REAL",
+          "verdict_correct": false,
+          "surprise_level": "WRONG",
+          "reasoning": "Engine reported raw_score=0.000000 = clip(D_max/Th, 0, 1) with D_max=0.0 against the paper's Th=0.19, at confidence 0.1118, is_reliable=True, with 0 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 320 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=1 with grid shift (0, 0). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 2.2583 at q2=1, from a candidate whose class-0 region held a median 0.5782 of the frame at median coherence 0.8252; 1 of those candidates passed the gate (16 rejected as covering more than 0.4 of the frame, 0 as covering less than 0.02, 7 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 3063.7935, 'best_transform_kind': 'scaling', 'best_transform_value': 0.75, 'em_iterations': 29, 'em_converged': True, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.",
+          "mathematical_explanation": "This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=0.0, so raw_score=0.000000 and the engine did not clear the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Image preparation",
+              "description": "Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "original_shape": "(1152, 928, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)",
+              "description": "For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": false,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 320,
+                "estimated_region_quality_factor": 1,
+                "detected_grid_shift": [
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)",
+              "description": "Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 3063.7935,
+                "best_transform_kind": "scaling",
+                "best_transform_value": 0.75,
+                "em_iterations": 29,
+                "em_converged": true,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              }
+            },
+            {
+              "step": 4,
+              "name": "Scoring",
+              "description": "D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "raw_score": 0.0,
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case2_img2_fake_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case2_img2_fake_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Image preparation": {
+                "original_shape": "(1152, 928, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              },
+              "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": false,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 320,
+                "estimated_region_quality_factor": 1,
+                "detected_grid_shift": [
+                  0,
+                  0
+                ]
+              },
+              "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 3063.7935,
+                "best_transform_kind": "scaling",
+                "best_transform_value": 0.75,
+                "em_iterations": 29,
+                "em_converged": true,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              },
+              "Scoring": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "raw_score": 0.0,
+                "is_calibrated": false
+              }
+            },
+            "flagged_regions": 0,
+            "ungated_shift00": {
+              "candidates": [
+                {
+                  "q2": 1,
+                  "ungated_B": 2.2583,
+                  "area_fraction": 0.048,
+                  "coherence": 0.3425,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 6,
+                  "ungated_B": 0.3279,
+                  "area_fraction": 0.2949,
+                  "coherence": 0.5862,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 11,
+                  "ungated_B": 0.3279,
+                  "area_fraction": 0.3969,
+                  "coherence": 0.4404,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 16,
+                  "ungated_B": 0.3952,
+                  "area_fraction": 0.4081,
+                  "coherence": 0.3818,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 21,
+                  "ungated_B": 0.4696,
+                  "area_fraction": 0.512,
+                  "coherence": 0.6937,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 26,
+                  "ungated_B": 0.4005,
+                  "area_fraction": 0.7278,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 31,
+                  "ungated_B": 0.4158,
+                  "area_fraction": 0.5574,
+                  "coherence": 0.6369,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 36,
+                  "ungated_B": 0.4337,
+                  "area_fraction": 0.6492,
+                  "coherence": 0.9651,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 41,
+                  "ungated_B": 0.4756,
+                  "area_fraction": 0.8251,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 46,
+                  "ungated_B": 0.5256,
+                  "area_fraction": 0.6598,
+                  "coherence": 0.9567,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 51,
+                  "ungated_B": 0.5083,
+                  "area_fraction": 0.8605,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 56,
+                  "ungated_B": 0.5538,
+                  "area_fraction": 0.8708,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 61,
+                  "ungated_B": 0.4486,
+                  "area_fraction": 0.8524,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 66,
+                  "ungated_B": 0.3955,
+                  "area_fraction": 0.7734,
+                  "coherence": 0.994,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 71,
+                  "ungated_B": 0.3533,
+                  "area_fraction": 0.453,
+                  "coherence": 0.416,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 76,
+                  "ungated_B": 0.3999,
+                  "area_fraction": 0.414,
+                  "coherence": 0.4651,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 81,
+                  "ungated_B": 0.3947,
+                  "area_fraction": 0.5211,
+                  "coherence": 0.3863,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 86,
+                  "ungated_B": 0.3572,
+                  "area_fraction": 0.3935,
+                  "coherence": 0.3908,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 91,
+                  "ungated_B": 0.3612,
+                  "area_fraction": 0.5991,
+                  "coherence": 0.9775,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 96,
+                  "ungated_B": 0.4069,
+                  "area_fraction": 0.6987,
+                  "coherence": 0.9803,
+                  "passes_gate": false
+                }
+              ],
+              "max_ungated_B": 2.2583,
+              "max_ungated_at_q2": 1,
+              "gate_survivors": 1,
+              "rejected_area_too_large": 16,
+              "rejected_area_too_small": 0,
+              "rejected_incoherent": 7,
+              "median_area_fraction": 0.5782,
+              "median_coherence": 0.8252
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": 0.5,
+      "score_spread": 1.0,
+      "correct_verdicts": 1,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 3,
+      "case_type": "Case 3 AI-generated",
+      "ground_truth": "AI-GENERATED",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg",
+            "filename": "gen.jpeg",
+            "format": "JPEG",
+            "height": 1006,
+            "width": 800,
+            "file_size_bytes": 45706,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 0.0,
+          "probability": 0.0,
+          "confidence": 0.11180339887498948,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. No ghost candidate survived validation across any of the 320 swept combinations - no region behaved like a separately-quantized paste. Read this as an absence of detectable ghost evidence, NOT as evidence of authenticity: the method is blind by construction to a paste whose original quality exceeded the re-save quality, and faint when the two are close. Ground truth confirms the ambiguity is structural rather than incidental: an authentic single-compression image and a genuine splice of higher-quality content into a lower-quality host both return exactly this null result, so its confidence is weighted at 0.5. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.",
+          "processing_time_ms": 55380.28273999998,
+          "engine_verdict": "REAL",
+          "verdict_correct": false,
+          "surprise_level": "WRONG",
+          "reasoning": "Engine reported raw_score=0.000000 = clip(D_max/Th, 0, 1) with D_max=0.0 against the paper's Th=0.19, at confidence 0.1118, is_reliable=True, with 0 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 320 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=1 with grid shift (0, 0). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 0.8873 at q2=1, from a candidate whose class-0 region held a median 0.5635 of the frame at median coherence 0.6255; 4 of those candidates passed the gate (16 rejected as covering more than 0.4 of the frame, 0 as covering less than 0.02, 0 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 3171.6533, 'best_transform_kind': 'rotation', 'best_transform_value': 0.5672, 'em_iterations': 30, 'em_converged': False, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.",
+          "mathematical_explanation": "This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=0.0, so raw_score=0.000000 and the engine did not clear the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Image preparation",
+              "description": "Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "original_shape": "(1006, 800, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)",
+              "description": "For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": false,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 320,
+                "estimated_region_quality_factor": 1,
+                "detected_grid_shift": [
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)",
+              "description": "Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 3171.6533,
+                "best_transform_kind": "rotation",
+                "best_transform_value": 0.5672,
+                "em_iterations": 30,
+                "em_converged": false,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              }
+            },
+            {
+              "step": 4,
+              "name": "Scoring",
+              "description": "D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "raw_score": 0.0,
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case3_img1_gen_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case3_img1_gen_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Image preparation": {
+                "original_shape": "(1006, 800, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              },
+              "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": false,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 320,
+                "estimated_region_quality_factor": 1,
+                "detected_grid_shift": [
+                  0,
+                  0
+                ]
+              },
+              "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 3171.6533,
+                "best_transform_kind": "rotation",
+                "best_transform_value": 0.5672,
+                "em_iterations": 30,
+                "em_converged": false,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              },
+              "Scoring": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "raw_score": 0.0,
+                "is_calibrated": false
+              }
+            },
+            "flagged_regions": 0,
+            "ungated_shift00": {
+              "candidates": [
+                {
+                  "q2": 1,
+                  "ungated_B": 0.8873,
+                  "area_fraction": 0.0483,
+                  "coherence": 0.6308,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 6,
+                  "ungated_B": 0.4793,
+                  "area_fraction": 0.2784,
+                  "coherence": 0.7548,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 11,
+                  "ungated_B": 0.5964,
+                  "area_fraction": 0.3797,
+                  "coherence": 0.7495,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 16,
+                  "ungated_B": 0.5923,
+                  "area_fraction": 0.6246,
+                  "coherence": 0.5982,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 21,
+                  "ungated_B": 0.4525,
+                  "area_fraction": 0.4821,
+                  "coherence": 0.6083,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 26,
+                  "ungated_B": 0.6041,
+                  "area_fraction": 0.6463,
+                  "coherence": 0.5382,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 31,
+                  "ungated_B": 0.6032,
+                  "area_fraction": 0.4777,
+                  "coherence": 0.6704,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 36,
+                  "ungated_B": 0.5955,
+                  "area_fraction": 0.7619,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 41,
+                  "ungated_B": 0.6916,
+                  "area_fraction": 0.7187,
+                  "coherence": 0.9934,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 46,
+                  "ungated_B": 0.5656,
+                  "area_fraction": 0.5347,
+                  "coherence": 0.6201,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 51,
+                  "ungated_B": 0.5508,
+                  "area_fraction": 0.5924,
+                  "coherence": 0.5091,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 56,
+                  "ungated_B": 0.5318,
+                  "area_fraction": 0.4898,
+                  "coherence": 0.6415,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 61,
+                  "ungated_B": 0.4764,
+                  "area_fraction": 0.5237,
+                  "coherence": 0.6407,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 66,
+                  "ungated_B": 0.6141,
+                  "area_fraction": 0.4486,
+                  "coherence": 0.6719,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 71,
+                  "ungated_B": 0.5509,
+                  "area_fraction": 0.356,
+                  "coherence": 0.5094,
+                  "passes_gate": true
+                },
+                {
+                  "q2": 76,
+                  "ungated_B": 0.7804,
+                  "area_fraction": 0.7054,
+                  "coherence": 0.5144,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 81,
+                  "ungated_B": 0.7814,
+                  "area_fraction": 0.7223,
+                  "coherence": 0.5192,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 86,
+                  "ungated_B": 0.5627,
+                  "area_fraction": 0.6855,
+                  "coherence": 0.5058,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 91,
+                  "ungated_B": 0.8473,
+                  "area_fraction": 0.7139,
+                  "coherence": 0.5344,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 96,
+                  "ungated_B": 0.2102,
+                  "area_fraction": 0.6808,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                }
+              ],
+              "max_ungated_B": 0.8873,
+              "max_ungated_at_q2": 1,
+              "gate_survivors": 4,
+              "rejected_area_too_large": 16,
+              "rejected_area_too_small": 0,
+              "rejected_incoherent": 0,
+              "median_area_fraction": 0.5635,
+              "median_coherence": 0.6255
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg",
+            "filename": "genratedimage.jpeg",
+            "format": "JPEG",
+            "height": 1376,
+            "width": 768,
+            "file_size_bytes": 72944,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 0.0,
+          "probability": 0.0,
+          "confidence": 0.11180339887498948,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. No ghost candidate survived validation across any of the 320 swept combinations - no region behaved like a separately-quantized paste. Read this as an absence of detectable ghost evidence, NOT as evidence of authenticity: the method is blind by construction to a paste whose original quality exceeded the re-save quality, and faint when the two are close. Ground truth confirms the ambiguity is structural rather than incidental: an authentic single-compression image and a genuine splice of higher-quality content into a lower-quality host both return exactly this null result, so its confidence is weighted at 0.5. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.",
+          "processing_time_ms": 68824.09284100003,
+          "engine_verdict": "REAL",
+          "verdict_correct": false,
+          "surprise_level": "WRONG",
+          "reasoning": "Engine reported raw_score=0.000000 = clip(D_max/Th, 0, 1) with D_max=0.0 against the paper's Th=0.19, at confidence 0.1118, is_reliable=True, with 0 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 320 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=1 with grid shift (0, 0). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 6.4147 at q2=1, from a candidate whose class-0 region held a median 0.6989 of the frame at median coherence 1.0; 0 of those candidates passed the gate (19 rejected as covering more than 0.4 of the frame, 1 as covering less than 0.02, 1 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 3594.4462, 'best_transform_kind': 'scaling', 'best_transform_value': 0.75, 'em_iterations': 30, 'em_converged': False, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.",
+          "mathematical_explanation": "This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=0.0, so raw_score=0.000000 and the engine did not clear the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "Image preparation",
+              "description": "Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "original_shape": "(1376, 768, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)",
+              "description": "For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": false,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 320,
+                "estimated_region_quality_factor": 1,
+                "detected_grid_shift": [
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)",
+              "description": "Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 3594.4462,
+                "best_transform_kind": "scaling",
+                "best_transform_value": 0.75,
+                "em_iterations": 30,
+                "em_converged": false,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              }
+            },
+            {
+              "step": 4,
+              "name": "Scoring",
+              "description": "D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "raw_score": 0.0,
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case3_img2_genratedimage_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/after/ghost_case3_img2_genratedimage_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "Image preparation": {
+                "original_shape": "(1376, 768, 3)",
+                "resampling_window": "Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity."
+              },
+              "Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "exceeds_threshold": false,
+                "combinations_evaluated": 320,
+                "full_search_size": 6400,
+                "degenerate_segmentations": 320,
+                "estimated_region_quality_factor": 1,
+                "detected_grid_shift": [
+                  0,
+                  0
+                ]
+              },
+              "Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)": {
+                "ran": true,
+                "scored": false,
+                "rho_uncalibrated": 3594.4462,
+                "best_transform_kind": "scaling",
+                "best_transform_value": 0.75,
+                "em_iterations": 30,
+                "em_converged": false,
+                "synthetic_maps_evaluated": 692,
+                "full_search_set_size": 692
+              },
+              "Scoring": {
+                "D_max": 0.0,
+                "threshold_Th": 0.19,
+                "raw_score": 0.0,
+                "is_calibrated": false
+              }
+            },
+            "flagged_regions": 0,
+            "ungated_shift00": {
+              "candidates": [
+                {
+                  "q2": 1,
+                  "ungated_B": 6.4147,
+                  "area_fraction": 0.0086,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 6,
+                  "ungated_B": 0.7135,
+                  "area_fraction": 0.5636,
+                  "coherence": 0.9268,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 11,
+                  "ungated_B": 0.8081,
+                  "area_fraction": 0.5235,
+                  "coherence": 0.4906,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 16,
+                  "ungated_B": 1.0146,
+                  "area_fraction": 0.6942,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 21,
+                  "ungated_B": 1.0427,
+                  "area_fraction": 0.7036,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 26,
+                  "ungated_B": 0.9679,
+                  "area_fraction": 0.6874,
+                  "coherence": 0.9667,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 31,
+                  "ungated_B": 0.879,
+                  "area_fraction": 0.6883,
+                  "coherence": 0.98,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 36,
+                  "ungated_B": 0.8078,
+                  "area_fraction": 0.7255,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 41,
+                  "ungated_B": 0.7895,
+                  "area_fraction": 0.7138,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 46,
+                  "ungated_B": 0.749,
+                  "area_fraction": 0.74,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 51,
+                  "ungated_B": 0.738,
+                  "area_fraction": 0.745,
+                  "coherence": 0.9911,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 56,
+                  "ungated_B": 0.6766,
+                  "area_fraction": 0.7524,
+                  "coherence": 0.9916,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 61,
+                  "ungated_B": 0.6637,
+                  "area_fraction": 0.7077,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 66,
+                  "ungated_B": 0.6996,
+                  "area_fraction": 0.7373,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 71,
+                  "ungated_B": 0.6302,
+                  "area_fraction": 0.7111,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 76,
+                  "ungated_B": 0.7104,
+                  "area_fraction": 0.6917,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 81,
+                  "ungated_B": 0.668,
+                  "area_fraction": 0.6861,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 86,
+                  "ungated_B": 0.7501,
+                  "area_fraction": 0.6673,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 91,
+                  "ungated_B": 0.7647,
+                  "area_fraction": 0.649,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                },
+                {
+                  "q2": 96,
+                  "ungated_B": 1.0688,
+                  "area_fraction": 0.8707,
+                  "coherence": 1.0,
+                  "passes_gate": false
+                }
+              ],
+              "max_ungated_B": 6.4147,
+              "max_ungated_at_q2": 1,
+              "gate_survivors": 0,
+              "rejected_area_too_large": 19,
+              "rejected_area_too_small": 1,
+              "rejected_incoherent": 1,
+              "median_area_fraction": 0.6989,
+              "median_coherence": 1.0
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": 0.0,
+      "score_spread": 0.0,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    }
+  ],
+  "statistics": {
+    "total_images": 6,
+    "real_average": 1.0,
+    "fake_average": 0.5,
+    "ai_average": 0.0,
+    "separation": -0.5,
+    "real_raw_average": 1.0,
+    "fake_raw_average": 0.5,
+    "raw_separation": -0.5,
+    "reliable_count": 6,
+    "correct_verdicts": 1,
+    "abstained_count": 0,
+    "wrong_verdicts": 5,
+    "average_time_ms": 84193.93408850003
+  }
+}

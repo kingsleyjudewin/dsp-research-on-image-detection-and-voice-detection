@@ -1,0 +1,473 @@
+==========================================================================
+GHOST ENGINE DIAGNOSTIC REPORT  [before]
+Generated: 2026-08-18 23:39:43
+==========================================================================
+
+Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case
+--------------------------------------------------------------------------------
+campic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real
+campic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real
+mobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real
+mobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real
+fake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI
+fake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI
+fake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI
+gen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI
+genratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI
+
+NOTICES:
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+  - Pipeline B ran the SKILL-sanctioned pruned sweep: 20 quality factors x 16 grid shifts = 320 of the paper's 6400 combinations. Pipeline A ran its full 692-map search set but cannot score, because this SKILL prints no numeric value for its decision threshold rho_T.
+
+
+##########################################################################
+CASE 1: Case 1 Real (ground truth REAL)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images
+##########################################################################
+
+==========================================================================
+IMAGE: campic.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 79.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 1.000000
+  Probability  : 1.000000
+  Confidence   : 0.2236
+  Is reliable  : True
+  Time         : 115785.5 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Image preparation
+      Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).
+      in=  out=
+        original_shape = (1200, 1599, 3)
+        resampling_window = Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity.
+    Step 2: Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)
+      For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.
+      in=  out=
+        D_max = 0.6797
+        threshold_Th = 0.19
+        exceeds_threshold = True
+        combinations_evaluated = 320
+        full_search_size = 6400
+        degenerate_segmentations = 289
+        estimated_region_quality_factor = 6
+        detected_grid_shift = (0, 4)
+    Step 3: Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)
+      Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.
+      in=  out=
+        ran = True
+        scored = False
+        rho_uncalibrated = 3028.8051
+        best_transform_kind = scaling
+        best_transform_value = 0.75
+        em_iterations = 13
+        em_converged = True
+        synthetic_maps_evaluated = 692
+        full_search_set_size = 692
+    Step 4: Scoring
+      D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.
+      in=  out=
+        D_max = 0.6797
+        threshold_Th = 0.19
+        raw_score = 1.0
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=1.000000 = clip(D_max/Th, 0, 1) with D_max=0.6797 against the paper's Th=0.19, at confidence 0.2236, is_reliable=True, with 1 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 289 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=6 with grid shift (0, 4). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 0.7325 at q2=1, from a candidate whose class-0 region held a median 0.6074 of the frame at median coherence 0.9524; 1 of those candidates passed the gate (19 rejected as covering more than 0.4 of the frame, 0 as covering less than 0.02, 0 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 3028.8051, 'best_transform_kind': 'scaling', 'best_transform_value': 0.75, 'em_iterations': 13, 'em_converged': True, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=0.6797, so raw_score=1.000000 and the engine cleared the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.
+
+  Engine says   : FAKE
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/before/ghost_case1_img1_campic_heatmap.png
+
+==========================================================================
+IMAGE: campic2.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 80.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 1.000000
+  Probability  : 1.000000
+  Confidence   : 0.2236
+  Is reliable  : True
+  Time         : 174020.9 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Image preparation
+      Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).
+      in=  out=
+        original_shape = (1200, 1599, 3)
+        resampling_window = Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity.
+    Step 2: Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)
+      For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.
+      in=  out=
+        D_max = 0.7271
+        threshold_Th = 0.19
+        exceeds_threshold = True
+        combinations_evaluated = 320
+        full_search_size = 6400
+        degenerate_segmentations = 289
+        estimated_region_quality_factor = 6
+        detected_grid_shift = (2, 0)
+    Step 3: Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)
+      Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.
+      in=  out=
+        ran = True
+        scored = False
+        rho_uncalibrated = 2978.464
+        best_transform_kind = scaling
+        best_transform_value = 0.75
+        em_iterations = 13
+        em_converged = True
+        synthetic_maps_evaluated = 692
+        full_search_set_size = 692
+    Step 4: Scoring
+      D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.
+      in=  out=
+        D_max = 0.7271
+        threshold_Th = 0.19
+        raw_score = 1.0
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=1.000000 = clip(D_max/Th, 0, 1) with D_max=0.7271 against the paper's Th=0.19, at confidence 0.2236, is_reliable=True, with 1 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 289 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=6 with grid shift (2, 0). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 0.7426 at q2=1, from a candidate whose class-0 region held a median 0.677 of the frame at median coherence 0.9513; 1 of those candidates passed the gate (19 rejected as covering more than 0.4 of the frame, 0 as covering less than 0.02, 0 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 2978.464, 'best_transform_kind': 'scaling', 'best_transform_value': 0.75, 'em_iterations': 13, 'em_converged': True, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=0.7271, so raw_score=1.000000 and the engine cleared the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.
+
+  Engine says   : FAKE
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/before/ghost_case1_img2_campic2_heatmap.png
+
+  CASE 1 SUMMARY
+    average probability : 1.0000
+    score spread        : 0.0000
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 2: Case 2 Manipulated (ground truth FAKE)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: fake .jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg
+==========================================================================
+  Resolution   : 728x1600
+  Format       : JPEG
+  File size    : 157.8 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 1.000000
+  Probability  : 1.000000
+  Confidence   : 0.2236
+  Is reliable  : True
+  Time         : 107036.3 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Image preparation
+      Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).
+      in=  out=
+        original_shape = (1600, 728, 3)
+        resampling_window = Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity.
+    Step 2: Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)
+      For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.
+      in=  out=
+        D_max = 0.8175
+        threshold_Th = 0.19
+        exceeds_threshold = True
+        combinations_evaluated = 320
+        full_search_size = 6400
+        degenerate_segmentations = 313
+        estimated_region_quality_factor = 6
+        detected_grid_shift = (4, 6)
+    Step 3: Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)
+      Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.
+      in=  out=
+        ran = True
+        scored = False
+        rho_uncalibrated = 2904.0136
+        best_transform_kind = rotation
+        best_transform_value = 0.5672
+        em_iterations = 30
+        em_converged = False
+        synthetic_maps_evaluated = 692
+        full_search_set_size = 692
+    Step 4: Scoring
+      D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.
+      in=  out=
+        D_max = 0.8175
+        threshold_Th = 0.19
+        raw_score = 1.0
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=1.000000 = clip(D_max/Th, 0, 1) with D_max=0.8175 against the paper's Th=0.19, at confidence 0.2236, is_reliable=True, with 2 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 313 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=6 with grid shift (4, 6). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 1.29 at q2=16, from a candidate whose class-0 region held a median 0.6887 of the frame at median coherence 0.9423; 0 of those candidates passed the gate (20 rejected as covering more than 0.4 of the frame, 0 as covering less than 0.02, 0 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 2904.0136, 'best_transform_kind': 'rotation', 'best_transform_value': 0.5672, 'em_iterations': 30, 'em_converged': False, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=0.8175, so raw_score=1.000000 and the engine cleared the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.
+
+  Engine says   : FAKE
+  Ground truth  : FAKE
+  Correct       : True
+  Surprise level: EXPECTED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/before/ghost_case2_img1_fake__heatmap.png
+
+==========================================================================
+IMAGE: fake.jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg
+==========================================================================
+  Resolution   : 928x1152
+  Format       : JPEG
+  File size    : 67.4 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.000000
+  Probability  : 0.000000
+  Confidence   : 0.2236
+  Is reliable  : True
+  Time         : 67961.2 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. No ghost candidate survived validation across any of the 320 swept combinations - no region behaved like a separately-quantized paste. Read this as an absence of detectable ghost evidence, NOT as evidence of authenticity: the method is blind by construction to a paste whose original quality exceeded the re-save quality, and faint when the two are close. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Image preparation
+      Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).
+      in=  out=
+        original_shape = (1152, 928, 3)
+        resampling_window = Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity.
+    Step 2: Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)
+      For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.
+      in=  out=
+        D_max = 0.0
+        threshold_Th = 0.19
+        exceeds_threshold = False
+        combinations_evaluated = 320
+        full_search_size = 6400
+        degenerate_segmentations = 320
+        estimated_region_quality_factor = 1
+        detected_grid_shift = (0, 0)
+    Step 3: Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)
+      Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.
+      in=  out=
+        ran = True
+        scored = False
+        rho_uncalibrated = 3063.7935
+        best_transform_kind = scaling
+        best_transform_value = 0.75
+        em_iterations = 29
+        em_converged = True
+        synthetic_maps_evaluated = 692
+        full_search_set_size = 692
+    Step 4: Scoring
+      D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.
+      in=  out=
+        D_max = 0.0
+        threshold_Th = 0.19
+        raw_score = 0.0
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=0.000000 = clip(D_max/Th, 0, 1) with D_max=0.0 against the paper's Th=0.19, at confidence 0.2236, is_reliable=True, with 0 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 320 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=1 with grid shift (0, 0). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 6.1979 at q2=51, from a candidate whose class-0 region held a median 0.7807 of the frame at median coherence 1.0; 0 of those candidates passed the gate (19 rejected as covering more than 0.4 of the frame, 0 as covering less than 0.02, 1 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 3063.7935, 'best_transform_kind': 'scaling', 'best_transform_value': 0.75, 'em_iterations': 29, 'em_converged': True, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=0.0, so raw_score=0.000000 and the engine did not clear the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.
+
+  Engine says   : REAL
+  Ground truth  : FAKE
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/before/ghost_case2_img2_fake_heatmap.png
+
+  CASE 2 SUMMARY
+    average probability : 0.5000
+    score spread        : 1.0000
+    correct verdicts    : 1 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 3: Case 3 AI-generated (ground truth AI-GENERATED)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: gen.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg
+==========================================================================
+  Resolution   : 800x1006
+  Format       : JPEG
+  File size    : 44.6 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 1.000000
+  Probability  : 1.000000
+  Confidence   : 0.2236
+  Is reliable  : True
+  Time         : 42436.2 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Image preparation
+      Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).
+      in=  out=
+        original_shape = (1006, 800, 3)
+        resampling_window = Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity.
+    Step 2: Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)
+      For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.
+      in=  out=
+        D_max = 1.2161
+        threshold_Th = 0.19
+        exceeds_threshold = True
+        combinations_evaluated = 320
+        full_search_size = 6400
+        degenerate_segmentations = 295
+        estimated_region_quality_factor = 1
+        detected_grid_shift = (0, 6)
+    Step 3: Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)
+      Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.
+      in=  out=
+        ran = True
+        scored = False
+        rho_uncalibrated = 3171.6533
+        best_transform_kind = rotation
+        best_transform_value = 0.5672
+        em_iterations = 30
+        em_converged = False
+        synthetic_maps_evaluated = 692
+        full_search_set_size = 692
+    Step 4: Scoring
+      D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.
+      in=  out=
+        D_max = 1.2161
+        threshold_Th = 0.19
+        raw_score = 1.0
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=1.000000 = clip(D_max/Th, 0, 1) with D_max=1.2161 against the paper's Th=0.19, at confidence 0.2236, is_reliable=True, with 2 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 295 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=1 with grid shift (0, 6). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 0.7262 at q2=41, from a candidate whose class-0 region held a median 0.7355 of the frame at median coherence 0.5857; 1 of those candidates passed the gate (18 rejected as covering more than 0.4 of the frame, 0 as covering less than 0.02, 2 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 3171.6533, 'best_transform_kind': 'rotation', 'best_transform_value': 0.5672, 'em_iterations': 30, 'em_converged': False, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=1.2161, so raw_score=1.000000 and the engine cleared the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.
+
+  Engine says   : FAKE
+  Ground truth  : AI-GENERATED
+  Correct       : True
+  Surprise level: EXPECTED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/before/ghost_case3_img1_gen_heatmap.png
+
+==========================================================================
+IMAGE: genratedimage.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg
+==========================================================================
+  Resolution   : 768x1376
+  Format       : JPEG
+  File size    : 71.2 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 1.000000
+  Probability  : 1.000000
+  Confidence   : 0.2236
+  Is reliable  : True
+  Time         : 58626.0 ms
+  Reliability  : Standing SKILL caveats - a LOW score from this engine is NOT evidence of authenticity. The ghost detector is fundamentally directional: it resolves a splice only when the pasted region's original quality was LOWER than the quality the composite was re-saved at, and it cannot resolve the reverse case at all. Its sensitivity depends strongly on the quality gap, exceeding 95% only once that gap exceeds 22, and fading to nothing as the gap approaches zero. Neither quantity is computable from the image alone, since the pasted region's original quality is precisely what is unknown. The resampling detector is additionally defeated outright by three counter-forensic techniques published in its own source paper (5x5 median filtering, edge-modulated geometric distortion, and their dual-path combination), and by ordinary sinc/spline interpolation with no attack at all. Swept 320 of the paper's 6400 (q2, dx, dy) combinations (20 quality factors x 16 grid shifts). Pruning is sanctioned by the SKILL for cost, but a pruned sweep can miss the true combination, so confidence is scaled by coverage. Resampling periodicity (auxiliary) was computed on a JPEG input at estimated quality 74; the SKILL states this detector 'fails outright after even moderate JPEG compression', so its rho should be read as uninformative here rather than as an absence of resampling. Pipeline A: rho is UNCALIBRATED: this SKILL gives no numeric value for the decision threshold rho_T, and the gamma contrast function its spectrum enhancement calls for is not printed in the source either. Reported as evidence only; it does not contribute to raw_score. Scored by the SKILL's own recommended normalisation, clip(D_max / Th, 0, 1) with Th=0.19. The threshold itself is a corpus value fitted on 1000 original + 1000 tampered UCID images, so a raw score of 1.0 marks the paper's own forged/authentic boundary - but the mapping from that ratio to a probability is not calibrated by the corpus, so treat intermediate values as an ordering signal rather than a likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: Image preparation
+      Built the RGB view the ghost difference-energy statistic sums over, and a CFA-suppressed centre window for the resampling detector (downsampled x2 with nearest-neighbour to strip demosaicing periodicity that would otherwise be mistaken for resampling periodicity).
+      in=  out=
+        original_shape = (1376, 768, 3)
+        resampling_window = Analysed a 256x256 centre window after the x2 nearest-neighbour downsample that strips CFA-interpolation periodicity.
+    Step 2: Pipeline B: automated JPEG-ghost sweep (SCORE-DRIVING)
+      For each grid shift, padded the image off the 8x8 DCT grid, recompressed at each candidate quality, took the smoothed RGB squared difference, normalised each pixel across the quality sweep, segmented ghost from background, and measured the two classes' separability by Bhattacharyya distance. The most separable combination gives D_max and the tamper mask.
+      in=  out=
+        D_max = 1.1911
+        threshold_Th = 0.19
+        exceeds_threshold = True
+        combinations_evaluated = 320
+        full_search_size = 6400
+        degenerate_segmentations = 317
+        estimated_region_quality_factor = 1
+        detected_grid_shift = (6, 6)
+    Step 3: Pipeline A: resampling periodicity (AUXILIARY, UNCALIBRATED)
+      Ran the two-state EM predictor to convergence to build the per-pixel p-map, then correlated its radially high-passed spectrum against the bank of synthetic transformation maps. Reported only: the corpus gives no numeric threshold for this statistic.
+      in=  out=
+        ran = True
+        scored = False
+        rho_uncalibrated = 3594.4462
+        best_transform_kind = scaling
+        best_transform_value = 0.75
+        em_iterations = 30
+        em_converged = False
+        synthetic_maps_evaluated = 692
+        full_search_set_size = 692
+    Step 4: Scoring
+      D_max normalised against the paper's threshold and mapped to a probability via the threshold_ratio route.
+      in=  out=
+        D_max = 1.1911
+        threshold_Th = 0.19
+        raw_score = 1.0
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=1.000000 = clip(D_max/Th, 0, 1) with D_max=1.1911 against the paper's Th=0.19, at confidence 0.2236, is_reliable=True, with 1 flagged region(s). Pipeline B swept 320 of 6400 (q2, dx, dy) combinations and rejected 317 of them as degenerate segmentations; the winning candidate placed the region's estimated original quality at q2=1 with grid shift (6, 6). With the validity gate removed at the unshifted grid position the largest Bhattacharyya distance available was 6.4147 at q2=1, from a candidate whose class-0 region held a median 0.7293 of the frame at median coherence 0.996; 0 of those candidates passed the gate (19 rejected as covering more than 0.4 of the frame, 1 as covering less than 0.02, 0 as spatially incoherent). Pipeline A (auxiliary, unscorable) reported {'ran': True, 'scored': False, 'rho_uncalibrated': 3594.4462, 'best_transform_kind': 'scaling', 'best_transform_value': 0.75, 'em_iterations': 30, 'em_converged': False, 'synthetic_maps_evaluated': 692, 'full_search_set_size': 692}.
+
+  MATHEMATICAL EXPLANATION:
+    This engine measures a double-quantization artefact in the 8x8 block-DCT domain. Azarian-Pour Eq. 8 recompresses the image at each candidate quality q2 and takes the RGB squared difference smoothed over a w=16 window; a region already quantized at q2 loses little further information, so Eq. 9's per-pixel min-max normalisation across the sweep drives that region toward zero while the rest of the frame stays high - the ghost. Eq. 10's Bhattacharyya distance then measures how separable the segmented ghost is from the background, and the maximum over all (q2, dx, dy) is D_max, compared against Th=0.19. For this image D_max=1.1911, so raw_score=1.000000 and the engine cleared the paper's own forged/authentic boundary. The decisive quantity is not the arithmetic but the direction of the quality gap: the SKILL states the method resolves a splice only when the pasted region's original quality was LOWER than the re-save quality, exceeding 95% sensitivity only once that gap passes 22, and neither quantity is computable from the image alone.
+
+  Engine says   : FAKE
+  Ground truth  : AI-GENERATED
+  Correct       : True
+  Surprise level: EXPECTED
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/ghost_engine/before/ghost_case3_img2_genratedimage_heatmap.png
+
+  CASE 3 SUMMARY
+    average probability : 1.0000
+    score spread        : 0.0000
+    correct verdicts    : 2 / 2
+    case verdict        : 
+    
+
+
+==========================================================================
+OVERALL
+==========================================================================
+  real average probability     : 1.0
+  manipulated average          : 0.5
+  ai-generated average         : 1.0
+  separation (fake - real)     : -0.5
+  raw-score separation         : -0.5
+  reliable results             : 6 / 6
+  average processing time (ms) : 94311.01575833333

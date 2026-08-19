@@ -1,0 +1,32 @@
+FOURIER / JPEG-GHOST ENGINE - DIAGNOSTIC SUMMARY
+run tag       : after
+generated     : 2026-08-19 00:13:07
+
+images tested : 6
+reliable      : 6 / 6
+correct       : 1 / 6
+wrong         : 5 / 6
+abstained     : 0 / 6
+
+PROBABILITY BY CASE
+  real        : 1.0
+  manipulated : 0.5
+  ai-generated: 0.0
+  separation  : -0.5
+
+RAW SCORE BY CASE
+  real        : 1.0
+  manipulated : 0.5
+  separation  : -0.5
+
+NOTICES
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+  - Pipeline B ran the SKILL-sanctioned pruned sweep: 20 quality factors x 16 grid shifts = 320 of the paper's 6400 combinations. Pipeline A ran its full 692-map search set but cannot score, because this SKILL prints no numeric value for its decision threshold rho_T.
+
+PER-IMAGE
+  campic.jpeg            truth=REAL          raw=1.0000 prob=1.0000 conf=0.224 verdict=FAKE
+  campic2.jpeg           truth=REAL          raw=1.0000 prob=1.0000 conf=0.224 verdict=FAKE
+  fake .jpeg             truth=FAKE          raw=1.0000 prob=1.0000 conf=0.224 verdict=FAKE
+  fake.jpeg              truth=FAKE          raw=0.0000 prob=0.0000 conf=0.112 verdict=REAL
+  gen.jpeg               truth=AI-GENERATED  raw=0.0000 prob=0.0000 conf=0.112 verdict=REAL
+  genratedimage.jpeg     truth=AI-GENERATED  raw=0.0000 prob=0.0000 conf=0.112 verdict=REAL

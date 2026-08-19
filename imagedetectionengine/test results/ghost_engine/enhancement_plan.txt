@@ -1,0 +1,96 @@
+PHASE 7.1 - ENHANCEMENT PLAN: FOURIER / JPEG-GHOST ENGINE
+Every row cites the measurement that forced it. Rows that failed their own
+test are listed at the bottom as reverted, with their numbers.
+
++---+------------------------------+------------------------------+------------------------------+
+| # | Weakness found               | Root cause                   | Enhancement                  |
++---+------------------------------+------------------------------+------------------------------+
+| 1 | Both authentic photographs   | Two-class Otsu spends its    | Split the superpixel means   |
+|   | scored probability 1.0000    | single cut separating the    | into THREE classes and take  |
+|   | as reliable. Separation on   | textured-background tail,    | the lowest band as the ghost.|
+|   | the corpus was -0.5000, i.e. | not the ghost. Class-0 held  | The map holds three          |
+|   | inverted. On ground truth    | a median 0.607-0.781 of the  | populations - ghost, flat    |
+|   | ALL nine cases returned      | frame on all six supplied    | background, textured         |
+|   | D_max 1.17-1.65 and every    | images, so 18-20 of every 20 | background - and a single cut|
+|   | winner sat at q2=6.          | candidates were thrown out   | cannot separate three.       |
+|   |                              | by the area test as too      |                              |
+|   |                              | large, leaving only the      |                              |
+|   |                              | degenerate low-q2 ones.      |                              |
++---+------------------------------+------------------------------+------------------------------+
+| 2 | With #1 alone an authentic-  | The engine measured class    | Require the candidate's own  |
+|   | by-construction image still  | separability at each q2      | class-0 mean to sit at an    |
+|   | fired at q2=1/6/11 with B up | independently and never      | interior LOCAL MINIMUM of    |
+|   | to 1.0287 - ABOVE the 0.9684 | tested that the candidate    | the q2 profile. This         |
+|   | a genuine q0=50 splice gave  | was at a turning point,      | implements a sentence of the |
+|   | at its true quality.         | which is what the SKILL      | SKILL the engine did not act |
+|   |                              | says identifies a ghost.     | on.                          |
++---+------------------------------+------------------------------+------------------------------+
+| 3 | A null result (D_max = 0)    | The reverse-direction case   | Weight a null result's       |
+|   | is reported as probability   | is unresolvable by the       | confidence at 0.5. Two of    |
+|   | 0.0 at full confidence, a    | method's own construction,   | the SKILL's documented       |
+|   | confident REAL vote. Ground  | so its null is              | scenarios produce it and the |
+|   | truth: authentic_q90 and a   | indistinguishable from an    | corpus gives no basis for    |
+|   | real q0=95-into-q1=70 splice | authentic image's null.      | preferring either, so they   |
+|   | both return EXACTLY 0.0000.  |                              | are carried at equal weight. |
++---+------------------------------+------------------------------+------------------------------+
+
+FILES AND METHODS CHANGED
+  1. computer.py  GhostDetector._group_superpixels, new _lowest_band_threshold
+     constants.py SEGMENTATION_CLASS_COUNT = 3
+     Mathematically: the cut moves from argmax of two-class between-class
+     variance to the lower of the two three-class multi-Otsu cuts.
+     Risk: on a map that genuinely holds only two populations the lowest band
+     is smaller than the true ghost. Mitigated by the existing minimum-area
+     test, which rejects a sliver, and measured - IoU rose 0.320 -> 0.858.
+  2. computer.py  GhostDetector._sweep_one_shift, new _normalised_maps and
+     _is_quality_local_minimum
+     constants.py REQUIRE_GHOST_LOCAL_MINIMUM, LOCAL_MINIMUM_NEIGHBOUR_OFFSET
+     Mathematically: a candidate is admitted only if mean_{class0}(d at q) is
+     strictly below its value at the two neighbouring swept qualities.
+     Risk: recall loss where the minimum is shallow, and the sweep endpoints
+     can no longer be candidates at all. Both are real; see the limitations.
+  3. condition.py ConditionChecker.assess_segmentation_health
+     constants.py NULL_GHOST_RESULT_CONFIDENCE = 0.5
+     Risk: none to the contract. is_reliable is deliberately unchanged, so
+     the vote still reaches the fusion layer, at a weight matching what it
+     can actually distinguish.
+
+CATEGORIES COVERED
+  A (signal extraction) : #1 and #2 - the segmentation and the admission rule.
+  B (condition checker) : #3.
+  C (scoring)           : considered and REJECTED - see below.
+  D (robustness)        : covered by testing at both UCID and corpus
+                          resolution rather than by a code change.
+  E (performance)       : NOT addressed. Runtime rose and is reported honestly
+                          rather than traded against accuracy.
+
+TESTED AND REVERTED (do not re-propose)
+  - Finer quality sweep, DEFAULT_QUALITY_FACTOR_STEP 5 -> 1. It genuinely
+    finds more forgeries: 5 of 6 ground-truth splices at the correct quality
+    against 3 of 6, including the q0=60 and q0=80 pastes a step of 5 misses
+    entirely, located precisely (q2=60 exactly, mask IoU 0.923). But it fires
+    on BOTH authentic images, at B=0.6683 and B=0.5928, three times the
+    threshold, and on the reverse-direction splice at 0.7150. Scored across
+    all nine cases with Th held at 0.19: step 5 right 6 times, step 1 five,
+    step 3 four, step 2 three. Finer sweeps give the maximisation more
+    candidates among which to find a spurious minimum.
+  - Fewer grid shifts, DEFAULT_GRID_SHIFT_STEP 2 -> 4. Extra shifts never
+    once improved a genuine detection - 1, 4 and 16 shifts returned identical
+    D_max at an identical q2 for all five detectable splices, every winner at
+    shift (0,0), a deliberately misaligned paste included - and they inflate
+    the spurious maximum on undetectable images (reverse splice 0.7150 ->
+    0.7150 -> 1.1457). Reverted anyway: at the shipped quality step those
+    non-detections are already 0.0000 at 16 shifts, and the SKILL sanctions
+    this pruning only for a paste known to be block-aligned.
+  - Segmenting a local-minimum DEPTH map instead of d. All nine cases still
+    saturated, the winning quality moved only from q2=6 to q2=16, and mask
+    IoU fell to 0.000. The q2 profile oscillates from quantization-table
+    resonance at low quality far more strongly than any ghost dips.
+  - Re-fitting BHATTACHARYYA_THRESHOLD off 0.19. It was fitted at FP=FN on
+    2000 UCID images; nine self-built cases are not grounds to replace it,
+    and doing so would fit the decision threshold to the test set.
+  - Replacing raw_score's clip(D_max/Th, 0, 1). Measured D_max runs 0.6-1.8,
+    three to ten times Th, so every positive reports exactly 1.0 and the
+    fusion layer sees no magnitude. Real, reported as a limitation, but the
+    normalisation is the SKILL's own recommendation and the corpus offers no
+    alternative, so it is not replaced with an invented one.
