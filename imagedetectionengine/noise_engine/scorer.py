@@ -22,6 +22,19 @@ logger = logging.getLogger(__name__)
 
 ScoringResult = tuple
 
+UNCALIBRATED_ABSTENTION_NOTE = (
+    "PROVISIONAL CALIBRATION: no known-authentic reference scores were "
+    "supplied. The SKILL states Pipeline A's aggregation and calibration are "
+    "an engineering recommendation, not a corpus value. Diagnostic testing "
+    "measured the aggregate scalar moving +0.0340 to +0.0772 under a real "
+    "local noise manipulation while six untampered images spanned 0.1222 - "
+    "the between-image spread exceeds the manipulation effect, so no fixed "
+    "cutoff on this scalar separates tampered from authentic. This engine "
+    "therefore publishes no probability on the uncalibrated route; supply "
+    "authentic_reference_scores to enable the empirical-CDF route. The "
+    "raw_score, heatmap and flagged_regions are still published."
+)
+
 
 class NoiseScorer:
     """Turns Pipeline A's top-k% aggregate scalar into a probability."""
@@ -56,12 +69,8 @@ class NoiseScorer:
                     f"{reference_scores.size} known-authentic reference "
                     f"aggregate scores.")
 
-        return (self._provisional_sigmoid(raw_score), "provisional_sigmoid", False,
-                "PROVISIONAL CALIBRATION: no known-authentic reference scores "
-                "were supplied. The SKILL states Pipeline A's aggregation "
-                "and calibration are an engineering recommendation, not a "
-                "corpus value - treat this probability as a rough ordering "
-                "signal, not a validated likelihood.")
+        return (self._provisional_sigmoid(raw_score), "provisional_sigmoid",
+                False, UNCALIBRATED_ABSTENTION_NOTE)
 
     def _empirical_cdf_percentile(self, raw_score: float,
                                   reference_scores: np.ndarray) -> float:

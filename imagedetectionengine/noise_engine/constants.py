@@ -91,9 +91,33 @@ LOCAL_NEIGHBOURHOOD_WINDOW_BLOCKS = 3
 
 # SKILL step 4: "Flag blocks whose statistic deviates significantly from
 # their neighborhood" - "significantly" is not quantified. [ENGINEERING] /
-# KNOWN_UNSOURCED_PARAMETER: a block is flagged when its statistic exceeds
-# this multiple of its neighbourhood median.
+# KNOWN_UNSOURCED_PARAMETER.
+#
+# ENHANCEMENT 2 (test-derived): the fixed factor-of-2 cutoff below is no
+# longer the flag criterion. Diagnostic testing measured the median
+# |log2(block variance / neighbourhood median)| of authentic photographs at
+# 0.4192-0.7725, i.e. the TYPICAL authentic block already deviates by
+# 1.34x-1.71x, so a factor-of-2 cutoff sits barely above the statistic's own
+# noise floor: 24.1%-41.96% of every corpus image's cells clipped at the 1.0
+# ceiling and raw_score came out exactly 1.000000 on all six. The flag
+# threshold is now read off each image's own deviation spread
+# (DEVIATION_ROBUST_SPREAD_MULTIPLE below), which is what SKILL step 4 asks
+# for when it says the comparison must not use "a fixed global threshold".
+# The constant is retained because the legacy diagnostic scalar still
+# reports against it.
 DEVIATION_FLAG_RATIO = 2.0
+
+# ENHANCEMENT 1/2 parameters. [ENGINEERING] - the SKILL prints no numeric
+# value for any of these; each is named in KNOWN_UNSOURCED_PARAMETERS.
+TEXTURE_CONDITIONING_ENABLED = True
+TEXTURE_FIT_POLYNOMIAL_DEGREE = 1  # [STRUCTURAL] straight line in log-log.
+MINIMUM_BLOCKS_FOR_TEXTURE_FIT = 8  # [STRUCTURAL] below this the fit is
+                                    # not meaningfully determined.
+# Half the width of the central 50% of a normal distribution, i.e. the factor
+# converting a median absolute deviation into a standard deviation. [DERIVED]
+MEDIAN_ABSOLUTE_DEVIATION_TO_SIGMA = 0.6745
+DEVIATION_ROBUST_SPREAD_MULTIPLE = 3.0  # [ENGINEERING]
+MINIMUM_STATISTIC_FLOOR = 1e-12  # [STRUCTURAL] log-domain divide-by-zero guard.
 
 # SKILL Output section: "[0,1]-normalized heatmap and a global scalar (max or
 # top-k% mean)". [CORPUS] offers both; top-k% mean is picked as the more
@@ -146,14 +170,39 @@ SATURATION_INTENSITY_FLOOR = 250.0
 MAXIMUM_SATURATED_PIXEL_FRACTION = 0.5  # [ENGINEERING]
 
 # Flat/textureless block floor - analogous principle to Eq. 19/20's texture
-# dependence, no numeric floor given. [ENGINEERING]
-BLOCK_VARIANCE_DEGENERACY_FLOOR = 1.0
+# dependence, no numeric floor given by the SKILL.
+#
+# ENHANCEMENT 3 (test-derived): this floor was 1.0, which is roughly TEN
+# TIMES the median per-block residual variance of an ordinary JPEG
+# photograph. Measured medians: campic 0.1358, campic2 0.1410, gen 0.1957,
+# genratedimage 0.0954 - so 62.0%, 62.0%, 61.3% and 55.4% of their blocks
+# fell under the old floor, tripping MAXIMUM_FLAT_BLOCK_FRACTION and making
+# the engine abstain on four of six corpus images including BOTH authentic
+# photographs. The floor is now the variance of uniform quantization error
+# on a 1-LSB 8-bit quantizer, 1/12: a block whose residual varies by less
+# than the rounding error of the container it arrived in genuinely carries
+# no measurable noise. [DERIVED] from the 8-bit container, not from the
+# SKILL. Verified: at 1/12 all eight corpus photographs pass (worst case
+# genratedimage.jpeg at 49.1%, marginal) while a constant-grey frame still
+# trips the gate at 100.0%.
+BLOCK_VARIANCE_DEGENERACY_FLOOR = 1.0 / 12.0
 MAXIMUM_FLAT_BLOCK_FRACTION = 0.5  # [ENGINEERING]
 
 # ── Scorer constants (provisional-route placeholders, same pattern as the
 # other engines in this system; SKILL: "Calibration not specified in corpus -
 # engineering recommendation" for Pipeline A's scalar). [ENGINEERING]
 MINIMUM_CALIBRATION_REFERENCE_COUNT = 10
+# ENHANCEMENT 5 (test-derived): when no known-authentic reference scores are
+# supplied the engine now declines to publish a probability at all instead of
+# emitting the provisional sigmoid at full confidence. Evidence: on ground
+# truth the aggregate scalar moves +0.0340 to +0.0772 for a real manipulation,
+# while the spread between six untampered images is 0.1222 - the between-image
+# spread is larger than the manipulation effect, so no fixed cutoff on this
+# scalar can separate tampered from authentic. The SKILL's Output section
+# states Pipeline A's calibration is "not specified in corpus - engineering
+# recommendation". raw_score, the heatmap and flagged_regions are still
+# published; only the unfounded probability is withheld. [ENGINEERING]
+ABSTAIN_WHEN_UNCALIBRATED = True
 PROVISIONAL_SIGMOID_SLOPE = 10.0
 PROVISIONAL_SIGMOID_MIDPOINT = 0.3
 SIGMOID_EXPONENT_LIMIT = 60.0
@@ -164,6 +213,77 @@ EIGHT_BIT_DISPLAY_MAXIMUM = 255.0  # [STRUCTURAL]
 EVIDENCE_MAP_MAX_DIMENSION = 2048  # [PRESENTATION]
 
 # ── Audit-aid tuples ─────────────────────────────────────────────────────────
+TEST_DERIVED_ENHANCEMENTS = (
+    "ENHANCEMENT 1 - TEXTURE_CONDITIONING_ENABLED. Evidence: Spearman "
+    "correlation between per-block residual variance and per-block Laplacian "
+    "energy measured 0.9753 / 0.9768 / 0.9635 / 0.7726 / 0.9604 / 0.9912 on "
+    "the six corpus images, so the block statistic ranked scene texture, not "
+    "noise level. Consequence measured on ground truth: heatmap peak fell "
+    "inside a known pasted region 0 times out of 12, and the top-10% of "
+    "blocks overlapped the paste 0.083 of the time against a chance rate of "
+    "0.083 - exactly chance. After conditioning: 6/18 peak hits and 0.268 "
+    "overlap against 0.111 chance.",
+    "ENHANCEMENT 2 - DEVIATION_ROBUST_SPREAD_MULTIPLE replaces "
+    "DEVIATION_FLAG_RATIO as the flag criterion, and the aggregate scalar "
+    "becomes the flagged-block fraction (SKILL step 5, 'Aggregate flagged "
+    "blocks into a heatmap and a scalar summary') rather than the Output "
+    "section's alternative top-k% mean. Evidence: the top-k% mean measured "
+    "exactly 1.000000 on all six corpus images, on all six global nuisance "
+    "transforms of each of them, and on all 18 ground-truth manipulations of "
+    "a real photograph - a delta of +0.000000 in every single case. The "
+    "flagged-block fraction moves in the correct direction on 17 of those 18.",
+    "ENHANCEMENT 3 - BLOCK_VARIANCE_DEGENERACY_FLOOR 1.0 -> 1/12. Evidence: "
+    "62.0%, 62.0%, 61.3% and 55.4% of the blocks of campic, campic2, gen and "
+    "genratedimage fell below the old floor, so the engine abstained on four "
+    "of six corpus images including both authentic photographs, while their "
+    "median block variances were 0.1358, 0.1410, 0.1957 and 0.0954.",
+    "ENHANCEMENT 4 - the saturation check's pass/fail boolean is now read. "
+    "Evidence: fake .jpeg has 65% of its pixels at or above 250, the check "
+    "returned failed, its result was discarded, and the engine published FAKE "
+    "at probability 0.9991 on an image where Eq. 19's attenuation makes the "
+    "multiplicative PRNU term vanish.",
+    "ENHANCEMENT 5 - ABSTAIN_WHEN_UNCALIBRATED. Evidence: the aggregate "
+    "scalar moves +0.0340 to +0.0772 under a real local noise manipulation "
+    "while six untampered images span 0.1222, so the between-image spread "
+    "exceeds the manipulation effect and no fixed cutoff separates them.",
+)
+
+REJECTED_ENHANCEMENTS = (
+    "Robust MAD-sigma of the residual as the block statistic, replacing "
+    "variance. REJECTED: raw_score stayed exactly 1.000000 on the authentic "
+    "host and on all three real manipulations of it (cross-sensor splice, "
+    "region denoised, region given foreign noise); delta +0.00000 in every "
+    "case. Changing the statistic alone does not lift the saturation.",
+    "MAD-sigma of the residual's HH wavelet subband. REJECTED as degenerate "
+    "on JPEG input: 90 of campic's 108 blocks returned exactly 0.0 because "
+    "the encoder had quantized that subband away. An apparent +0.45455 splice "
+    "delta was traced to floor arithmetic on those zeros - np.where(x>0,...) "
+    "and np.maximum(x,eps) disagree on values inside (0,eps) - and not to any "
+    "detection.",
+    "MAD-sigma of the INTENSITY's HH subband (Donoho's noise estimator). "
+    "REJECTED: raw_score 1.000000 everywhere, delta +0.00000 on all three "
+    "real manipulations.",
+    "Trimmed (p10-p90) block variance. REJECTED: delta +0.00000 on all three "
+    "real manipulations.",
+    "Noise-floor estimator - the p5/p10/p25 percentile of the block's 5x5 "
+    "local-variance map. REJECTED despite genuinely reducing texture coupling "
+    "(Spearman 0.9753 -> 0.7475 at p5): localization stayed at chance "
+    "(top-10%-inside 0.121 vs 0.111 chance) and the scalar still read 1.00000 "
+    "on every authentic and every manipulated image.",
+    "SKILL Eq. 20's f_T as the conditioning feature instead of intensity-plane "
+    "Laplacian energy. REJECTED: f_T is computed from the residual, so "
+    "denoising a region moves the feature in exactly the way that explains "
+    "away the reduced variance. Measured top-10%-inside on denoised regions "
+    "0.076, BELOW the 0.111 chance rate, versus 0.273 for the "
+    "intensity-plane feature.",
+    "Scalar = (top-k% mean - median) of the clipped heatmap. REJECTED as the "
+    "weaker of the two working scalars: correct direction on 3/6 denoise "
+    "trials against 5/6 for the flagged-block fraction.",
+    "Scalar = (top-k% mean - median) / robust spread of the UNCLIPPED "
+    "deviation field. REJECTED: saturates at 1.0000 on all seven images "
+    "tested, delta +0.0000 on splice and foreign-noise trials.",
+)
+
 KNOWN_UNSOURCED_PARAMETERS = (
     "LOCAL_NEIGHBOURHOOD_WINDOW_BLOCKS - SKILL: 'the local neighborhood "
     "median', no numeric neighbourhood size given.",
@@ -179,7 +299,17 @@ KNOWN_UNSOURCED_PARAMETERS = (
     "BLOCK_VARIANCE_DEGENERACY_FLOOR / MAXIMUM_FLAT_BLOCK_FRACTION - no "
     "numeric floor given for detecting textureless blocks.",
     "PROVISIONAL_SIGMOID_SLOPE / MIDPOINT - placeholder fallback route only, "
-    "SKILL gives no calibration at all for Pipeline A's aggregate scalar.",
+    "SKILL gives no calibration at all for Pipeline A's aggregate scalar. "
+    "Since ENHANCEMENT 5 this route no longer publishes a probability.",
+    "TEXTURE_CONDITIONING_ENABLED / TEXTURE_FIT_POLYNOMIAL_DEGREE - the SKILL "
+    "gives the rationale for conditioning on texture (step 4, citing Chen et "
+    "al.'s B.4 predictor) and names the fitting tool, but prints no blind, "
+    "camera-agnostic form of the predictor and no degree for the fit.",
+    "DEVIATION_ROBUST_SPREAD_MULTIPLE - replaces DEVIATION_FLAG_RATIO as the "
+    "quantification of step 4's 'deviates significantly'; equally unsourced, "
+    "but measured to have dynamic range where the fixed ratio had none.",
+    "MEDIAN_ABSOLUTE_DEVIATION_TO_SIGMA - a property of the normal "
+    "distribution, not of this SKILL; it only rescales the multiple above.",
 )
 
 KNOWN_SKILL_AMBIGUITIES = (
