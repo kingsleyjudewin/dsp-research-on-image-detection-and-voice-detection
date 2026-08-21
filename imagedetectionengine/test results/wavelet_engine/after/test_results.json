@@ -1,0 +1,950 @@
+{
+  "tag": "after",
+  "engine": "wavelet_domain_forgery",
+  "generated_at": "2026-08-21 23:06:41",
+  "pre_run_table": "Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case\n--------------------------------------------------------------------------------\ncampic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real\ncampic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real\nmobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real\nmobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real\nfake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI\nfake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI\nfake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI\ngen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI\ngenratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI",
+  "notices": [
+    "The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.",
+    "Engine configuration: Pipeline C only is scored: single-level 'haar' DWT, LL subband tiled into 16x16 blocks at stride 1; blur invariants for all (p,q) with 2<=p+q<=7, contrast-normalised (Eq. 17), PCA to 95% explained variance; candidate pairs at S=1/(1+rho) >= 0.7692307692307692 (Euclidean radius 0.300000), confirmed by 16 neighbour offsets within 4 px and a minimum separation of 2.0 block widths; raw_score = fraction of blocks in a confirmed pair; probability via a PROVISIONAL logistic (midpoint 0.05, slope 12.0). Pipelines A and B run unscored.",
+    "The SKILL scopes this engine's score to Pipeline C alone: Pipeline A's output is 'not a scalar score on its own', and Pipeline B is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is 'low-trust by default'. Both run here but never affect raw_score.",
+    "Pipeline C's summary scalar is the SKILL's own engineering recommendation, not a corpus value: 'not explicitly defined in the source paper as a summary scalar'. Its calibration is likewise provisional."
+  ],
+  "cases": [
+    {
+      "case_number": 1,
+      "case_type": "Case 1 Real",
+      "ground_truth": "REAL",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg",
+            "filename": "campic.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 81624,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 0.0,
+          "probability": 0.35434369377420455,
+          "confidence": 1.0,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats: undetectable for scaled or rotated copy-move regions; the noise-residual path (Pipeline A) is defeated by aggressive post-tampering smoothing/denoising; the compression-history path (Pipeline B) is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is therefore never scored, only reported as auxiliary evidence. ENHANCEMENT 6: analysed at 384x288 instead of 1599x1200 (scale 0.240); at full resolution the stride-1 candidate search is intractable. This sets a floor on detectable forgery size - a duplicated region smaller than roughly 133 px across in the original will not be resolved. Pipeline B auxiliary evidence: lambda_hat=-3.9088 (converged=False) - not used in raw_score; treat as low-trust per the SKILL's own caveat. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The fraction-of-flagged-blocks scalar itself is an engineering recommendation, not a value the SKILL file defines or calibrates - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 39571.57873000005,
+          "engine_verdict": "UNCERTAIN",
+          "verdict_correct": false,
+          "surprise_level": "WRONG",
+          "reasoning": "Engine reported raw_score=0.000000 at confidence 1.0000, is_reliable=True, flagged_regions=0 confirmed pair(s). Pipeline C reported {'flagged_block_count': 0, 'total_blocks': 22833, 'fraction_flagged': 0.0, 'confirmed_pairs': 0}; Pipeline A (unscored) {'noise_sigma': 0.5187, 'threshold_method': 'visushrink', 'threshold_mode': 'soft'}; Pipeline B (unscored, low-trust) {'lambda_hat': -3.9088, 'converged': False, 'iterations_run': 50}. The LL subband is [600, 800] and tiled into 459225 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.3 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 1523550000.0, median 7900090000000.0, max 1.09864e+16 - a gap of 13.42 orders of magnitude - and 0 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.314209, 'order_3_median_abs': 0.00735026, 'order_4_median_abs': 0.197124, 'order_5_median_abs': 0.00687114, 'order_6_median_abs': 0.14002, 'order_7_median_abs': 0.00612534}.",
+          "mathematical_explanation": "Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.314209, 'order_3_median_abs': 0.00735026, 'order_4_median_abs': 0.197124, 'order_5_median_abs': 0.00687114, 'order_6_median_abs': 0.14002, 'order_7_median_abs': 0.00612534} - so the highest orders dominate every Euclidean distance and the population spans 9.90331e-08 to 1.06448e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.3 against typical distances of 7900090000000.0, which is why raw_score came out 0.000000 with 0 confirmed pairs.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "LL subband + block tiling",
+              "description": "Single-level Haar DWT, kept the LL subband, tiled into overlapping blocks.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 22833,
+                "block_size": 16
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: copy-move detection (SCORE-DRIVING)",
+              "description": "Blur-invariant moment features, PCA reduction, similarity search, and 16-neighbour consistency confirmation.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "flagged_block_count": 0,
+                "total_blocks": 22833,
+                "fraction_flagged": 0.0,
+                "confirmed_pairs": 0
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)",
+              "description": "Feeds the separate noise-analysis engine per the SKILL; does not affect this engine's raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "noise_sigma": 0.5187,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)",
+              "description": "SKILL: this pipeline is documented as 100%-defeatable by a knowledgeable adversary; reported as evidence only.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "lambda_hat": -3.9088,
+                "converged": false,
+                "iterations_run": 50
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Fraction-flagged scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case1_img1_campic_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case1_img1_campic_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "LL subband + block tiling": {
+                "total_blocks": 22833,
+                "block_size": 16
+              },
+              "Pipeline C: copy-move detection (SCORE-DRIVING)": {
+                "flagged_block_count": 0,
+                "total_blocks": 22833,
+                "fraction_flagged": 0.0,
+                "confirmed_pairs": 0
+              },
+              "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)": {
+                "noise_sigma": 0.5187,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              },
+              "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)": {
+                "lambda_hat": -3.9088,
+                "converged": false,
+                "iterations_run": 50
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "feature_space": {
+              "ll_shape": [
+                600,
+                800
+              ],
+              "total_blocks": 459225,
+              "sampled_blocks": 400,
+              "feature_dimension": 33,
+              "feature_abs_min": 9.90331e-08,
+              "feature_abs_max": 1.06448e+16,
+              "feature_abs_median": 0.0115825,
+              "match_radius_from_threshold": 0.3,
+              "pair_distance_min": 1523550000.0,
+              "pair_distance_median": 7900090000000.0,
+              "pair_distance_max": 1.09864e+16,
+              "sampled_pairs": 79800,
+              "sampled_pairs_inside_radius": 0,
+              "orders_of_magnitude_gap": 13.42
+            },
+            "feature_scale_by_order": {
+              "order_2_median_abs": 0.314209,
+              "order_3_median_abs": 0.00735026,
+              "order_4_median_abs": 0.197124,
+              "order_5_median_abs": 0.00687114,
+              "order_6_median_abs": 0.14002,
+              "order_7_median_abs": 0.00612534
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg",
+            "filename": "campic2.jpeg",
+            "format": "JPEG",
+            "height": 1200,
+            "width": 1599,
+            "file_size_bytes": 82589,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 1 Real",
+          "ground_truth": "REAL",
+          "raw_score": 0.0,
+          "probability": 0.35434369377420455,
+          "confidence": 1.0,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats: undetectable for scaled or rotated copy-move regions; the noise-residual path (Pipeline A) is defeated by aggressive post-tampering smoothing/denoising; the compression-history path (Pipeline B) is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is therefore never scored, only reported as auxiliary evidence. ENHANCEMENT 6: analysed at 384x288 instead of 1599x1200 (scale 0.240); at full resolution the stride-1 candidate search is intractable. This sets a floor on detectable forgery size - a duplicated region smaller than roughly 133 px across in the original will not be resolved. Pipeline B auxiliary evidence: lambda_hat=-0.7791 (converged=True) - not used in raw_score; treat as low-trust per the SKILL's own caveat. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The fraction-of-flagged-blocks scalar itself is an engineering recommendation, not a value the SKILL file defines or calibrates - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 39265.13033599986,
+          "engine_verdict": "UNCERTAIN",
+          "verdict_correct": false,
+          "surprise_level": "WRONG",
+          "reasoning": "Engine reported raw_score=0.000000 at confidence 1.0000, is_reliable=True, flagged_regions=0 confirmed pair(s). Pipeline C reported {'flagged_block_count': 0, 'total_blocks': 22833, 'fraction_flagged': 0.0, 'confirmed_pairs': 0}; Pipeline A (unscored) {'noise_sigma': 0.5333, 'threshold_method': 'visushrink', 'threshold_mode': 'soft'}; Pipeline B (unscored, low-trust) {'lambda_hat': -0.7791, 'converged': True, 'iterations_run': 12}. The LL subband is [600, 800] and tiled into 459225 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.3 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 3933520000.0, median 5249250000000.0, max 1.07437e+16 - a gap of 13.24 orders of magnitude - and 0 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.31582, 'order_3_median_abs': 0.00756654, 'order_4_median_abs': 0.196335, 'order_5_median_abs': 0.00703664, 'order_6_median_abs': 0.139485, 'order_7_median_abs': 0.00617914}.",
+          "mathematical_explanation": "Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.31582, 'order_3_median_abs': 0.00756654, 'order_4_median_abs': 0.196335, 'order_5_median_abs': 0.00703664, 'order_6_median_abs': 0.139485, 'order_7_median_abs': 0.00617914} - so the highest orders dominate every Euclidean distance and the population spans 3.46081e-06 to 1.0397e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.3 against typical distances of 5249250000000.0, which is why raw_score came out 0.000000 with 0 confirmed pairs.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "LL subband + block tiling",
+              "description": "Single-level Haar DWT, kept the LL subband, tiled into overlapping blocks.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 22833,
+                "block_size": 16
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: copy-move detection (SCORE-DRIVING)",
+              "description": "Blur-invariant moment features, PCA reduction, similarity search, and 16-neighbour consistency confirmation.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "flagged_block_count": 0,
+                "total_blocks": 22833,
+                "fraction_flagged": 0.0,
+                "confirmed_pairs": 0
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)",
+              "description": "Feeds the separate noise-analysis engine per the SKILL; does not affect this engine's raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "noise_sigma": 0.5333,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)",
+              "description": "SKILL: this pipeline is documented as 100%-defeatable by a knowledgeable adversary; reported as evidence only.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "lambda_hat": -0.7791,
+                "converged": true,
+                "iterations_run": 12
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Fraction-flagged scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case1_img2_campic2_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case1_img2_campic2_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "LL subband + block tiling": {
+                "total_blocks": 22833,
+                "block_size": 16
+              },
+              "Pipeline C: copy-move detection (SCORE-DRIVING)": {
+                "flagged_block_count": 0,
+                "total_blocks": 22833,
+                "fraction_flagged": 0.0,
+                "confirmed_pairs": 0
+              },
+              "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)": {
+                "noise_sigma": 0.5333,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              },
+              "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)": {
+                "lambda_hat": -0.7791,
+                "converged": true,
+                "iterations_run": 12
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "feature_space": {
+              "ll_shape": [
+                600,
+                800
+              ],
+              "total_blocks": 459225,
+              "sampled_blocks": 400,
+              "feature_dimension": 33,
+              "feature_abs_min": 3.46081e-06,
+              "feature_abs_max": 1.0397e+16,
+              "feature_abs_median": 0.0113764,
+              "match_radius_from_threshold": 0.3,
+              "pair_distance_min": 3933520000.0,
+              "pair_distance_median": 5249250000000.0,
+              "pair_distance_max": 1.07437e+16,
+              "sampled_pairs": 79800,
+              "sampled_pairs_inside_radius": 0,
+              "orders_of_magnitude_gap": 13.24
+            },
+            "feature_scale_by_order": {
+              "order_2_median_abs": 0.31582,
+              "order_3_median_abs": 0.00756654,
+              "order_4_median_abs": 0.196335,
+              "order_5_median_abs": 0.00703664,
+              "order_6_median_abs": 0.139485,
+              "order_7_median_abs": 0.00617914
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": 0.35434369377420455,
+      "score_spread": 0.0,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 2,
+      "case_type": "Case 2 Manipulated",
+      "ground_truth": "FAKE",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg",
+            "filename": "fake .jpeg",
+            "format": "JPEG",
+            "height": 1600,
+            "width": 728,
+            "file_size_bytes": 161570,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 0.0,
+          "probability": 0.35434369377420455,
+          "confidence": 1.0,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats: undetectable for scaled or rotated copy-move regions; the noise-residual path (Pipeline A) is defeated by aggressive post-tampering smoothing/denoising; the compression-history path (Pipeline B) is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is therefore never scored, only reported as auxiliary evidence. ENHANCEMENT 6: analysed at 174x384 instead of 728x1600 (scale 0.240); at full resolution the stride-1 candidate search is intractable. This sets a floor on detectable forgery size - a duplicated region smaller than roughly 133 px across in the original will not be resolved. Pipeline B auxiliary evidence: lambda_hat=-0.1222 (converged=True) - not used in raw_score; treat as low-trust per the SKILL's own caveat. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The fraction-of-flagged-blocks scalar itself is an engineering recommendation, not a value the SKILL file defines or calibrates - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 12747.993850000057,
+          "engine_verdict": "UNCERTAIN",
+          "verdict_correct": false,
+          "surprise_level": "WRONG",
+          "reasoning": "Engine reported raw_score=0.000000 at confidence 1.0000, is_reliable=True, flagged_regions=0 confirmed pair(s). Pipeline C reported {'flagged_block_count': 0, 'total_blocks': 12744, 'fraction_flagged': 0.0, 'confirmed_pairs': 0}; Pipeline A (unscored) {'noise_sigma': 0.7685, 'threshold_method': 'visushrink', 'threshold_mode': 'soft'}; Pipeline B (unscored, low-trust) {'lambda_hat': -0.1222, 'converged': True, 'iterations_run': 4}. The LL subband is [800, 364] and tiled into 273965 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.3 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 0.0, median 5001490000000000.0, max 2.32343e+16 - a gap of 16.22 orders of magnitude - and 1 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.328289, 'order_3_median_abs': 0.00111779, 'order_4_median_abs': 0.197394, 'order_5_median_abs': 0.000936816, 'order_6_median_abs': 0.138986, 'order_7_median_abs': 0.000906988}.",
+          "mathematical_explanation": "Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.328289, 'order_3_median_abs': 0.00111779, 'order_4_median_abs': 0.197394, 'order_5_median_abs': 0.000936816, 'order_6_median_abs': 0.138986, 'order_7_median_abs': 0.000906988} - so the highest orders dominate every Euclidean distance and the population spans 0.0 to 2.33787e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.3 against typical distances of 5001490000000000.0, which is why raw_score came out 0.000000 with 0 confirmed pairs.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "LL subband + block tiling",
+              "description": "Single-level Haar DWT, kept the LL subband, tiled into overlapping blocks.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 12744,
+                "block_size": 16
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: copy-move detection (SCORE-DRIVING)",
+              "description": "Blur-invariant moment features, PCA reduction, similarity search, and 16-neighbour consistency confirmation.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "flagged_block_count": 0,
+                "total_blocks": 12744,
+                "fraction_flagged": 0.0,
+                "confirmed_pairs": 0
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)",
+              "description": "Feeds the separate noise-analysis engine per the SKILL; does not affect this engine's raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "noise_sigma": 0.7685,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)",
+              "description": "SKILL: this pipeline is documented as 100%-defeatable by a knowledgeable adversary; reported as evidence only.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "lambda_hat": -0.1222,
+                "converged": true,
+                "iterations_run": 4
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Fraction-flagged scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case2_img1_fake__heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case2_img1_fake__heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "LL subband + block tiling": {
+                "total_blocks": 12744,
+                "block_size": 16
+              },
+              "Pipeline C: copy-move detection (SCORE-DRIVING)": {
+                "flagged_block_count": 0,
+                "total_blocks": 12744,
+                "fraction_flagged": 0.0,
+                "confirmed_pairs": 0
+              },
+              "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)": {
+                "noise_sigma": 0.7685,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              },
+              "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)": {
+                "lambda_hat": -0.1222,
+                "converged": true,
+                "iterations_run": 4
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "feature_space": {
+              "ll_shape": [
+                800,
+                364
+              ],
+              "total_blocks": 273965,
+              "sampled_blocks": 400,
+              "feature_dimension": 33,
+              "feature_abs_min": 0.0,
+              "feature_abs_max": 2.33787e+16,
+              "feature_abs_median": 0.00382517,
+              "match_radius_from_threshold": 0.3,
+              "pair_distance_min": 0.0,
+              "pair_distance_median": 5001490000000000.0,
+              "pair_distance_max": 2.32343e+16,
+              "sampled_pairs": 79800,
+              "sampled_pairs_inside_radius": 1,
+              "orders_of_magnitude_gap": 16.22
+            },
+            "feature_scale_by_order": {
+              "order_2_median_abs": 0.328289,
+              "order_3_median_abs": 0.00111779,
+              "order_4_median_abs": 0.197394,
+              "order_5_median_abs": 0.000936816,
+              "order_6_median_abs": 0.138986,
+              "order_7_median_abs": 0.000906988
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg",
+            "filename": "fake.jpeg",
+            "format": "JPEG",
+            "height": 1152,
+            "width": 928,
+            "file_size_bytes": 68990,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 2 Manipulated",
+          "ground_truth": "FAKE",
+          "raw_score": 0.003995157384987893,
+          "probability": 0.36538704337131206,
+          "confidence": 1.0,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats: undetectable for scaled or rotated copy-move regions; the noise-residual path (Pipeline A) is defeated by aggressive post-tampering smoothing/denoising; the compression-history path (Pipeline B) is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is therefore never scored, only reported as auxiliary evidence. ENHANCEMENT 6: analysed at 309x384 instead of 928x1152 (scale 0.333); at full resolution the stride-1 candidate search is intractable. This sets a floor on detectable forgery size - a duplicated region smaller than roughly 96 px across in the original will not be resolved. Pipeline B auxiliary evidence: lambda_hat=-0.0000 (converged=True) - not used in raw_score; treat as low-trust per the SKILL's own caveat. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The fraction-of-flagged-blocks scalar itself is an engineering recommendation, not a value the SKILL file defines or calibrates - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 24284.73506699993,
+          "engine_verdict": "UNCERTAIN",
+          "verdict_correct": false,
+          "surprise_level": "WRONG",
+          "reasoning": "Engine reported raw_score=0.003995 at confidence 1.0000, is_reliable=True, flagged_regions=199 confirmed pair(s). Pipeline C reported {'flagged_block_count': 99, 'total_blocks': 24780, 'fraction_flagged': 0.004, 'confirmed_pairs': 199}; Pipeline A (unscored) {'noise_sigma': 0.3529, 'threshold_method': 'visushrink', 'threshold_mode': 'soft'}; Pipeline B (unscored, low-trust) {'lambda_hat': -0.0, 'converged': True, 'iterations_run': 48}. The LL subband is [576, 464] and tiled into 251889 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.3 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 0.0, median 4028850000000000.0, max 1.86327e+16 - a gap of 16.13 orders of magnitude - and 10 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.320143, 'order_3_median_abs': 0.00382392, 'order_4_median_abs': 0.197358, 'order_5_median_abs': 0.00432232, 'order_6_median_abs': 0.139038, 'order_7_median_abs': 0.00421176}.",
+          "mathematical_explanation": "Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.320143, 'order_3_median_abs': 0.00382392, 'order_4_median_abs': 0.197358, 'order_5_median_abs': 0.00432232, 'order_6_median_abs': 0.139038, 'order_7_median_abs': 0.00421176} - so the highest orders dominate every Euclidean distance and the population spans 0.0 to 1.80229e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.3 against typical distances of 4028850000000000.0, which is why raw_score came out 0.003995 with 199 confirmed pairs.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "LL subband + block tiling",
+              "description": "Single-level Haar DWT, kept the LL subband, tiled into overlapping blocks.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 24780,
+                "block_size": 16
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: copy-move detection (SCORE-DRIVING)",
+              "description": "Blur-invariant moment features, PCA reduction, similarity search, and 16-neighbour consistency confirmation.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "flagged_block_count": 99,
+                "total_blocks": 24780,
+                "fraction_flagged": 0.004,
+                "confirmed_pairs": 199
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)",
+              "description": "Feeds the separate noise-analysis engine per the SKILL; does not affect this engine's raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "noise_sigma": 0.3529,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)",
+              "description": "SKILL: this pipeline is documented as 100%-defeatable by a knowledgeable adversary; reported as evidence only.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "lambda_hat": -0.0,
+                "converged": true,
+                "iterations_run": 48
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Fraction-flagged scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case2_img2_fake_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case2_img2_fake_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "LL subband + block tiling": {
+                "total_blocks": 24780,
+                "block_size": 16
+              },
+              "Pipeline C: copy-move detection (SCORE-DRIVING)": {
+                "flagged_block_count": 99,
+                "total_blocks": 24780,
+                "fraction_flagged": 0.004,
+                "confirmed_pairs": 199
+              },
+              "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)": {
+                "noise_sigma": 0.3529,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              },
+              "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)": {
+                "lambda_hat": -0.0,
+                "converged": true,
+                "iterations_run": 48
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "feature_space": {
+              "ll_shape": [
+                576,
+                464
+              ],
+              "total_blocks": 251889,
+              "sampled_blocks": 400,
+              "feature_dimension": 33,
+              "feature_abs_min": 0.0,
+              "feature_abs_max": 1.80229e+16,
+              "feature_abs_median": 0.00867664,
+              "match_radius_from_threshold": 0.3,
+              "pair_distance_min": 0.0,
+              "pair_distance_median": 4028850000000000.0,
+              "pair_distance_max": 1.86327e+16,
+              "sampled_pairs": 79800,
+              "sampled_pairs_inside_radius": 10,
+              "orders_of_magnitude_gap": 16.13
+            },
+            "feature_scale_by_order": {
+              "order_2_median_abs": 0.320143,
+              "order_3_median_abs": 0.00382392,
+              "order_4_median_abs": 0.197358,
+              "order_5_median_abs": 0.00432232,
+              "order_6_median_abs": 0.139038,
+              "order_7_median_abs": 0.00421176
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": 0.3598653685727583,
+      "score_spread": 0.01104334959710751,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    },
+    {
+      "case_number": 3,
+      "case_type": "Case 3 AI-generated",
+      "ground_truth": "AI-GENERATED",
+      "folder": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images",
+      "images": [
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg",
+            "filename": "gen.jpeg",
+            "format": "JPEG",
+            "height": 1006,
+            "width": 800,
+            "file_size_bytes": 45706,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 0.0,
+          "probability": 0.35434369377420455,
+          "confidence": 1.0,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats: undetectable for scaled or rotated copy-move regions; the noise-residual path (Pipeline A) is defeated by aggressive post-tampering smoothing/denoising; the compression-history path (Pipeline B) is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is therefore never scored, only reported as auxiliary evidence. ENHANCEMENT 6: analysed at 305x384 instead of 800x1006 (scale 0.382); at full resolution the stride-1 candidate search is intractable. This sets a floor on detectable forgery size - a duplicated region smaller than roughly 84 px across in the original will not be resolved. Pipeline B auxiliary evidence: lambda_hat=-0.0000 (converged=True) - not used in raw_score; treat as low-trust per the SKILL's own caveat. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The fraction-of-flagged-blocks scalar itself is an engineering recommendation, not a value the SKILL file defines or calibrates - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 23905.768355999953,
+          "engine_verdict": "UNCERTAIN",
+          "verdict_correct": false,
+          "surprise_level": "WRONG",
+          "reasoning": "Engine reported raw_score=0.000000 at confidence 1.0000, is_reliable=True, flagged_regions=0 confirmed pair(s). Pipeline C reported {'flagged_block_count': 0, 'total_blocks': 24426, 'fraction_flagged': 0.0, 'confirmed_pairs': 0}; Pipeline A (unscored) {'noise_sigma': 0.3019, 'threshold_method': 'visushrink', 'threshold_mode': 'soft'}; Pipeline B (unscored, low-trust) {'lambda_hat': -0.0, 'converged': True, 'iterations_run': 40}. The LL subband is [503, 400] and tiled into 187880 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.3 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 793675000000.0, median 4271540000000000.0, max 1.29885e+16 - a gap of 16.15 orders of magnitude - and 0 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.330878, 'order_3_median_abs': 0.00079082, 'order_4_median_abs': 0.197373, 'order_5_median_abs': 0.000819469, 'order_6_median_abs': 0.139053, 'order_7_median_abs': 0.000764348}.",
+          "mathematical_explanation": "Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.330878, 'order_3_median_abs': 0.00079082, 'order_4_median_abs': 0.197373, 'order_5_median_abs': 0.000819469, 'order_6_median_abs': 0.139053, 'order_7_median_abs': 0.000764348} - so the highest orders dominate every Euclidean distance and the population spans 5.16048e-09 to 1.26233e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.3 against typical distances of 4271540000000000.0, which is why raw_score came out 0.000000 with 0 confirmed pairs.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "LL subband + block tiling",
+              "description": "Single-level Haar DWT, kept the LL subband, tiled into overlapping blocks.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 24426,
+                "block_size": 16
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: copy-move detection (SCORE-DRIVING)",
+              "description": "Blur-invariant moment features, PCA reduction, similarity search, and 16-neighbour consistency confirmation.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "flagged_block_count": 0,
+                "total_blocks": 24426,
+                "fraction_flagged": 0.0,
+                "confirmed_pairs": 0
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)",
+              "description": "Feeds the separate noise-analysis engine per the SKILL; does not affect this engine's raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "noise_sigma": 0.3019,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)",
+              "description": "SKILL: this pipeline is documented as 100%-defeatable by a knowledgeable adversary; reported as evidence only.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "lambda_hat": -0.0,
+                "converged": true,
+                "iterations_run": 40
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Fraction-flagged scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case3_img1_gen_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case3_img1_gen_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "LL subband + block tiling": {
+                "total_blocks": 24426,
+                "block_size": 16
+              },
+              "Pipeline C: copy-move detection (SCORE-DRIVING)": {
+                "flagged_block_count": 0,
+                "total_blocks": 24426,
+                "fraction_flagged": 0.0,
+                "confirmed_pairs": 0
+              },
+              "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)": {
+                "noise_sigma": 0.3019,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              },
+              "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)": {
+                "lambda_hat": -0.0,
+                "converged": true,
+                "iterations_run": 40
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "feature_space": {
+              "ll_shape": [
+                503,
+                400
+              ],
+              "total_blocks": 187880,
+              "sampled_blocks": 400,
+              "feature_dimension": 33,
+              "feature_abs_min": 5.16048e-09,
+              "feature_abs_max": 1.26233e+16,
+              "feature_abs_median": 0.00189784,
+              "match_radius_from_threshold": 0.3,
+              "pair_distance_min": 793675000000.0,
+              "pair_distance_median": 4271540000000000.0,
+              "pair_distance_max": 1.29885e+16,
+              "sampled_pairs": 79800,
+              "sampled_pairs_inside_radius": 0,
+              "orders_of_magnitude_gap": 16.15
+            },
+            "feature_scale_by_order": {
+              "order_2_median_abs": 0.330878,
+              "order_3_median_abs": 0.00079082,
+              "order_4_median_abs": 0.197373,
+              "order_5_median_abs": 0.000819469,
+              "order_6_median_abs": 0.139053,
+              "order_7_median_abs": 0.000764348
+            }
+          },
+          "error": ""
+        },
+        {
+          "facts": {
+            "path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg",
+            "filename": "genratedimage.jpeg",
+            "format": "JPEG",
+            "height": 1376,
+            "width": 768,
+            "file_size_bytes": 72944,
+            "estimated_quality_factor": 74.0,
+            "quality_estimation_method": "matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047",
+            "has_exif": false,
+            "is_resized": false,
+            "resize_evidence": "no EXIF pixel dimensions; resize state unknown, reported False",
+            "loadable": true,
+            "note": ""
+          },
+          "case_type": "Case 3 AI-generated",
+          "ground_truth": "AI-GENERATED",
+          "raw_score": 0.00227216900024564,
+          "probability": 0.3606062147111179,
+          "confidence": 1.0,
+          "is_reliable": true,
+          "reliability_note": "Standing SKILL caveats: undetectable for scaled or rotated copy-move regions; the noise-residual path (Pipeline A) is defeated by aggressive post-tampering smoothing/denoising; the compression-history path (Pipeline B) is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is therefore never scored, only reported as auxiliary evidence. ENHANCEMENT 6: analysed at 214x384 instead of 768x1376 (scale 0.279); at full resolution the stride-1 candidate search is intractable. This sets a floor on detectable forgery size - a duplicated region smaller than roughly 115 px across in the original will not be resolved. Pipeline B auxiliary evidence: lambda_hat=-0.4165 (converged=True) - not used in raw_score; treat as low-trust per the SKILL's own caveat. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The fraction-of-flagged-blocks scalar itself is an engineering recommendation, not a value the SKILL file defines or calibrates - treat this probability as a rough ordering signal, not a validated likelihood.",
+          "processing_time_ms": 15636.16746300022,
+          "engine_verdict": "UNCERTAIN",
+          "verdict_correct": false,
+          "surprise_level": "WRONG",
+          "reasoning": "Engine reported raw_score=0.002272 at confidence 1.0000, is_reliable=True, flagged_regions=48 confirmed pair(s). Pipeline C reported {'flagged_block_count': 37, 'total_blocks': 16284, 'fraction_flagged': 0.0023, 'confirmed_pairs': 48}; Pipeline A (unscored) {'noise_sigma': 0.295, 'threshold_method': 'visushrink', 'threshold_mode': 'soft'}; Pipeline B (unscored, low-trust) {'lambda_hat': -0.4165, 'converged': True, 'iterations_run': 6}. The LL subband is [688, 384] and tiled into 248337 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.3 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 996718000000.0, median 3815470000000000.0, max 1.87464e+16 - a gap of 16.1 orders of magnitude - and 0 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.331559, 'order_3_median_abs': 0.000712868, 'order_4_median_abs': 0.197326, 'order_5_median_abs': 0.000610027, 'order_6_median_abs': 0.138935, 'order_7_median_abs': 0.000587549}.",
+          "mathematical_explanation": "Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.331559, 'order_3_median_abs': 0.000712868, 'order_4_median_abs': 0.197326, 'order_5_median_abs': 0.000610027, 'order_6_median_abs': 0.138935, 'order_7_median_abs': 0.000587549} - so the highest orders dominate every Euclidean distance and the population spans 2.26114e-08 to 1.81541e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.3 against typical distances of 3815470000000000.0, which is why raw_score came out 0.002272 with 48 confirmed pairs.",
+          "computation_steps": [
+            {
+              "step": 1,
+              "name": "LL subband + block tiling",
+              "description": "Single-level Haar DWT, kept the LL subband, tiled into overlapping blocks.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "total_blocks": 16284,
+                "block_size": 16
+              }
+            },
+            {
+              "step": 2,
+              "name": "Pipeline C: copy-move detection (SCORE-DRIVING)",
+              "description": "Blur-invariant moment features, PCA reduction, similarity search, and 16-neighbour consistency confirmation.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "flagged_block_count": 37,
+                "total_blocks": 16284,
+                "fraction_flagged": 0.0023,
+                "confirmed_pairs": 48
+              }
+            },
+            {
+              "step": 3,
+              "name": "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)",
+              "description": "Feeds the separate noise-analysis engine per the SKILL; does not affect this engine's raw_score.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "noise_sigma": 0.295,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              }
+            },
+            {
+              "step": 4,
+              "name": "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)",
+              "description": "SKILL: this pipeline is documented as 100%-defeatable by a knowledgeable adversary; reported as evidence only.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "lambda_hat": -0.4165,
+                "converged": true,
+                "iterations_run": 6
+              }
+            },
+            {
+              "step": 5,
+              "name": "Scoring",
+              "description": "Fraction-flagged scalar converted to probability via the provisional_sigmoid route.",
+              "input_shape": "",
+              "output_shape": "",
+              "key_values": {
+                "is_calibrated": false
+              }
+            }
+          ],
+          "evidence_map_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case3_img2_genratedimage_heatmap.png",
+          "evidence_map_colour_path": "/home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/after/wavelet_case3_img2_genratedimage_heatmap_color.png",
+          "deep_probe": {
+            "steps": {
+              "LL subband + block tiling": {
+                "total_blocks": 16284,
+                "block_size": 16
+              },
+              "Pipeline C: copy-move detection (SCORE-DRIVING)": {
+                "flagged_block_count": 37,
+                "total_blocks": 16284,
+                "fraction_flagged": 0.0023,
+                "confirmed_pairs": 48
+              },
+              "Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)": {
+                "noise_sigma": 0.295,
+                "threshold_method": "visushrink",
+                "threshold_mode": "soft"
+              },
+              "Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)": {
+                "lambda_hat": -0.4165,
+                "converged": true,
+                "iterations_run": 6
+              },
+              "Scoring": {
+                "is_calibrated": false
+              }
+            },
+            "feature_space": {
+              "ll_shape": [
+                688,
+                384
+              ],
+              "total_blocks": 248337,
+              "sampled_blocks": 400,
+              "feature_dimension": 33,
+              "feature_abs_min": 2.26114e-08,
+              "feature_abs_max": 1.81541e+16,
+              "feature_abs_median": 0.0020947,
+              "match_radius_from_threshold": 0.3,
+              "pair_distance_min": 996718000000.0,
+              "pair_distance_median": 3815470000000000.0,
+              "pair_distance_max": 1.87464e+16,
+              "sampled_pairs": 79800,
+              "sampled_pairs_inside_radius": 0,
+              "orders_of_magnitude_gap": 16.1
+            },
+            "feature_scale_by_order": {
+              "order_2_median_abs": 0.331559,
+              "order_3_median_abs": 0.000712868,
+              "order_4_median_abs": 0.197326,
+              "order_5_median_abs": 0.000610027,
+              "order_6_median_abs": 0.138935,
+              "order_7_median_abs": 0.000587549
+            }
+          },
+          "error": ""
+        }
+      ],
+      "average_probability": 0.35747495424266124,
+      "score_spread": 0.006262520936913374,
+      "correct_verdicts": 0,
+      "case_verdict": "",
+      "summary": ""
+    }
+  ],
+  "statistics": {
+    "total_images": 6,
+    "real_average": 0.35434369377420455,
+    "fake_average": 0.3598653685727583,
+    "ai_average": 0.35747495424266124,
+    "separation": 0.005521674798553755,
+    "real_raw_average": 0.0,
+    "fake_raw_average": 0.0019975786924939466,
+    "raw_separation": 0.0019975786924939466,
+    "reliable_count": 6,
+    "correct_verdicts": 0,
+    "abstained_count": 0,
+    "wrong_verdicts": 6,
+    "average_time_ms": 25901.895633666678
+  }
+}

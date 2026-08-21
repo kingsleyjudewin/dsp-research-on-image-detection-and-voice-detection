@@ -1,0 +1,34 @@
+WAVELET-DOMAIN FORGERY ENGINE - DIAGNOSTIC SUMMARY
+run tag       : after
+generated     : 2026-08-21 23:06:41
+
+images tested : 6
+reliable      : 6 / 6
+correct       : 0 / 6
+wrong         : 6 / 6
+abstained     : 0 / 6
+
+PROBABILITY BY CASE
+  real        : 0.35434369377420455
+  manipulated : 0.3598653685727583
+  ai-generated: 0.35747495424266124
+  separation  : 0.005521674798553755
+
+RAW SCORE BY CASE
+  real        : 0.0
+  manipulated : 0.0019975786924939466
+  separation  : 0.0019975786924939466
+
+NOTICES
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+  - Engine configuration: Pipeline C only is scored: single-level 'haar' DWT, LL subband tiled into 16x16 blocks at stride 1; blur invariants for all (p,q) with 2<=p+q<=7, contrast-normalised (Eq. 17), PCA to 95% explained variance; candidate pairs at S=1/(1+rho) >= 0.7692307692307692 (Euclidean radius 0.300000), confirmed by 16 neighbour offsets within 4 px and a minimum separation of 2.0 block widths; raw_score = fraction of blocks in a confirmed pair; probability via a PROVISIONAL logistic (midpoint 0.05, slope 12.0). Pipelines A and B run unscored.
+  - The SKILL scopes this engine's score to Pipeline C alone: Pipeline A's output is 'not a scalar score on its own', and Pipeline B is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is 'low-trust by default'. Both run here but never affect raw_score.
+  - Pipeline C's summary scalar is the SKILL's own engineering recommendation, not a corpus value: 'not explicitly defined in the source paper as a summary scalar'. Its calibration is likewise provisional.
+
+PER-IMAGE
+  campic.jpeg            truth=REAL          raw=0.0000 prob=0.3543 conf=1.000 verdict=UNCERTAIN
+  campic2.jpeg           truth=REAL          raw=0.0000 prob=0.3543 conf=1.000 verdict=UNCERTAIN
+  fake .jpeg             truth=FAKE          raw=0.0000 prob=0.3543 conf=1.000 verdict=UNCERTAIN
+  fake.jpeg              truth=FAKE          raw=0.0040 prob=0.3654 conf=1.000 verdict=UNCERTAIN
+  gen.jpeg               truth=AI-GENERATED  raw=0.0000 prob=0.3543 conf=1.000 verdict=UNCERTAIN
+  genratedimage.jpeg     truth=AI-GENERATED  raw=0.0023 prob=0.3606 conf=1.000 verdict=UNCERTAIN
