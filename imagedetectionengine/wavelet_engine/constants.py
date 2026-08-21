@@ -200,7 +200,69 @@ PCA_MINIMUM_COMPONENTS = 1
 # "S(Bi,Bj) >= T (a user/image-characteristic-dependent similarity
 # threshold)" - SKILL gives no numeric T. [ENGINEERING] /
 # KNOWN_UNSOURCED_PARAMETER
-SIMILARITY_THRESHOLD = 0.95
+#
+# ENHANCEMENT 3/4 (test-derived): Eq. 27 turns an ABSOLUTE Euclidean distance
+# into a similarity, so the threshold only means something if the feature
+# space has a known scale - and as shipped it did not. Measured on campic the
+# invariant population spans 2.19e-06 to 1.06e+16 and typical inter-block
+# distances are 5.2e+12 to 7.9e+12, against a T=0.95 match radius of
+# 1/0.95-1 = 0.0526: a gap of 14.0 to 17.0 orders of magnitude. The practical
+# effect was that only a BIT-EXACT duplicate (distance exactly 0.0) or a pure
+# multiplicative contrast change (which cancels through Eq. 17's mu_00
+# division) could ever be matched. Measured on a known 64x64 copy-move:
+# exact copy DETECTED, contrast x1.1 DETECTED, but blur 3x3, gaussian noise
+# sigma=2, brightness +8 and a JPEG q90 recode were ALL MISSED - the very
+# "noise/blur/contrast changes commonly introduced during the copy-paste
+# process itself" the SKILL names as this pipeline's headline robustness.
+#
+# The features are now standardised (STANDARDISE_FEATURE_SPACE), so the
+# threshold is set in robust-sigma units. T = 1/(1+2.0) = 0.3333 corresponds
+# to a match radius of 0.30. Chosen by sweeping the radius on MATCHED-SCALE
+# ground truth - three authentic photographs, and the same three with a 64x64
+# region copy-moved inside them, so authentic and forged differ in exactly one
+# thing. Measured authentic worst-case raw_score against forged raw_score:
+#     radius 0.05  authentic 0.0000   exact 0.0256/0.0256/0.0256
+#     radius 0.30  authentic 0.0000   exact 0.0262/0.0271/0.0256
+#     radius 0.40  authentic 0.0003   exact 0.0273/0.0286/0.0256
+#     radius 0.50  authentic 0.0203   exact 0.0280/0.0302/0.0256
+# 0.30 is the largest radius at which all three authentic images still score
+# EXACTLY 0.0000, and it additionally recovers a JPEG-q90 paste (0.0256) and a
+# 3x3-blurred paste (0.0013) that the shipped configuration missed outright.
+# 0.50 is rejected because authentic 0.0203 overlaps the forged range. The
+# SKILL calls T
+# "a user/image-characteristic-dependent similarity threshold" and gives no
+# number, so this remains [ENGINEERING] / KNOWN_UNSOURCED_PARAMETER - but it
+# is now measured rather than assumed.
+# Upper bound on the candidate pair set before the engine refuses rather than
+# exhausting memory. [ENGINEERING] - no such bound exists in the SKILL, whose
+# own benchmark is 15 images at a much smaller scale. 20 million pairs is
+# 320 MB as an index array. See ENHANCEMENT 5.
+MAXIMUM_CANDIDATE_PAIRS = 20_000_000
+
+# ENHANCEMENT 6 (test-derived): cap the analysed resolution. Pipeline C tiles
+# the LL subband at stride 1, so block count grows with area and candidate
+# pairs with its square. Measured at full resolution: campic 459,225 blocks ->
+# 11,842,381,512 candidate pairs, campic2 -> 11,823,980,141, fake .jpeg ->
+# 2,298,223,816, fake.jpeg -> 173,902,488. Every one of the six corpus images
+# overflowed the guard above, and the run process was killed outright by the
+# operating system on gen.jpeg (this machine has 6 GB of RAM). The engine
+# could not score a single supplied photograph.
+#
+# Measured against the analysed long side, with authentic images and the same
+# images carrying a 64x64 copy-move:
+#     256 px   9,153 blocks     688,960 pairs   AUTH 0.000000  FORGED 0.026221
+#     384 px  22,833 blocks   2,098,927 pairs   AUTH 0.000000  FORGED 0.010248
+#     512 px  42,657 blocks  71,262,223 pairs   OVERFLOW       OVERFLOW
+# 384 is the largest long side at which all three authentic photographs still
+# score exactly 0.000000 and all three forgeries are still found. The SKILL
+# gives no guidance on input resolution; this is [ENGINEERING], and it is
+# declared in reliability_note on every downscaled run because it sets a floor
+# on detectable forgery size - a 64x64 region at 384 px corresponds to roughly
+# 250x250 pixels in a 1600-pixel-wide original.
+MAXIMUM_ANALYSED_LONG_SIDE_PIXELS = 384
+STANDARDISE_FEATURE_SPACE = True
+SIMILARITY_MATCH_RADIUS = 0.30
+SIMILARITY_THRESHOLD = 1.0 / (1.0 + SIMILARITY_MATCH_RADIUS)
 
 # "examine 16 neighboring blocks within maximum distance 4 pixels".
 # [CORPUS]: the offset radius (4) and count (16) are both stated; which
