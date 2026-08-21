@@ -37,8 +37,42 @@ class NoiseResidualExtractor:
         Returns:
             SWT coefficient list, coarsest level first (pywt.swt2 order).
         """
-        return pywt.swt2(grayscale, constants.PIPELINE_A_WAVELET_FAMILY,
+        # ENHANCEMENT 1: swt2 requires both dimensions divisible by
+        # 2**levels and raises otherwise. Measured on the supplied corpus:
+        # campic (1200x1599), campic2 (1200x1599) and gen (1006x800) all
+        # raise, and because analyse() catches ValueError at the top level
+        # that killed the WHOLE engine - discarding a completed and correct
+        # Pipeline C result after 485s, 496s and 209s of work respectively.
+        # The SKILL's Implementation Notes already prescribe the fix:
+        # "Odd image dimensions / boundary extension ... engineering
+        # recommendation: use symmetric/reflect padding, PyWavelets' default
+        # 'symmetric' mode, to avoid introducing spurious high-frequency
+        # energy at image borders that could be mistaken for tampering
+        # evidence there."
+        padded = self._pad_to_transform_multiple(
+            grayscale, constants.PIPELINE_A_DECOMPOSITION_LEVELS)
+        return pywt.swt2(padded, constants.PIPELINE_A_WAVELET_FAMILY,
                          level=constants.PIPELINE_A_DECOMPOSITION_LEVELS)
+
+    @staticmethod
+    def _pad_to_transform_multiple(grayscale: np.ndarray, levels: int) -> np.ndarray:
+        """Symmetrically pad so each side is a multiple of 2**levels.
+
+        Args:
+            grayscale: Float64 grayscale image.
+            levels: Number of SWT decomposition levels.
+
+        Returns:
+            Padded array; the input unchanged when it already conforms.
+        """
+        multiple = constants.SWT_DIMENSION_MULTIPLE_BASE ** levels
+        height, width = grayscale.shape
+        pad_rows = (-height) % multiple
+        pad_cols = (-width) % multiple
+        if pad_rows == 0 and pad_cols == 0:
+            return grayscale
+        return np.pad(grayscale, ((0, pad_rows), (0, pad_cols)),
+                      mode=constants.BOUNDARY_EXTENSION_MODE)
 
     def estimate_noise_sigma(self, diagonal_subband: np.ndarray) -> float:
         """Robust MAD-based noise standard-deviation estimate.
@@ -279,7 +313,12 @@ class NoiseResidualExtractor:
             thresholded = [self.apply_threshold(band, threshold_used, mode)
                           for band in (cH, cV, cD)]
 
+        # ENHANCEMENT 1: the SWT ran on a symmetrically padded copy, so the
+        # residual is cropped back to the caller's own resolution before it is
+        # handed on - the noise-analysis engine this feeds compares residual
+        # statistics region by region and must receive the original geometry.
         residual = self.extract_residual((cH, cV, cD), thresholded)
+        residual = residual[:grayscale.shape[0], :grayscale.shape[1]]
         return NoiseResidualResult(residual=residual, sigma_estimate=noise_sigma,
                                    threshold_used=float(threshold_used),
                                    threshold_method=method, threshold_mode=mode)
