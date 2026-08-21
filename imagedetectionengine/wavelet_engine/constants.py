@@ -37,6 +37,16 @@ TRACE_DECIMAL_PLACES = 4  # [PRESENTATION]
 TRACE_COARSE_DECIMAL_PLACES = 2  # [PRESENTATION]
 MILLISECONDS_PER_SECOND = 1000.0  # [STRUCTURAL]
 
+# ENHANCEMENT 1 (test-derived): SWT requires both image dimensions to be
+# divisible by 2**levels. 3 of the 6 supplied corpus images are not, and each
+# raised ValueError out of Pipeline A - an explicitly NON-SCORING pipeline -
+# which analyse() caught and turned into a whole-engine failure, discarding a
+# completed Pipeline C result. The SKILL's Implementation Notes prescribe the
+# remedy directly: "use symmetric/reflect padding, PyWavelets' default
+# 'symmetric' mode". [CORPUS] for the mode, [STRUCTURAL] for the base.
+SWT_DIMENSION_MULTIPLE_BASE = 2
+BOUNDARY_EXTENSION_MODE = "symmetric"
+
 # ── Pipeline A: wavelet noise-residual extraction ───────────────────────────
 # Formula: sigma_W_Phi = median(|HH_i|) / 0.6745
 # Source: mgaga2019, Eq. 7. 0.6745 is the 75th-percentile point of the
