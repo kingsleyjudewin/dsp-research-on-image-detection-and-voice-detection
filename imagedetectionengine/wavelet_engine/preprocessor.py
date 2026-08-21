@@ -49,6 +49,33 @@ class WaveletPreprocessor:
         return PreparedImage(grayscale=gray.astype(np.float64),
                              original_shape=array.shape)
 
+    def limit_resolution(self, image: np.ndarray) -> tuple:
+        """Downscale so the long side fits the analysed-resolution cap.
+
+        ENHANCEMENT 6. Pipeline C tiles at stride 1, so the candidate-pair
+        count grows roughly with the square of the block count. At full
+        resolution the six corpus images produced up to 11,842,381,512
+        candidate pairs and the process was killed by the operating system;
+        none could be scored. See constants.MAXIMUM_ANALYSED_LONG_SIDE_PIXELS
+        for the measured basis of the cap.
+
+        Args:
+            image: BGR uint8 or grayscale array.
+
+        Returns:
+            Tuple of (possibly downscaled image, scale factor applied). A
+            factor of 1.0 means the image was left untouched.
+        """
+        array = np.asarray(image)
+        longest = max(array.shape[0], array.shape[1])
+        cap = constants.MAXIMUM_ANALYSED_LONG_SIDE_PIXELS
+        if longest <= cap:
+            return array, 1.0
+        scale = cap / float(longest)
+        target = (max(int(array.shape[1] * scale), 1),
+                  max(int(array.shape[0] * scale), 1))
+        return cv2.resize(array, target, interpolation=cv2.INTER_AREA), scale
+
     def extract_ll_subband(self, grayscale: np.ndarray) -> np.ndarray:
         """Single-level Haar DWT, keeping only the coarse LL subband.
 
