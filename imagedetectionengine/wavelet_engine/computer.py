@@ -683,6 +683,18 @@ class CopyMoveDetector:
         # Source: Kashyap & Joshi 2013, Eq. 18-26.
         # Expected range: reduced-dimension real vectors.
         # ──────────────────────────────────────────────────────────
+        # ENHANCEMENT 3: standardise each invariant dimension before the
+        # eigen-decomposition. Eq. 17's contrast normalisation is supposed to
+        # render the invariants dimensionless, but measured on campic the
+        # median |value| per moment order runs 3.2165e-01, 6.7269e-03,
+        # 1.9834e-01, 5.8492e-03, 1.4042e-01, 4.9824e-03 for orders 2..7 and
+        # the population spans 2.19e-06 to 1.06e+16, so a plain covariance
+        # eigen-decomposition is dominated by whichever raw dimension happens
+        # to be largest. A robust (median / MAD) z-score is used rather than
+        # mean/std because the invariant distribution is extremely
+        # heavy-tailed. This rescales the axes only; it does not alter any
+        # invariant's value relative to another block's.
+        feature_matrix = self._standardise_features(feature_matrix)
         max_components = min(feature_matrix.shape[0], feature_matrix.shape[1])
         pca = PCA(n_components=max_components)
         pca.fit(feature_matrix)
@@ -692,6 +704,24 @@ class CopyMoveDetector:
         n_components = max(n_components, constants.PCA_MINIMUM_COMPONENTS)
         n_components = min(n_components, max_components)
         return PCA(n_components=n_components).fit_transform(feature_matrix)
+
+    @staticmethod
+    def _standardise_features(feature_matrix: np.ndarray) -> np.ndarray:
+        """Robustly z-score each feature dimension across all blocks.
+
+        Args:
+            feature_matrix: n_blocks x n_features array.
+
+        Returns:
+            Array of the same shape, each column centred on its median and
+            scaled by its median absolute deviation.
+        """
+        if not constants.STANDARDISE_FEATURE_SPACE:
+            return feature_matrix
+        centre = np.median(feature_matrix, axis=0)
+        deviation = np.median(np.abs(feature_matrix - centre), axis=0)
+        scale = deviation / constants.NOISE_MAD_CONSTANT
+        return (feature_matrix - centre) / np.where(scale > 0.0, scale, 1.0)
 
     def find_candidate_pairs(self, reduced_vectors: np.ndarray) -> set:
         """Find all block-index pairs whose similarity meets the threshold.
