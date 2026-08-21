@@ -730,7 +730,7 @@ class CopyMoveDetector:
             reduced_vectors: n_blocks x m_0 PCA-reduced feature matrix.
 
         Returns:
-            Set of (index_a, index_b) tuples with index_a < index_b.
+            Tuple of (n x 2 array of index pairs, overflow flag).
         """
         # ── SKILL VERIFICATION ──────────────────────────────────────
         # Formula: S(Bi,Bj) = 1/(1+rho(Bi,Bj)), rho = Euclidean distance.
@@ -738,9 +738,18 @@ class CopyMoveDetector:
         # Source: Kashyap & Joshi 2013, Eq. 27-28.
         # Expected range: S in (0, 1].
         # ──────────────────────────────────────────────────────────
+        # ENHANCEMENT 5: count first with count_neighbors, which materialises
+        # nothing, and refuse rather than exhaust memory. Measured: 251,889
+        # blocks at a standardised radius of 1.0 give 327,692,893 candidate
+        # pairs - 5.24 GB as a bare index array, far more as a set of tuples.
         max_distance = (1.0 / constants.SIMILARITY_THRESHOLD) - 1.0
         tree = cKDTree(reduced_vectors)
-        return tree.query_pairs(r=max_distance)
+        neighbour_count = int(tree.count_neighbors(tree, r=max_distance))
+        pair_count = (neighbour_count - len(reduced_vectors)) // 2
+        if pair_count > constants.MAXIMUM_CANDIDATE_PAIRS:
+            logger.warning("candidate search overflowed: %d pairs", pair_count)
+            return np.empty((0, 2), dtype=np.int64), True
+        return tree.query_pairs(r=max_distance, output_type="ndarray"), False
 
     def confirm_neighbour_consistency(self, candidates: set, positions: list,
                                       reduced_vectors: np.ndarray,
@@ -855,7 +864,7 @@ class CopyMoveDetector:
         positions = [(block.row, block.col) for block in blocks]
         position_lookup = {position: index for index, position in enumerate(positions)}
 
-        candidates = self.find_candidate_pairs(reduced)
+        candidates, overflowed = self.find_candidate_pairs(reduced)
         confirmed = self.confirm_neighbour_consistency(
             candidates, positions, reduced, position_lookup, block_size)
 
@@ -867,4 +876,4 @@ class CopyMoveDetector:
             duplicate_map=duplicate_map, confirmed_pairs=confirmed,
             total_blocks=len(blocks), flagged_block_count=len(flagged_blocks),
             fraction_flagged=len(flagged_blocks) / len(blocks) if blocks else 0.0,
-            block_size=block_size)
+            block_size=block_size, search_overflowed=overflowed)

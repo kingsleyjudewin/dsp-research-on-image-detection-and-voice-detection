@@ -108,6 +108,7 @@ class CopyMoveResult:
     flagged_block_count: int
     fraction_flagged: float
     block_size: int
+    search_overflowed: bool = False  # candidate set exceeded the memory guard
 
 
 @dataclass
