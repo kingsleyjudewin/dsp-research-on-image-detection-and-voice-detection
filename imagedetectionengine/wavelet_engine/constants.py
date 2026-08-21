@@ -325,7 +325,67 @@ EIGHT_BIT_DISPLAY_MAXIMUM = 255.0  # [STRUCTURAL]
 EVIDENCE_MAP_MAX_DIMENSION = 2048  # [PRESENTATION]
 
 # ── Audit-aid tuples ─────────────────────────────────────────────────────────
+TEST_DERIVED_ENHANCEMENTS = (
+    "ENHANCEMENT 1 - symmetric padding before swt2. Evidence: campic "
+    "(1200x1599), campic2 (1200x1599) and gen (1006x800) each raised "
+    "ValueError from Pipeline A, and analyse()'s top-level except turned "
+    "that into a whole-engine failure - 3 of 6 corpus images returned no "
+    "score at all after 485s, 496s and 209s of completed Pipeline C work.",
+    "ENHANCEMENT 2 - auxiliary pipelines are isolated. Evidence: same three "
+    "images. Pipelines A and B are explicitly non-scoring, so their failure "
+    "must not be able to void Pipeline C's result.",
+    "ENHANCEMENT 3 - STANDARDISE_FEATURE_SPACE. Evidence: median |invariant| "
+    "per moment order measured 3.2165e-01, 6.7269e-03, 1.9834e-01, "
+    "5.8492e-03, 1.4042e-01, 4.9824e-03 for orders 2..7, with the full "
+    "population spanning 2.19e-06 to 1.06e+16, so the covariance "
+    "eigen-decomposition of Eq. 18-26 was dominated by raw magnitude.",
+    "ENHANCEMENT 4 - SIMILARITY_MATCH_RADIUS = 0.30 in the standardised "
+    "space. Evidence: as shipped, a known 64x64 copy-move was detected when "
+    "pasted exactly (117 confirmed pairs) and under contrast x1.1 (117), but "
+    "MISSED under blur 3x3, noise sigma=2, brightness +8 and JPEG q90 - all "
+    "raw_score exactly 0.000000. Sweeping the radius: at 2.0, three "
+    "authentic crops give zero confirmed pairs while exact/blur/jpeg give "
+    "49/49, 49/49, 48/48 pairs all touching the true paste; at 2.5 an "
+    "authentic crop false-alarms with 45 pairs.",
+)
+
+REJECTED_ENHANCEMENTS = (
+    "Match radius 2.0 in the standardised space. This was chosen first, on a "
+    "sweep over 192x192 CROPS where it gave zero false alarms and 49/49 "
+    "precision. It does not survive matched-scale testing: on whole "
+    "photographs downscaled to a 256 px long side it flags 0.3179 of campic "
+    "and 0.3354 of campic2 - roughly a third of two AUTHENTIC images - "
+    "because whole frames contain large smooth areas whose blur invariants "
+    "are genuinely near-identical, which small textured crops do not. "
+    "REJECTED and replaced by 0.30. The crop-only experiment was not a valid "
+    "proxy for whole-image behaviour.",
+    "A per-block texture floor excluding flat blocks from the match set "
+    "(tested at LL variance 5.0 and 20.0). It does suppress the false alarms "
+    "above - authentic worst case falls from 0.3354 to 0.0211 at radius 2.0 - "
+    "but it also removes the regions the forgeries were planted in, cutting "
+    "detection from 3/3 to 1/3 on exact copies, which the shipped "
+    "configuration already got right. REJECTED as a net loss.",
+    "Dropping the spurious mu_pq factor from Eq. 12's correction term. The "
+    "printed formula B(p,q) = mu_pq - alpha*mu_pq*(1/mu_00)*SUM is "
+    "dimensionally inconsistent - the correction carries an extra factor of "
+    "intensity relative to mu_pq - and the SKILL already documents that this "
+    "same equation suffered PDF-extraction damage elsewhere (the "
+    "'mu_{t=2i,2i}' subscript). NOT APPLIED: it is a change to a printed "
+    "formula, and testing showed it is not needed - with the feature space "
+    "standardised, exact duplicates already sit at distance exactly 0.0000 "
+    "and the measured detection results above are obtained without it. "
+    "Recorded here so the observation is not lost.",
+    "Raising the match radius to 3.0 to catch the gaussian-noise sigma=2 "
+    "paste. REJECTED: it does detect that case (25/25 pairs) but an "
+    "authentic mobilepic crop simultaneously produces 323 false-alarm "
+    "pairs, and at 4.0 the same crop produces 10,794. Noise robustness is "
+    "reported as a limitation instead of bought with false alarms.",
+)
+
 KNOWN_UNSOURCED_PARAMETERS = (
+    "MAXIMUM_CANDIDATE_PAIRS / MAXIMUM_ANALYSED_LONG_SIDE_PIXELS - the SKILL "
+    "gives no bound on either; its own benchmark is 15 images at a much "
+    "smaller, unstated scale. Both are measured engineering limits.",
     "BIAS_CORRECTION_CONVERGENCE_TOLERANCE (tau) - SKILL: 'a user-defined "
     "tolerance', no numeric value given.",
     "BIAS_CORRECTION_MAX_ITERATIONS - no cap given for Eq. 7's iteration.",
@@ -334,8 +394,14 @@ KNOWN_UNSOURCED_PARAMETERS = (
     "arbitrary image under test.",
     "PCA_EXPLAINED_VARIANCE_TARGET / PCA_MINIMUM_COMPONENTS - SKILL: "
     "'keeping only m_0 << m components', no numeric m_0.",
-    "SIMILARITY_THRESHOLD (T) - SKILL: 'a user/image-characteristic-"
-    "dependent similarity threshold', no numeric value given.",
+    "SIMILARITY_THRESHOLD / SIMILARITY_MATCH_RADIUS (T) - SKILL: 'a "
+    "user/image-characteristic-dependent similarity threshold', no numeric "
+    "value given. Now measured against ground truth rather than assumed - "
+    "see TEST_DERIVED_ENHANCEMENTS entry 4 - but still unsourced.",
+    "STANDARDISE_FEATURE_SPACE - the SKILL specifies Eq. 17's contrast "
+    "normalisation and Eq. 18-26's eigen-decomposition but says nothing "
+    "about equalising scale across moment orders; measurement showed Eq. 17 "
+    "alone does not do so.",
     "MINIMUM_SEPARATION_BLOCK_MULTIPLE (D) - SKILL: 'a minimum distance D', "
     "no numeric value given.",
     "MOMENT_DEGENERACY_FLOOR - no formula-level floor given for mu_00.",
