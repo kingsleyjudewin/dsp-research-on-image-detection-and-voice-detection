@@ -1,0 +1,144 @@
+WAVELET-DOMAIN FORGERY ENGINE - ONE-PAGE SUMMARY
+Read this first next time you open wavelet_engine.
+
+ENGINE            wavelet_domain_forgery   (skill_version 1.0.0)
+SCORED PIPELINE   C only - Haar-DWT copy-move block matching. A (noise
+                  residual) and B (compression history) run unscored, per the
+                  SKILL: A's output "is not a scalar score on its own" and B is
+                  documented 100%-defeatable by its own source paper.
+
+OVERALL HEALTH    NEEDS INVESTIGATION BEFORE INTEGRATION
+                  The detector genuinely works - 3/3 planted copy-moves found,
+                  0/3 false alarms on the same photographs untouched - but its
+                  calibration never leaves the UNCERTAIN band, and it can only
+                  run at all on downscaled input.
+
+SEPARATION SCORE
+  before   probability separation: UNDEFINED. Three of six images CRASHED, so
+           the real-image average could not be computed at all.
+           raw separation: +0.002664   reliable 3/6   avg 338.5 s per image
+  after    probability separation: +0.005522   (target >0.40; this is poor)
+           raw separation: +0.001998   reliable 6/6   avg 25.9 s per image
+  ground truth (3 photographs at the analysed cap, 64x64 region copy-moved):
+           authentic 0.000000 / 0.000000 / 0.000000  - zero false alarms
+           forged    0.010248 / 0.010248 / 0.010248  - 117 confirmed pairs each
+
+TOP 3 STRENGTHS
+  1. When it can run, it is exact and it does not false-alarm. A bit-exact
+     duplicate sits at Euclidean distance EXACTLY 0.0000 in feature space
+     while random block pairs sit at a median of 8.09e+11 - a separation ratio
+     of 8.09e+41. On all three authentic photographs it returns 0.000000.
+  2. The contrast invariance of Eq. 17 is real and measurable. A paste
+     rescaled by x1.1 is detected with the identical 117 confirmed pairs as
+     the untouched paste, because a multiplicative change cancels exactly
+     through the mu_00 division.
+  3. It localises. flagged_regions carries every confirmed pair's two block
+     origins and the duplicate map is a genuine binary tamper mask, which the
+     SKILL treats as Pipeline C's primary output rather than a by-product.
+
+TOP 3 WEAKNESSES
+  1. IT CANNOT RUN AT NATIVE RESOLUTION. Stride-1 tiling gives 459,225 blocks
+     for a 1600x1200 image and 11,842,381,512 candidate pairs - 189 GB as a
+     bare index array. All six corpus images overflowed the guard and the
+     process was OOM-killed on gen.jpeg. Everything is now analysed at a 384 px
+     long side, which puts a floor of roughly 130-250 original pixels on
+     detectable forgery size, and cost fake .jpeg the duplication it had found.
+  2. IT ONLY SURVIVES SOME OF THE PROCESSING IT CLAIMS TO. The SKILL's headline
+     robustness is to "the noise/blur/contrast changes commonly introduced
+     during the copy-paste process". Measured: exact copy DETECTED, contrast
+     x1.1 DETECTED, JPEG q90 DETECTED after enhancement, blur 3x3 marginal
+     (0.0013), gaussian noise sigma=2 MISSED, brightness +8 MISSED. Brightness
+     is a genuine scope limit - the invariants are contrast-invariant, not
+     DC-offset-invariant - but noise is squarely inside the SKILL's claim.
+  3. THE CALIBRATION CARRIES NO DECISION. Every observed raw_score maps into
+     probability 0.3543-0.3654, which reads as UNCERTAIN for all six images.
+     0/6 correct verdicts before AND after, even though the underlying
+     ordering is right (both real images at exactly zero, two of four
+     non-real above it). The scalar is the SKILL's own engineering
+     recommendation, not a corpus value, and it has never been calibrated.
+
+BUGS FOUND (all fixed)
+  1. THE ENGINE CRASHED ON HALF THE CORPUS. campic (1200x1599), campic2
+     (1200x1599) and gen.jpeg (1006x800) raised out of pywt.swt2, which needs
+     both dimensions divisible by 2**levels = 8. Fixed by symmetric padding -
+     which the SKILL's Implementation Notes already prescribed and the engine
+     had simply not implemented - with the residual cropped back to the
+     caller's own geometry.
+  2. A NON-SCORING PIPELINE COULD VOID THE WHOLE RESULT. Those crashes came
+     from Pipeline A, which by the engine's own scope decision cannot affect
+     raw_score, yet analyse()'s top-level except discarded a completed and
+     correct Pipeline C result - 485 s, 496 s and 209 s of work. Auxiliary
+     pipelines are now isolated and their failure is reported, not fatal.
+  3. UNBOUNDED MEMORY IN THE CANDIDATE SEARCH. find_candidate_pairs built a
+     Python set of tuples from cKDTree.query_pairs with no bound. The count is
+     now taken with count_neighbors, which materialises nothing, and the
+     engine reports is_reliable=False above the cap rather than dying.
+  No contract violations. Deterministic across repeat runs.
+  MINOR, NOT FIXED: constants.py's module docstring contains a text-corruption
+  artifact - "not a rigorSKILL(Wavelet-Domain Forgery Detection)ously-derived
+  optimum" - where a filename was pasted into a word. Cosmetic, in a comment,
+  affects nothing.
+  PRE-EXISTING, NOT FIXED: five 0.5 literals outside constants.py (computer.py
+  lines 200/379/475, visualizer.py line 49). Identical in HEAD; out of scope.
+
+FUSION LAYER WEIGHT TABLE
+  +---------------------+-------------------+
+  | Input condition     | Recommended weight|
+  +---------------------+-------------------+
+  | JPEG original       | LOW               |
+  | JPEG recompressed   | LOW               |
+  | PNG lossless        | MEDIUM            |
+  | Resized image       | LOW               |
+  | AI-generated        | ZERO              |
+  | Low resolution      | MEDIUM            |
+  +---------------------+-------------------+
+  Copy-move detection is nearly format-agnostic - the duplicate is duplicated
+  whatever the container - so the rows barely differ, and PNG edges ahead only
+  because a JPEG recode of the pasted region is one of the perturbations that
+  weakens the match. Low resolution is MEDIUM rather than LOW because this is
+  the one engine in the system that PREFERS small inputs: it already downscales
+  everything to 384 px, so a small image is analysed at full fidelity.
+  AI-generated is ZERO on principle - a diffusion render contains no copy-move
+  event, so a low score there is correct behaviour and carries no information
+  about synthetic provenance.
+  A LOW SCORE IS NEVER EVIDENCE OF AUTHENTICITY: the SKILL's own Key Findings
+  state the compression-history detector is 100% defeatable by an adversary,
+  and Pipeline C is explicitly blind to scaled or rotated copy-move regions.
+
+CALIBRATION ASSESSMENT
+  Status: NEEDS LABELLED DATASET. The empirical-CDF route is implemented and
+  verified working. The provisional sigmoid (midpoint 0.05, slope 12) is
+  anchored far above the observed operating range - measured raw scores run
+  0.000000 to 0.003995 on the corpus and 0.0102 to 0.0271 on ground truth - so
+  it compresses everything into 0.354-0.365 and never crosses a decision band.
+  Action: supply >=10 authentic reference fraction-flagged scores, or re-anchor
+  the sigmoid midpoint near 0.005 once a labelled set exists. Do not re-anchor
+  it from the six corpus images; that would be fitting the boundary to the test.
+
+FUSION ONE-LINER
+  wavelet_domain_forgery: detects un-scaled, un-rotated copy-move duplication
+  exactly and without false alarms when it can run (3/3 planted forgeries
+  found, 0/3 false alarms, exact duplicates at Euclidean distance 0.0000
+  against a random-pair median of 8.09e+11), and localises it to block pairs;
+  but it must downscale every input to a 384 px long side to be computationally
+  tractable at all - so it is blind to forgeries below roughly 130-250 original
+  pixels - it misses noise-perturbed and brightness-shifted pastes, it is blind
+  by construction to scaled or rotated copies, and its provisional calibration
+  maps every real score into UNCERTAIN. Weight MEDIUM on PNG and low-resolution
+  input, LOW on JPEG, ZERO on AI-generated, and never read a low score as
+  evidence of authenticity.
+
+PERFORMANCE
+  338.5 s per image before, 25.9 s after - a 13x speed-up, entirely from the
+  analysed-resolution cap. Slowest step is Pipeline C's per-block feature
+  build: build_feature_vector was timed at 997 microseconds per block, and at
+  native resolution that alone is 7.6 minutes for one 1600x1200 image.
+  Memory is the binding constraint on this machine (6 GB total): the candidate
+  pair set, not the feature matrix, is what overflows.
+
+NEXT STEP THAT WOULD ACTUALLY MOVE THIS ENGINE
+  Not tuning. Two things: (a) a labelled copy-move set to calibrate the
+  fraction-flagged scalar, since the ordering is already correct and only the
+  mapping is missing; and (b) an approximate-nearest-neighbour or
+  lexicographic-sort matching strategy in place of the all-pairs KD-tree query,
+  which is what forces the resolution cap and therefore the forgery-size floor.
