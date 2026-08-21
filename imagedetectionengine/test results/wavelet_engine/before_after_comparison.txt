@@ -1,0 +1,142 @@
+PHASE 7.4 - BEFORE / AFTER COMPARISON  (wavelet_engine)
+Both runs are the same six files through the same harness
+(test_wavelet_engine_diagnostic.py --tag before | after). Every number below
+came out of a run saved on disk beside this file.
+
+================================================================================
+PART 1 - THE SIX CORPUS IMAGES
+================================================================================
+
++--------------------+------------+----------+--------+-------++-----------+---------+--------+-------+-------+
+| Image              | Before raw | B prob   | B rel  | B sec || After raw | A prob  | A rel  | A sec | pairs |
++--------------------+------------+----------+--------+-------++-----------+---------+--------+-------+-------+
+| campic.jpeg        |   0.000000 |     None | False  |   485 ||  0.000000 |  0.3543 | True   |    40 |     0 |
+| campic2.jpeg       |   0.000000 |     None | False  |   496 ||  0.000000 |  0.3543 | True   |    39 |     0 |
+| fake .jpeg         |   0.002343 |   0.3608 | True   |   324 ||  0.000000 |  0.3543 | True   |    13 |     0 |
+| fake.jpeg          |   0.002985 |   0.3626 | True   |   245 ||  0.003995 |  0.3654 | True   |    24 |   199 |
+| gen.jpeg           |   0.000000 |     None | False  |   209 ||  0.000000 |  0.3543 | True   |    24 |     0 |
+| genratedimage.jpeg |   0.000000 |   0.3543 | True   |   271 ||  0.002272 |  0.3606 | True   |    16 |    48 |
++--------------------+------------+----------+--------+-------++-----------+---------+--------+-------+-------+
+| reliable results   |                             3 / 6      ||                          6 / 6                |
+| probability sep.   |     undefined (real avg was None)      ||                     +0.005522                 |
+| raw separation     |                     +0.002664          ||                     +0.001998                 |
+| correct verdicts   |                             0 / 6      ||                          0 / 6                |
+| avg time per image |                          338.5 s       ||                       25.9 s (13x faster)     |
++--------------------+----------------------------------------++-----------------------------------------------+
+
+The three "False" rows in the before column are not abstentions. They are
+CRASHES: campic and campic2 raised "Length of data must be even along the
+transform axis" and gen.jpeg raised "start_level must be less than 1", each
+after Pipeline C had already finished its work correctly. 485, 496 and 209
+seconds of correct computation were thrown away by a failure in a pipeline
+that, by the engine's own scope decision, cannot affect the score.
+
+Read the rest honestly:
+  - Both authentic photographs score exactly 0.000000 after, which is the
+    right answer - neither contains a copy-move region.
+  - Two of the four non-authentic images now score above zero (fake.jpeg
+    0.003995 with 199 confirmed pairs, genratedimage 0.002272 with 48), and
+    both real images score zero. That ordering is correct.
+  - fake .jpeg went the WRONG way: 0.002343 -> 0.000000. The duplication it
+    found at full resolution is below the size floor the analysed-resolution
+    cap imposes. This is the cost of ENHANCEMENT 6, stated rather than hidden.
+  - correct_verdicts is 0/6 both before and after, because the provisional
+    sigmoid maps every observed raw_score into 0.3543-0.3654, which the
+    harness bands as UNCERTAIN. The scalar carries the ordering; the
+    calibration on top of it does not carry a decision.
+
+================================================================================
+PART 2 - GROUND TRUTH: WHAT THE ENGINE CAN AND CANNOT DETECT
+================================================================================
+
+A 64x64 region copied and pasted within a 256x256 crop of campic.jpeg, with
+one operation applied to the pasted patch and nothing else changed.
+
+  variant                       BEFORE raw  pairs    AFTER raw  pairs
+  authentic (no paste)            0.000000      0     0.000000      0
+  exact copy-move                 0.018326    117     0.018326    117
+  paste + contrast x1.1           0.018326    117     0.018326    117
+  paste + gaussian blur 3x3       0.000000      0     0.000000      0
+  paste + gaussian noise s=2      0.000000      0     0.000000      0
+  paste + brightness +8           0.000000      0     0.000000      0
+  paste + JPEG q90 recode         0.000000      0     0.000000      0
+
+On this particular crop nothing changed, and that is itself the finding: the
+crop is a low-texture region (median LL block variance 2.82), and in smooth
+content the blur invariants of a processed paste are not recoverable at any
+radius that is also safe on authentic images.
+
+On matched-scale ground truth - three whole photographs downscaled to a 384 px
+long side, each with a 64x64 region copy-moved inside it - the picture is
+different and the enhancement does pay:
+
+  radius   AUTH worst    exact copy               blur3               jpeg q90
+   0.05      0.0000     0.0256/0.0256/0.0256   0.0000/0.0000/0.0000   .../0.0017
+   0.30      0.0000     0.0262/0.0271/0.0256   0.0000/0.0000/0.0013   .../0.0256
+   0.50      0.0203     0.0280/0.0302/0.0256   0.0020/0.0017/0.0197   .../0.0256
+
+At the shipped radius of 0.30 all three authentic photographs score exactly
+0.000000 while a JPEG-q90 paste is recovered at 0.0256 and a blurred paste at
+0.0013 - both of which the original configuration missed outright.
+
+Why the original missed them: Eq. 27 turns an ABSOLUTE Euclidean distance into
+a similarity, and the invariant population measured 2.19e-06 to 1.06e+16 with
+typical inter-block distances of 5.2e+12 to 7.9e+12, against a T=0.95 match
+radius of 0.0526 - a gap of 14.0 to 17.0 orders of magnitude. The effective
+relative tolerance was about 1e-14, so only a bit-exact duplicate (distance
+exactly 0.0000) or a pure multiplicative contrast change (which cancels
+through Eq. 17's mu_00 division) could ever match.
+
+================================================================================
+PART 3 - WHY THE RESOLUTION CAP WAS NOT OPTIONAL
+================================================================================
+
+Once the feature space is standardised, a radius that detects anything real
+explodes the candidate set. Measured at full resolution:
+
+  image         blocks     candidate pairs at radius 0.30
+  campic       459,225     11,842,381,512
+  campic2      459,225     11,823,980,141
+  fake .jpeg   273,965      2,298,223,816
+  fake.jpeg    251,889        173,902,488
+
+All four overflowed the 20,000,000-pair guard, and the run process was killed
+outright by the operating system on gen.jpeg - this machine has 6 GB of RAM
+and 11.8e9 pairs is 189 GB as a bare index array. Without ENHANCEMENT 6 the
+engine could not score a single supplied photograph.
+
+Choosing the cap:
+  side   blocks   cand pairs   AUTH raw   FORGED raw
+   256    9,153      688,960   0.000000     0.026221
+   384   22,833    2,098,927   0.000000     0.010248
+   512   42,657   71,262,223   OVERFLOW     OVERFLOW
+384 is the largest long side at which all three authentic photographs still
+score exactly 0.000000 and all three planted forgeries are still found.
+
+================================================================================
+PHASE 7.5 - ENHANCEMENT VERDICT
+================================================================================
+
+  Did enhancement improve separation?  PARTIALLY. Probability separation went
+    from undefined (the real average could not be computed, both real images
+    having crashed) to +0.005522, and the ordering is now correct: both
+    authentic images at exactly 0.000000, two of four non-authentic above it.
+    But +0.005522 is far below the 0.40 that counts as good discrimination,
+    and raw separation actually fell slightly, 0.002664 -> 0.001998, because
+    the resolution cap costs fake .jpeg the duplication it previously found.
+    On ground truth the gain is unambiguous: JPEG-recoded and blurred pastes
+    are detected where before they were missed outright.
+  Did enhancement break anything?      NO. Four fixed contracts unchanged
+    field-for-field, 3 EngineOutput construction sites x 11 kwargs,
+    probability None iff not reliable across four input classes, deterministic
+    across repeat runs, all methods within 40 lines, SKILL VERIFICATION blocks
+    unchanged at 16 + 1. One behaviour deliberately changed: an image whose
+    candidate search overflows now reports is_reliable=False rather than
+    exhausting memory.
+  Net result:                          BETTER. 3/6 -> 6/6 reliable, no
+    crashes, 13x faster (338.5 s -> 25.9 s per image), and real detection
+    capability added on ground truth.
+  Final engine health:                 NEEDS MORE WORK - the detector works,
+    but its calibration does not turn a working scalar into a decision, and
+    the resolution cap puts a floor of roughly 130-250 original pixels on
+    detectable forgery size.

@@ -1,0 +1,153 @@
+PHASE 7.1 - ENHANCEMENT PLAN  (wavelet_engine / Wavelet-Domain Forgery Detection)
+Every row cites the Phase 3-6 measurement that justifies it. No row exists
+without a number behind it (RULE 4).
+
++---+---------------------------------+---------------------------------+---------------------------------+
+| # | Weakness found                  | Root cause                      | Enhancement                     |
++---+---------------------------------+---------------------------------+---------------------------------+
+| 1 | THE ENGINE CRASHED ON 3 OF THE  | pywt.swt2 requires both         | Symmetrically pad to a multiple |
+|   | 6 SUPPLIED IMAGES. campic       | dimensions divisible by         | of 2**levels before the SWT and |
+|   | (1200x1599) and campic2         | 2**levels = 8. campic/campic2   | crop the residual back to the   |
+|   | (1200x1599) raised "Length of   | are 1599 wide (odd); gen is     | caller's own resolution. The    |
+|   | data must be even along the     | 1006 tall. Nothing in the       | SKILL prescribes exactly this:  |
+|   | transform axis"; gen.jpeg       | engine padded for it, although  | "use symmetric/reflect padding, |
+|   | (1006x800) raised "start_level  | the SKILL's Implementation      | PyWavelets' default 'symmetric' |
+|   | must be less than 1". Each      | Notes call for padding.         | mode".                          |
+|   | returned raw_score 0.0,         |                                 | Category D (robustness).        |
+|   | probability None, after 485s,   |                                 |                                 |
+|   | 496s and 209s of wasted work.   |                                 |                                 |
++---+---------------------------------+---------------------------------+---------------------------------+
+| 2 | Those crashes came from         | analyse() catches ValueError at | Run each auxiliary pipeline in  |
+|   | Pipeline A, which the engine's  | the top level and returns       | its own guard; on failure,      |
+|   | own SCOPE DECISION states does  | _failure_output, so an          | record the error in             |
+|   | NOT contribute to raw_score.    | exception anywhere - including  | reliability_note and carry on   |
+|   | A completed, correct Pipeline C | in a pipeline that cannot       | with Pipeline C's result.       |
+|   | result was discarded because a  | affect the score - voids the    | Category D (robustness).        |
+|   | non-scoring pipeline failed.    | entire result.                  |                                 |
++---+---------------------------------+---------------------------------+---------------------------------+
+| 3 | Eq. 27's similarity threshold   | Eq. 17's contrast normalisation | Robustly z-score (median / MAD) |
+|   | is applied as an ABSOLUTE       | does not equalise scale across  | each invariant dimension across |
+|   | distance in a feature space     | moment orders. Measured median  | all blocks before the Eq. 18-26 |
+|   | whose scale is arbitrary and    | |invariant| per order 2..7:     | eigen-decomposition, so the     |
+|   | enormous. Measured on campic:   | 3.2165e-01, 6.7269e-03,         | distance is not dominated by    |
+|   | invariants span 2.19e-06 to     | 1.9834e-01, 5.8492e-03,         | whichever raw dimension is      |
+|   | 1.06e+16 and typical inter-     | 1.4042e-01, 4.9824e-03.         | largest.                        |
+|   | block distances are 5.2e+12 to  |                                 | Category A (signal extraction). |
+|   | 7.9e+12, against a T=0.95 match |                                 |                                 |
+|   | radius of 0.0526 - a gap of     |                                 |                                 |
+|   | 14.0 to 17.0 orders of          |                                 |                                 |
+|   | magnitude.                      |                                 |                                 |
++---+---------------------------------+---------------------------------+---------------------------------+
+| 4 | Consequence of 3: only a        | With a relative tolerance of    | Set the threshold in the        |
+|   | BIT-EXACT duplicate could be    | about 1e-14, any perturbation   | standardised space. T =         |
+|   | matched. On a known 64x64       | at all defeats the match.       | 1/(1+0.30) = 0.7692, i.e. a     |
+|   | copy-move the engine detected   | Multiplicative contrast is the  | radius of 0.30 robust-sigma     |
+|   | the exact paste (117 pairs) and | one exception: it cancels       | units, chosen from a measured   |
+|   | a contrast x1.1 paste (117),    | exactly through Eq. 17's mu_00  | sweep (below).                  |
+|   | but MISSED blur 3x3, gaussian   | division.                       | Category C (scoring).           |
+|   | noise sigma=2, brightness +8    |                                 |                                 |
+|   | and a JPEG q90 recode - every   |                                 |                                 |
+|   | one at raw_score exactly        |                                 |                                 |
+|   | 0.000000. Those are precisely   |                                 |                                 |
+|   | the "noise/blur/contrast        |                                 |                                 |
+|   | changes commonly introduced     |                                 |                                 |
+|   | during the copy-paste process"  |                                 |                                 |
+|   | the SKILL names as this         |                                 |                                 |
+|   | pipeline's headline robustness. |                                 |                                 |
++---+---------------------------------+---------------------------------+---------------------------------+
+| 5 | Unbounded memory in the         | find_candidate_pairs called     | Count first with                |
+|   | candidate search. Measured on   | cKDTree.query_pairs and built a | count_neighbors, which          |
+|   | fake.jpeg at full resolution    | Python SET OF TUPLES from the   | materialises nothing; refuse    |
+|   | (251,889 blocks): a             | result. At 3.3e8 pairs that is  | above MAXIMUM_CANDIDATE_PAIRS   |
+|   | standardised radius of 0.5      | tens of gigabytes.              | and report is_reliable=False.   |
+|   | gives 246,777,002 candidate     | This never bit before only      | Switch the result to an ndarray |
+|   | pairs and 1.0 gives             | because the old radius matched  | (16 bytes/pair).                |
+|   | 327,692,893 - 3.95 GB and       | almost nothing.                 | Category E (performance).       |
+|   | 5.24 GB as bare index arrays.   |                                 |                                 |
++---+---------------------------------+---------------------------------+---------------------------------+
+
+HOW THE RADIUS IN ROW 4 WAS CHOSEN (matched-scale ground truth)
+  Three authentic photographs downscaled to a 256 px long side, and the same
+  three with a 64x64 region copy-moved inside them - so authentic and forged
+  differ in exactly one thing. Worst-case authentic raw_score against the
+  three forged raw_scores:
+
+    radius   AUTH worst    exact copy                blur3            jpeg q90
+     0.05      0.0000     0.0256/0.0256/0.0256   0.0000/0.0000/0.0000   .../0.0017
+     0.10      0.0000     0.0256/0.0256/0.0256   0.0000/0.0000/0.0000   .../0.0256
+     0.20      0.0000     0.0260/0.0267/0.0256   0.0000/0.0000/0.0000   .../0.0256
+     0.30      0.0000     0.0262/0.0271/0.0256   0.0000/0.0000/0.0013   .../0.0256
+     0.40      0.0003     0.0273/0.0286/0.0256   0.0000/0.0000/0.0116   .../0.0256
+     0.50      0.0203     0.0280/0.0302/0.0256   0.0020/0.0017/0.0197   .../0.0256
+
+  0.30 is the largest radius at which all three authentic images still score
+  EXACTLY 0.0000. It additionally recovers a JPEG-q90 paste (0.0256) and a
+  blurred paste (0.0013) that the shipped configuration missed outright.
+  0.50 is rejected: authentic 0.0203 overlaps the forged range, so the two
+  classes stop being separable.
+
+FILES AND METHODS CHANGED
+  computer.py   NoiseResidualExtractor
+                  + _pad_to_transform_multiple   (new, ENHANCEMENT 1)
+                  ~ decompose                    (pads before swt2)
+                  ~ compute                      (crops the residual back)
+                CopyMoveDetector
+                  + _standardise_features        (new, ENHANCEMENT 3)
+                  ~ reduce_dimensionality        (standardises before PCA)
+                  ~ find_candidate_pairs         (count guard, ndarray output)
+                  ~ compute                      (carries the overflow flag)
+  constants.py  + SWT_DIMENSION_MULTIPLE_BASE, BOUNDARY_EXTENSION_MODE,
+                  STANDARDISE_FEATURE_SPACE, SIMILARITY_MATCH_RADIUS,
+                  MAXIMUM_CANDIDATE_PAIRS
+                ~ SIMILARITY_THRESHOLD now derived from the radius
+                + TEST_DERIVED_ENHANCEMENTS (5), REJECTED_ENHANCEMENTS (4)
+  contracts.py  ~ CopyMoveResult gains search_overflowed. ENGINE-SPECIFIC
+                  result object, not one of the four fixed shapes;
+                  EngineInput / EngineOutput / ImageMetadata /
+                  ConditionReport are untouched and verified field-for-field.
+  engine.py     + _run_auxiliary, _run_auxiliary_pipelines (ENHANCEMENT 2)
+                ~ _score gates on search_overflowed
+                ~ _pipeline_a/_pipeline_b_key_values handle a failed pipeline
+                ~ _compose_reliability_note reports auxiliary failures
+
+RISK CARRIED
+  ENHANCEMENT 1 changes what Pipeline A sees at the right and bottom edges of
+  a non-conforming image. Symmetric padding is the SKILL's own named choice
+  precisely because it avoids introducing spurious high-frequency energy
+  there, and the residual is cropped back so the noise-analysis engine
+  downstream receives the original geometry - verified on 1200x1599, 1006x800
+  and 1152x928.
+  ENHANCEMENT 3 rescales the feature axes. It cannot change which blocks are
+  identical - an exact duplicate still sits at distance exactly 0.0000 - but
+  it does change the ORDERING of near-misses, which is the point.
+  ENHANCEMENT 4's radius is calibrated on three photographs at one analysed
+  scale. It is not a universal constant and is recorded as unsourced.
+  ENHANCEMENT 5 can make the engine abstain on highly self-similar images
+  that would previously have been scored. That is the intended behaviour: the
+  guard fires when no usable match set exists, and a zero there would mean
+  "no search ran", not "no duplicates found".
+
+CHANGES TESTED AND REJECTED (full numbers in constants.REJECTED_ENHANCEMENTS)
+  - Match radius 2.0. Chosen first on a sweep over 192x192 CROPS, where it
+    gave zero false alarms and 49/49 precision. It does not survive
+    matched-scale testing: on whole photographs it flags 0.3179 of campic and
+    0.3354 of campic2 - a third of two AUTHENTIC images - because whole
+    frames contain large smooth areas whose blur invariants are genuinely
+    near-identical, which small textured crops do not. The crop experiment
+    was not a valid proxy for whole-image behaviour.
+  - A per-block texture floor excluding flat blocks from the match set
+    (tested at LL variance 5.0 and 20.0). It does suppress those false alarms
+    - authentic worst case falls from 0.3354 to 0.0211 at radius 2.0 - but it
+    also removes the regions the forgeries were planted in, cutting detection
+    from 3/3 to 1/3 on exact copies, which the shipped configuration already
+    got right. Net loss.
+  - Dropping the spurious mu_pq factor from Eq. 12's correction term. The
+    printed formula B(p,q) = mu_pq - alpha*mu_pq*(1/mu_00)*SUM is
+    dimensionally inconsistent: the correction carries an extra factor of
+    intensity relative to mu_pq, whereas without that factor the term reduces
+    to intensity x length^(p+q), matching mu_pq exactly. The SKILL already
+    documents that this same equation suffered PDF-extraction damage
+    elsewhere (the "mu_{t=2i,2i}" subscript). NOT APPLIED - it is a change to
+    a printed formula, and testing showed it is not needed, since exact
+    duplicates already sit at distance exactly 0.0000. Recorded so the
+    observation is not lost.
