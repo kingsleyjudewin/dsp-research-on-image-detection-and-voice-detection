@@ -79,12 +79,16 @@ class WaveletEngine:
         Returns:
             EngineOutput.
         """
-        condition = self.condition_checker.check(
-            engine_input.metadata, engine_input.image, self.block_size)
+        # ENHANCEMENT 6: cap the analysed resolution before anything else.
+        image, scale = self.preprocessor.limit_resolution(engine_input.image)
+        self._downscale_note = self._describe_downscale(engine_input.image, image,
+                                                         scale)
+        condition = self.condition_checker.check(engine_input.metadata, image,
+                                                  self.block_size)
         if condition.skip_engine:
             return self._null_output(condition.reliability_note, start_time)
 
-        prepared = self.preprocessor.prepare(engine_input.image, engine_input.metadata)
+        prepared = self.preprocessor.prepare(image, engine_input.metadata)
         ll_subband = self.preprocessor.extract_ll_subband(prepared.grayscale)
         blocks = self.preprocessor.tile_blocks(ll_subband, self.block_size)
 
@@ -94,6 +98,29 @@ class WaveletEngine:
 
         return self._score_and_assemble(prepared.grayscale, ll_subband, blocks,
                                         condition, block_check, start_time)
+
+    @staticmethod
+    def _describe_downscale(original, analysed, scale: float) -> str:
+        """Describe the analysed-resolution cap for the reliability note.
+
+        Args:
+            original: The caller's own image array.
+            analysed: The array actually analysed.
+            scale: Linear scale factor applied, 1.0 when none was.
+
+        Returns:
+            Note fragment, or an empty string when nothing was downscaled.
+        """
+        if scale >= 1.0:
+            return ""
+        floor_pixels = int(round(2 * constants.DEFAULT_BLOCK_SIZE / scale))
+        return (f"ENHANCEMENT 6: analysed at {analysed.shape[1]}x"
+                f"{analysed.shape[0]} instead of {original.shape[1]}x"
+                f"{original.shape[0]} (scale {scale:.3f}); at full resolution "
+                f"the stride-1 candidate search is intractable. This sets a "
+                f"floor on detectable forgery size - a duplicated region "
+                f"smaller than roughly {floor_pixels} px across in the "
+                f"original will not be resolved.")
 
     def _score_and_assemble(self, grayscale, ll_subband, blocks,
                             condition, block_check, start_time) -> EngineOutput:
@@ -113,11 +140,10 @@ class WaveletEngine:
         moment_check = self._assess_moments(blocks)
         copy_move = self.copy_move_detector.compute(blocks, ll_subband.shape,
                                                      self.block_size)
-        noise_result = self.noise_extractor.compute(grayscale)
-        compression_result = self.compression_estimator.compute(grayscale)
+        noise_result, compression_result, auxiliary_errors = (
+            self._run_auxiliary_pipelines(grayscale))
 
-        scoring = self._score(copy_move.fraction_flagged, condition, block_check,
-                              moment_check)
+        scoring = self._score(copy_move, condition, block_check, moment_check)
         evidence_map = self.visualizer.render_duplicate_overlay(
             ll_subband, copy_move.duplicate_map)
         flagged_regions = self._build_flagged_regions(copy_move.confirmed_pairs)
@@ -125,7 +151,8 @@ class WaveletEngine:
             blocks, copy_move, noise_result, compression_result,
             scoring["route"], scoring["is_calibrated"])
         note = self._compose_reliability_note(
-            condition, moment_check, compression_result, scoring["score_note"])
+            condition, moment_check, compression_result, scoring["score_note"],
+            auxiliary_errors, copy_move)
 
         elapsed_ms = (time.perf_counter() - start_time) * constants.MILLISECONDS_PER_SECOND
         return EngineOutput(
@@ -136,12 +163,54 @@ class WaveletEngine:
             computation_steps=steps, processing_time_ms=elapsed_ms,
             skill_version=constants.SKILL_VERSION)
 
-    def _score(self, fraction_flagged: float, condition, block_check,
-              moment_check) -> dict:
+    def _run_auxiliary_pipelines(self, grayscale) -> tuple:
+        """Run both non-scoring pipelines, surviving a failure in either.
+
+        ENHANCEMENT 2: Pipelines A and B are explicitly non-scoring, so a
+        failure inside either must not be able to void Pipeline C's result.
+        Measured before this change: 3 of the 6 corpus images raised out of
+        Pipeline A's swt2 call, and analyse()'s top-level except turned that
+        into a whole-engine failure that discarded a completed, correct
+        Pipeline C result - 485s, 496s and 209s of work respectively.
+
+        Args:
+            grayscale: Float64 grayscale image.
+
+        Returns:
+            Tuple of (Pipeline A result or None, Pipeline B result or None,
+            list of error notes for whichever failed).
+        """
+        noise_result, noise_error = self._run_auxiliary(
+            self.noise_extractor.compute, grayscale)
+        compression_result, compression_error = self._run_auxiliary(
+            self.compression_estimator.compute, grayscale)
+        return noise_result, compression_result, [
+            note for note in (noise_error, compression_error) if note]
+
+    @staticmethod
+    def _run_auxiliary(computation, grayscale) -> tuple:
+        """Run a non-scoring pipeline, capturing rather than propagating failure.
+
+        Args:
+            computation: The auxiliary pipeline's compute callable.
+            grayscale: Float64 grayscale image to pass to it.
+
+        Returns:
+            Tuple of (result or None, error note or empty string).
+        """
+        try:
+            return computation(grayscale), ""
+        except (ValueError, RuntimeError, np.linalg.LinAlgError) as error:
+            logger.warning("auxiliary pipeline failed: %s", error)
+            return None, (f"{computation.__self__.__class__.__name__} "
+                          f"(auxiliary, non-scoring) failed and was skipped: "
+                          f"{error}. raw_score is unaffected.")
+
+    def _score(self, copy_move, condition, block_check, moment_check) -> dict:
         """Turn the raw fraction-flagged scalar into the full scoring bundle.
 
         Args:
-            fraction_flagged: Pipeline C's fraction-of-flagged-blocks scalar.
+            copy_move: Pipeline C's CopyMoveResult.
             condition: Pre-computation ConditionReport.
             block_check: Result of assess_block_count_sufficiency.
             moment_check: Combined result of _assess_moments.
@@ -151,12 +220,16 @@ class WaveletEngine:
             route, is_calibrated, and score_note.
         """
         probability, route, is_calibrated, score_note = self.scorer.to_probability(
-            fraction_flagged)
+            copy_move.fraction_flagged)
         confidence = compose_confidence_penalties(
             [condition.confidence_weight, block_check[1], moment_check[1]])
-        is_reliable = condition.is_reliable and moment_check[0]
+        # ENHANCEMENT 5: an overflowed candidate search produced no usable
+        # match set, so the zero it returns is an absence of evidence, not
+        # evidence of absence.
+        is_reliable = (condition.is_reliable and moment_check[0]
+                       and not copy_move.search_overflowed)
         return {
-            "raw_score": float(fraction_flagged),
+            "raw_score": float(copy_move.fraction_flagged),
             "probability": probability if is_reliable else None,
             "confidence": confidence if is_reliable else constants.ZERO_CONFIDENCE,
             "is_reliable": is_reliable, "route": route,
@@ -248,6 +321,8 @@ class WaveletEngine:
 
     def _pipeline_a_key_values(self, noise_result) -> dict:
         """Report values for Pipeline A's computation_steps entry."""
+        if noise_result is None:
+            return {"ran": False, "note": "auxiliary pipeline failed; skipped"}
         return {"noise_sigma": round(noise_result.sigma_estimate,
                                     constants.TRACE_DECIMAL_PLACES),
                "threshold_method": noise_result.threshold_method,
@@ -255,13 +330,16 @@ class WaveletEngine:
 
     def _pipeline_b_key_values(self, compression_result) -> dict:
         """Report values for Pipeline B's computation_steps entry."""
+        if compression_result is None:
+            return {"ran": False, "note": "auxiliary pipeline failed; skipped"}
         return {"lambda_hat": round(compression_result.lambda_hat,
                                    constants.TRACE_DECIMAL_PLACES),
                "converged": compression_result.converged,
                "iterations_run": compression_result.iterations_run}
 
     def _compose_reliability_note(self, condition, moment_check,
-                                  compression_result, score_note) -> str:
+                                  compression_result, score_note,
+                                  auxiliary_errors, scoring_overflow) -> str:
         """Combine every note fragment into one reliability_note string.
 
         Args:
@@ -269,18 +347,30 @@ class WaveletEngine:
             moment_check: Result of assess_moment_degeneracy.
             compression_result: CompressionHistoryResult, for the low-trust caveat.
             score_note: Note from the scorer's chosen route.
+            auxiliary_errors: Notes for any non-scoring pipeline that failed.
+            scoring_overflow: Pipeline C's CopyMoveResult, for its overflow flag.
 
         Returns:
             Combined reliability_note string.
         """
         fragments = [STANDING_LIMITATIONS_NOTE]
+        if getattr(self, "_downscale_note", ""):
+            fragments.append(self._downscale_note)
         if moment_check[2]:
             fragments.append(moment_check[2])
-        fragments.append(
-            f"Pipeline B auxiliary evidence: lambda_hat="
-            f"{compression_result.lambda_hat:.4f} "
-            f"(converged={compression_result.converged}) - not used in "
-            f"raw_score; treat as low-trust per the SKILL's own caveat.")
+        if compression_result is not None:
+            fragments.append(
+                f"Pipeline B auxiliary evidence: lambda_hat="
+                f"{compression_result.lambda_hat:.4f} "
+                f"(converged={compression_result.converged}) - not used in "
+                f"raw_score; treat as low-trust per the SKILL's own caveat.")
+        if getattr(scoring_overflow, "search_overflowed", False):
+            fragments.append(
+                f"Pipeline C's candidate search exceeded "
+                f"{constants.MAXIMUM_CANDIDATE_PAIRS} pairs and was abandoned; "
+                f"raw_score 0.0 here means NO SEARCH RAN, not 'no duplicates "
+                f"found'.")
+        fragments.extend(auxiliary_errors)
         fragments.append(score_note)
         return " ".join(fragments)
 
