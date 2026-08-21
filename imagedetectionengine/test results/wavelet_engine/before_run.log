@@ -1,0 +1,127 @@
+==========================================================================
+PHASE 0 - PRE-RUN IMAGE SUMMARY
+==========================================================================
+Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case
+--------------------------------------------------------------------------------
+campic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real
+campic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real
+mobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real
+mobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real
+fake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI
+fake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI
+fake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI
+gen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI
+genratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI
+
+--- CASE 1: Case 1 Real ---
+  [1] campic.jpeg  1599x1200 QF~74
+wavelet engine failed
+Traceback (most recent call last):
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/engine.py", line 66, in analyse
+    return self._analyse_unguarded(engine_input, start_time)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/engine.py", line 95, in _analyse_unguarded
+    return self._score_and_assemble(prepared.grayscale, ll_subband, blocks,
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                    condition, block_check, start_time)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/engine.py", line 116, in _score_and_assemble
+    noise_result = self.noise_extractor.compute(grayscale)
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/computer.py", line 264, in compute
+    levels = self.decompose(grayscale)
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/computer.py", line 40, in decompose
+    return pywt.swt2(grayscale, constants.PIPELINE_A_WAVELET_FAMILY,
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     level=constants.PIPELINE_A_DECOMPOSITION_LEVELS)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kingsley-judewin/dsp project/.venv/lib/python3.14/site-packages/pywt/_swt.py", line 368, in swt2
+    coefs = swtn(data, wavelet, level, start_level, axes, trim_approx, norm)
+  File "/home/kingsley-judewin/dsp project/.venv/lib/python3.14/site-packages/pywt/_swt.py", line 661, in swtn
+    cA, cD = _swt_axis(x, wavelet, level=1, start_level=i,
+             ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       axis=axis)[0]
+                       ^^^^^^^^^^
+  File "pywt/_extensions/_swt.pyx", line 161, in pywt._extensions._swt.swt_axis
+  File "pywt/_extensions/_swt.pyx", line 174, in pywt._extensions._swt.swt_axis
+ValueError: Length of data must be even along the transform axis.
+      raw=0.000000  prob=None  conf=0.000  reliable=False  verdict=NO VOTE (unreliable)  (ABSTAINED)
+  [2] campic2.jpeg  1599x1200 QF~74
+wavelet engine failed
+Traceback (most recent call last):
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/engine.py", line 66, in analyse
+    return self._analyse_unguarded(engine_input, start_time)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/engine.py", line 95, in _analyse_unguarded
+    return self._score_and_assemble(prepared.grayscale, ll_subband, blocks,
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                    condition, block_check, start_time)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/engine.py", line 116, in _score_and_assemble
+    noise_result = self.noise_extractor.compute(grayscale)
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/computer.py", line 264, in compute
+    levels = self.decompose(grayscale)
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/computer.py", line 40, in decompose
+    return pywt.swt2(grayscale, constants.PIPELINE_A_WAVELET_FAMILY,
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     level=constants.PIPELINE_A_DECOMPOSITION_LEVELS)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kingsley-judewin/dsp project/.venv/lib/python3.14/site-packages/pywt/_swt.py", line 368, in swt2
+    coefs = swtn(data, wavelet, level, start_level, axes, trim_approx, norm)
+  File "/home/kingsley-judewin/dsp project/.venv/lib/python3.14/site-packages/pywt/_swt.py", line 661, in swtn
+    cA, cD = _swt_axis(x, wavelet, level=1, start_level=i,
+             ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       axis=axis)[0]
+                       ^^^^^^^^^^
+  File "pywt/_extensions/_swt.pyx", line 161, in pywt._extensions._swt.swt_axis
+  File "pywt/_extensions/_swt.pyx", line 174, in pywt._extensions._swt.swt_axis
+ValueError: Length of data must be even along the transform axis.
+      raw=0.000000  prob=None  conf=0.000  reliable=False  verdict=NO VOTE (unreliable)  (ABSTAINED)
+
+--- CASE 2: Case 2 Manipulated ---
+  [1] fake .jpeg  728x1600 QF~74
+      raw=0.002343  prob=0.3608  conf=1.000  reliable=True  verdict=UNCERTAIN  (WRONG)
+  [2] fake.jpeg  928x1152 QF~74
+      raw=0.002985  prob=0.3626  conf=1.000  reliable=True  verdict=UNCERTAIN  (WRONG)
+
+--- CASE 3: Case 3 AI-generated ---
+  [1] gen.jpeg  800x1006 QF~74
+wavelet engine failed
+Traceback (most recent call last):
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/engine.py", line 66, in analyse
+    return self._analyse_unguarded(engine_input, start_time)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/engine.py", line 95, in _analyse_unguarded
+    return self._score_and_assemble(prepared.grayscale, ll_subband, blocks,
+           ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                    condition, block_check, start_time)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/engine.py", line 116, in _score_and_assemble
+    noise_result = self.noise_extractor.compute(grayscale)
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/computer.py", line 264, in compute
+    levels = self.decompose(grayscale)
+  File "/home/kingsley-judewin/dsp project/imagedetectionengine/wavelet_engine/computer.py", line 40, in decompose
+    return pywt.swt2(grayscale, constants.PIPELINE_A_WAVELET_FAMILY,
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     level=constants.PIPELINE_A_DECOMPOSITION_LEVELS)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kingsley-judewin/dsp project/.venv/lib/python3.14/site-packages/pywt/_swt.py", line 368, in swt2
+    coefs = swtn(data, wavelet, level, start_level, axes, trim_approx, norm)
+  File "/home/kingsley-judewin/dsp project/.venv/lib/python3.14/site-packages/pywt/_swt.py", line 661, in swtn
+    cA, cD = _swt_axis(x, wavelet, level=1, start_level=i,
+             ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       axis=axis)[0]
+                       ^^^^^^^^^^
+  File "pywt/_extensions/_swt.pyx", line 161, in pywt._extensions._swt.swt_axis
+  File "pywt/_extensions/_swt.pyx", line 181, in pywt._extensions._swt.swt_axis
+ValueError: start_level must be less than 1.
+      raw=0.000000  prob=None  conf=0.000  reliable=False  verdict=NO VOTE (unreliable)  (ABSTAINED)
+  [2] genratedimage.jpeg  768x1376 QF~74
+      raw=0.000000  prob=0.3543  conf=1.000  reliable=True  verdict=UNCERTAIN  (WRONG)
+
+==========================================================================
+real avg prob = None
+fake avg prob = 0.36169264629927134
+ai   avg prob = 0.35434369377420455
+separation    = None
+raw separation= 0.002664403514312839
+written to    : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/before

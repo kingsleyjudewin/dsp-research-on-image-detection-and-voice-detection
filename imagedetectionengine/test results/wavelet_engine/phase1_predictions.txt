@@ -1,0 +1,141 @@
+PHASE 1 - PRE-TEST EXPECTATIONS  (wavelet_engine / Wavelet-Domain Forgery Detection)
+Written BEFORE the engine was run on any corpus image. Phases 4-6 grade the
+run against exactly this text; nothing here is edited afterwards.
+
+================================================================================
+STEP 1.1 - CORE ENGINE CAPABILITY, AS STATED BY THE SKILL
+================================================================================
+
+Exact mathematical property measured
+  Duplicated-region (copy-move) detection in the wavelet domain. The SKILL
+  describes three pipelines; constants.py's SCOPE DECISION restricts raw_score
+  to Pipeline C alone, on the SKILL's own grounds: Pipeline A's output is
+  "not a scalar score on its own ... an intermediate signal consumed by the
+  noise analysis module", and Pipeline B's is "low-trust by default" with no
+  formula anywhere for combining it with C. Both still run as auxiliary,
+  non-scoring evidence.
+
+  Pipeline C (Kashyap & Joshi 2013): single-level Haar DWT, keep the LL
+  subband, tile it into overlapping RxR blocks at stride 1, describe each
+  block by blur-invariant moments built recursively from central moments up
+  to 7th order (Eq. 12), contrast-normalise them (Eq. 17), PCA-reduce, and
+  declare two blocks candidate duplicates when
+      S(Bi,Bj) = 1/(1 + rho(Bi,Bj)) >= T        [Eq. 27-28]
+  with rho the Euclidean distance in feature space. Candidates survive only
+  if all 16 neighbour-offset pairs also pass (Eq. 29) and the two blocks are
+  more than D apart (Eq. 30).
+
+Signal present in FAKE, absent/weaker in REAL
+  Two spatially separated regions with near-identical blur-invariant feature
+  vectors - the signature of a region copied and pasted within the same
+  image. The blur invariance is the point: the pipeline is meant to survive
+  the noise, blur and contrast changes introduced by the paste itself.
+
+Signal present in REAL, different in FAKE
+  An authentic photograph should contain no two distant regions whose 33
+  moment invariants agree to within the similarity threshold, so the
+  confirmed-pair set should be empty and the duplicate map all zero.
+
+Exact computation producing raw_score
+  raw_score = (number of distinct blocks appearing in a confirmed pair)
+              / (total blocks tiled)
+  The SKILL is explicit that this scalar is NOT from the source paper:
+  "not explicitly defined in the source paper as a summary scalar -
+  engineering recommendation: sum of Q, or largest connected-component size".
+  probability = 1/(1+exp(-12*(raw_score - 0.05)))   [PROVISIONAL, uncalibrated]
+
+raw_score range meaning
+  0.0 = no duplicated regions found (REAL). Rising toward 1.0 = an
+  increasing share of the frame participates in a duplicated pair (FAKE).
+  Probability crosses 0.5 at raw_score = 0.05.
+
+================================================================================
+STEP 1.2 - PER-CASE PREDICTIONS
+================================================================================
+
+These follow from two measurements taken on campic.jpeg BEFORE any engine run,
+using the engine's own preprocessor and feature builder in isolation:
+
+  (i)  RUNTIME. The LL subband of a 1200x1599 image is 600x800, which at
+       R=16 and stride 1 gives 459,225 blocks. build_feature_vector was timed
+       at 997 microseconds per block, so feature extraction ALONE is about
+       7.6 minutes per image, roughly 46 minutes for six, before PCA, the
+       KD-tree query, or the neighbour-consistency loop.
+
+  (ii) FEATURE SCALE vs THRESHOLD. Over 200 adjacent blocks the 33-dimensional
+       feature vectors span |value| from 2.19e-06 to 1.85e+13, and their
+       pairwise Euclidean distances run min 1.90e+09, median 2.77e+12, max
+       1.78e+13. SIMILARITY_THRESHOLD = 0.95 corresponds via Eq. 27 to a
+       maximum distance of exactly 1/0.95 - 1 = 0.052632. Zero of those 19,900
+       pairs fall inside that radius.
+
+CASE 1 - REAL IMAGES  (campic.jpeg, campic2.jpeg)
+  Expected probability range   : exactly 0.3543 (= sigmoid(12*(0 - 0.05))).
+                                 Not in the 0.0-0.3 band a working detector
+                                 should give, but at least below 0.5, so the
+                                 verdict label will read REAL by luck.
+  Expected raw_score range     : exactly 0.0000
+  Expected is_reliable         : True. The only gate that can flip it is
+                                 texture degeneracy (>=50% of blocks with LL
+                                 variance below 1.0), which no textured
+                                 photograph will trip.
+  Expected evidence_map        : uniformly empty - the duplicate map should be
+                                 all zeros, so the overlay shows the LL
+                                 subband with nothing marked.
+  Signal that should be ABSENT : distant near-identical blocks. It will be
+                                 absent, but for the wrong reason - the
+                                 threshold is unreachable, not the image clean.
+  Most likely failure mode     : a detector that returns 0.0000 on every input
+                                 is indistinguishable from a correct detector
+                                 on authentic images. Case 1 cannot tell those
+                                 two apart; only Case 2 and ground truth can.
+
+CASE 2 - FAKE IMAGES  (fake .jpeg, fake.jpeg)
+  Expected probability range   : exactly 0.3543, identical to Case 1.
+  Expected raw_score range     : exactly 0.0000
+  Expected is_reliable         : True, same reasoning.
+  Expected evidence_map        : empty. I predict NO hotspots even if these
+                                 images do contain a copy-move region.
+  Signal that should be PRESENT: duplicated blocks. I predict the engine
+                                 misses them entirely, because the match
+                                 radius is roughly fourteen orders of
+                                 magnitude below the typical inter-block
+                                 distance in its own feature space.
+  Most likely failure mode     : total insensitivity. Predicted separation
+                                 exactly 0.0000.
+
+CASE 3 - AI-GENERATED IMAGES  (gen.jpeg, genratedimage.jpeg)
+  Expected probability range   : exactly 0.3543, identical to Cases 1 and 2.
+  Expected is_reliable         : True.
+  Is AI detection in SKILL scope: NO. Not one of the three pipelines addresses
+                                 synthetic provenance. Pipeline C detects
+                                 within-image duplication, Pipeline A feeds
+                                 the noise engine, Pipeline B detects
+                                 wavelet-compression history. The SKILL names
+                                 its detectable manipulation as "un-scaled,
+                                 un-rotated copy-move/cloning forgery".
+  What the engine will likely do: return the same constant as everything else.
+  Most likely failure mode     : the engine is not designed for this case.
+                                 A diffusion render contains no copy-move
+                                 event, so even a perfectly working Pipeline C
+                                 should return 0.0 on it - meaning a LOW score
+                                 here would be correct behaviour and still
+                                 useless as an AI verdict.
+
+================================================================================
+OVERALL PRE-RUN PREDICTION
+================================================================================
+  raw_score on all six             : exactly 0.0000
+  probability on all six           : exactly 0.3543
+  Separation (fake avg - real avg) : exactly 0.0000
+  Reliable results                 : 6/6
+  Predicted correct verdicts       : 2/6 - the two real images, by accident,
+                                     since a constant 0.3543 reads as REAL.
+  Runtime                          : 8-12 minutes per image.
+
+  If the above is what appears, the finding is NOT "the engine found no
+  forgeries". It is that SIMILARITY_THRESHOLD, an explicitly unsourced
+  constant ("a user/image-characteristic-dependent similarity threshold",
+  no numeric value given in the SKILL), is being applied as an ABSOLUTE
+  distance cutoff in a feature space whose scale is arbitrary and, as
+  measured, enormous. Eq. 27 is scale-dependent; the features are not scaled.

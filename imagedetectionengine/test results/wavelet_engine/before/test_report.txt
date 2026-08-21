@@ -1,0 +1,349 @@
+==========================================================================
+WAVELET-DOMAIN ENGINE DIAGNOSTIC REPORT  [before]
+Generated: 2026-08-21 00:14:20
+==========================================================================
+
+Image                  | Format | Resolution   | Est.QF | EXIF |  Size KB | Case
+--------------------------------------------------------------------------------
+campic.jpeg            | JPEG   | 1599x1200    |     74 | No   |     79.7 | Real
+campic2.jpeg           | JPEG   | 1599x1200    |     74 | No   |     80.7 | Real
+mobilepic.jpeg         | JPEG   | 1200x1600    |     74 | No   |    303.8 | Real
+mobilepic2.jpeg        | JPEG   | 1200x1600    |     74 | No   |    259.1 | Real
+fake .jpeg             | JPEG   | 728x1600    |     74 | No   |    157.8 | Fake/AI
+fake.jpeg              | JPEG   | 928x1152    |     74 | No   |     67.4 | Fake/AI
+fake2.jpeg             | JPEG   | 464x820     |    100 | No   |    198.1 | Fake/AI
+gen.jpeg               | JPEG   | 800x1006    |     74 | No   |     44.6 | Fake/AI
+genratedimage.jpeg     | JPEG   | 768x1376    |     74 | No   |     71.2 | Fake/AI
+
+NOTICES:
+  - The AI-generated images folder named in the specification does not exist (/home/kingsley-judewin/dsp project/imagedetectionengine/test images/ai generated images). Case 3 falls back to the two files inside the fake-images folder whose names denote AI generation: gen.jpeg, genratedimage.jpeg. Their AI provenance is inferred from the filenames, not verified.
+  - Engine configuration: Pipeline C only is scored: single-level 'haar' DWT, LL subband tiled into 16x16 blocks at stride 1; blur invariants for all (p,q) with 2<=p+q<=7, contrast-normalised (Eq. 17), PCA to 95% explained variance; candidate pairs at S=1/(1+rho) >= 0.95 (Euclidean radius 0.052632), confirmed by 16 neighbour offsets within 4 px and a minimum separation of 2.0 block widths; raw_score = fraction of blocks in a confirmed pair; probability via a PROVISIONAL logistic (midpoint 0.05, slope 12.0). Pipelines A and B run unscored.
+  - The SKILL scopes this engine's score to Pipeline C alone: Pipeline A's output is 'not a scalar score on its own', and Pipeline B is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is 'low-trust by default'. Both run here but never affect raw_score.
+  - Pipeline C's summary scalar is the SKILL's own engineering recommendation, not a corpus value: 'not explicitly defined in the source paper as a summary scalar'. Its calibration is likewise provisional.
+
+
+##########################################################################
+CASE 1: Case 1 Real (ground truth REAL)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images
+##########################################################################
+
+==========================================================================
+IMAGE: campic.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 79.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.000000
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 485169.9 ms
+  Reliability  : Engine failed during computation: Length of data must be even along the transform axis.
+
+  COMPUTATION TRACE:
+
+  REASONING:
+    Engine reported raw_score=0.000000 at confidence 0.0000, is_reliable=False, flagged_regions=0 confirmed pair(s). Pipeline C reported {}; Pipeline A (unscored) {}; Pipeline B (unscored, low-trust) {}. The LL subband is [600, 800] and tiled into 459225 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.052632 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 1523550000.0, median 7900090000000.0, max 1.09864e+16 - a gap of 14.18 orders of magnitude - and 0 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.314209, 'order_3_median_abs': 0.00735026, 'order_4_median_abs': 0.197124, 'order_5_median_abs': 0.00687114, 'order_6_median_abs': 0.14002, 'order_7_median_abs': 0.00612534}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.314209, 'order_3_median_abs': 0.00735026, 'order_4_median_abs': 0.197124, 'order_5_median_abs': 0.00687114, 'order_6_median_abs': 0.14002, 'order_7_median_abs': 0.00612534} - so the highest orders dominate every Euclidean distance and the population spans 9.90331e-08 to 1.06448e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.052632 against typical distances of 7900090000000.0, which is why raw_score came out 0.000000 with None confirmed pairs.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : none
+
+==========================================================================
+IMAGE: campic2.jpeg   [Case 1 Real]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/real images/campic2.jpeg
+==========================================================================
+  Resolution   : 1599x1200
+  Format       : JPEG
+  File size    : 80.7 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.000000
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 496064.2 ms
+  Reliability  : Engine failed during computation: Length of data must be even along the transform axis.
+
+  COMPUTATION TRACE:
+
+  REASONING:
+    Engine reported raw_score=0.000000 at confidence 0.0000, is_reliable=False, flagged_regions=0 confirmed pair(s). Pipeline C reported {}; Pipeline A (unscored) {}; Pipeline B (unscored, low-trust) {}. The LL subband is [600, 800] and tiled into 459225 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.052632 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 3933520000.0, median 5249250000000.0, max 1.07437e+16 - a gap of 14.0 orders of magnitude - and 0 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.31582, 'order_3_median_abs': 0.00756654, 'order_4_median_abs': 0.196335, 'order_5_median_abs': 0.00703664, 'order_6_median_abs': 0.139485, 'order_7_median_abs': 0.00617914}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.31582, 'order_3_median_abs': 0.00756654, 'order_4_median_abs': 0.196335, 'order_5_median_abs': 0.00703664, 'order_6_median_abs': 0.139485, 'order_7_median_abs': 0.00617914} - so the highest orders dominate every Euclidean distance and the population spans 3.46081e-06 to 1.0397e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.052632 against typical distances of 5249250000000.0, which is why raw_score came out 0.000000 with None confirmed pairs.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : REAL
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : none
+
+  CASE 1 SUMMARY
+    average probability : n/a
+    score spread        : n/a
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 2: Case 2 Manipulated (ground truth FAKE)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: fake .jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake .jpeg
+==========================================================================
+  Resolution   : 728x1600
+  Format       : JPEG
+  File size    : 157.8 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.002343
+  Probability  : 0.360803
+  Confidence   : 1.0000
+  Is reliable  : True
+  Time         : 324332.2 ms
+  Reliability  : Standing SKILL caveats: undetectable for scaled or rotated copy-move regions; the noise-residual path (Pipeline A) is defeated by aggressive post-tampering smoothing/denoising; the compression-history path (Pipeline B) is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is therefore never scored, only reported as auxiliary evidence. Pipeline B auxiliary evidence: lambda_hat=-0.0000 (converged=True) - not used in raw_score; treat as low-trust per the SKILL's own caveat. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The fraction-of-flagged-blocks scalar itself is an engineering recommendation, not a value the SKILL file defines or calibrates - treat this probability as a rough ordering signal, not a validated likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: LL subband + block tiling
+      Single-level Haar DWT, kept the LL subband, tiled into overlapping blocks.
+      in=  out=
+        total_blocks = 273965
+        block_size = 16
+    Step 2: Pipeline C: copy-move detection (SCORE-DRIVING)
+      Blur-invariant moment features, PCA reduction, similarity search, and 16-neighbour consistency confirmation.
+      in=  out=
+        flagged_block_count = 642
+        total_blocks = 273965
+        fraction_flagged = 0.0023
+        confirmed_pairs = 24151
+    Step 3: Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)
+      Feeds the separate noise-analysis engine per the SKILL; does not affect this engine's raw_score.
+      in=  out=
+        noise_sigma = 0.0645
+        threshold_method = visushrink
+        threshold_mode = soft
+    Step 4: Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)
+      SKILL: this pipeline is documented as 100%-defeatable by a knowledgeable adversary; reported as evidence only.
+      in=  out=
+        lambda_hat = -0.0
+        converged = True
+        iterations_run = 29
+    Step 5: Scoring
+      Fraction-flagged scalar converted to probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=0.002343 at confidence 1.0000, is_reliable=True, flagged_regions=24151 confirmed pair(s). Pipeline C reported {'flagged_block_count': 642, 'total_blocks': 273965, 'fraction_flagged': 0.0023, 'confirmed_pairs': 24151}; Pipeline A (unscored) {'noise_sigma': 0.0645, 'threshold_method': 'visushrink', 'threshold_mode': 'soft'}; Pipeline B (unscored, low-trust) {'lambda_hat': -0.0, 'converged': True, 'iterations_run': 29}. The LL subband is [800, 364] and tiled into 273965 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.052632 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 0.0, median 5001490000000000.0, max 2.32343e+16 - a gap of 16.98 orders of magnitude - and 1 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.328289, 'order_3_median_abs': 0.00111779, 'order_4_median_abs': 0.197394, 'order_5_median_abs': 0.000936816, 'order_6_median_abs': 0.138986, 'order_7_median_abs': 0.000906988}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.328289, 'order_3_median_abs': 0.00111779, 'order_4_median_abs': 0.197394, 'order_5_median_abs': 0.000936816, 'order_6_median_abs': 0.138986, 'order_7_median_abs': 0.000906988} - so the highest orders dominate every Euclidean distance and the population spans 0.0 to 2.33787e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.052632 against typical distances of 5001490000000000.0, which is why raw_score came out 0.002343 with 24151 confirmed pairs.
+
+  Engine says   : UNCERTAIN
+  Ground truth  : FAKE
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/before/wavelet_case2_img1_fake__heatmap.png
+
+==========================================================================
+IMAGE: fake.jpeg   [Case 2 Manipulated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/fake.jpeg
+==========================================================================
+  Resolution   : 928x1152
+  Format       : JPEG
+  File size    : 67.4 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.002985
+  Probability  : 0.362582
+  Confidence   : 1.0000
+  Is reliable  : True
+  Time         : 245073.4 ms
+  Reliability  : Standing SKILL caveats: undetectable for scaled or rotated copy-move regions; the noise-residual path (Pipeline A) is defeated by aggressive post-tampering smoothing/denoising; the compression-history path (Pipeline B) is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is therefore never scored, only reported as auxiliary evidence. Pipeline B auxiliary evidence: lambda_hat=-0.9953 (converged=True) - not used in raw_score; treat as low-trust per the SKILL's own caveat. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The fraction-of-flagged-blocks scalar itself is an engineering recommendation, not a value the SKILL file defines or calibrates - treat this probability as a rough ordering signal, not a validated likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: LL subband + block tiling
+      Single-level Haar DWT, kept the LL subband, tiled into overlapping blocks.
+      in=  out=
+        total_blocks = 251889
+        block_size = 16
+    Step 2: Pipeline C: copy-move detection (SCORE-DRIVING)
+      Blur-invariant moment features, PCA reduction, similarity search, and 16-neighbour consistency confirmation.
+      in=  out=
+        flagged_block_count = 752
+        total_blocks = 251889
+        fraction_flagged = 0.003
+        confirmed_pairs = 63273
+    Step 3: Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)
+      Feeds the separate noise-analysis engine per the SKILL; does not affect this engine's raw_score.
+      in=  out=
+        noise_sigma = 0.1178
+        threshold_method = visushrink
+        threshold_mode = soft
+    Step 4: Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)
+      SKILL: this pipeline is documented as 100%-defeatable by a knowledgeable adversary; reported as evidence only.
+      in=  out=
+        lambda_hat = -0.9953
+        converged = True
+        iterations_run = 2
+    Step 5: Scoring
+      Fraction-flagged scalar converted to probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=0.002985 at confidence 1.0000, is_reliable=True, flagged_regions=63273 confirmed pair(s). Pipeline C reported {'flagged_block_count': 752, 'total_blocks': 251889, 'fraction_flagged': 0.003, 'confirmed_pairs': 63273}; Pipeline A (unscored) {'noise_sigma': 0.1178, 'threshold_method': 'visushrink', 'threshold_mode': 'soft'}; Pipeline B (unscored, low-trust) {'lambda_hat': -0.9953, 'converged': True, 'iterations_run': 2}. The LL subband is [576, 464] and tiled into 251889 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.052632 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 0.0, median 4028850000000000.0, max 1.86327e+16 - a gap of 16.88 orders of magnitude - and 10 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.320143, 'order_3_median_abs': 0.00382392, 'order_4_median_abs': 0.197358, 'order_5_median_abs': 0.00432232, 'order_6_median_abs': 0.139038, 'order_7_median_abs': 0.00421176}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.320143, 'order_3_median_abs': 0.00382392, 'order_4_median_abs': 0.197358, 'order_5_median_abs': 0.00432232, 'order_6_median_abs': 0.139038, 'order_7_median_abs': 0.00421176} - so the highest orders dominate every Euclidean distance and the population spans 0.0 to 1.80229e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.052632 against typical distances of 4028850000000000.0, which is why raw_score came out 0.002985 with 63273 confirmed pairs.
+
+  Engine says   : UNCERTAIN
+  Ground truth  : FAKE
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/before/wavelet_case2_img2_fake_heatmap.png
+
+  CASE 2 SUMMARY
+    average probability : 0.3617
+    score spread        : 0.0018
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+##########################################################################
+CASE 3: Case 3 AI-generated (ground truth AI-GENERATED)
+folder: /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images
+##########################################################################
+
+==========================================================================
+IMAGE: gen.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/gen.jpeg
+==========================================================================
+  Resolution   : 800x1006
+  Format       : JPEG
+  File size    : 44.6 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.000000
+  Probability  : None
+  Confidence   : 0.0000
+  Is reliable  : False
+  Time         : 209051.7 ms
+  Reliability  : Engine failed during computation: start_level must be less than 1.
+
+  COMPUTATION TRACE:
+
+  REASONING:
+    Engine reported raw_score=0.000000 at confidence 0.0000, is_reliable=False, flagged_regions=0 confirmed pair(s). Pipeline C reported {}; Pipeline A (unscored) {}; Pipeline B (unscored, low-trust) {}. The LL subband is [503, 400] and tiled into 187880 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.052632 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 793675000000.0, median 4271540000000000.0, max 1.29885e+16 - a gap of 16.91 orders of magnitude - and 0 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.330878, 'order_3_median_abs': 0.00079082, 'order_4_median_abs': 0.197373, 'order_5_median_abs': 0.000819469, 'order_6_median_abs': 0.139053, 'order_7_median_abs': 0.000764348}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.330878, 'order_3_median_abs': 0.00079082, 'order_4_median_abs': 0.197373, 'order_5_median_abs': 0.000819469, 'order_6_median_abs': 0.139053, 'order_7_median_abs': 0.000764348} - so the highest orders dominate every Euclidean distance and the population spans 5.16048e-09 to 1.26233e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.052632 against typical distances of 4271540000000000.0, which is why raw_score came out 0.000000 with None confirmed pairs.
+
+  Engine says   : NO VOTE (unreliable)
+  Ground truth  : AI-GENERATED
+  Correct       : False
+  Surprise level: ABSTAINED
+  Evidence map  : none
+
+==========================================================================
+IMAGE: genratedimage.jpeg   [Case 3 AI-generated]
+PATH:  /home/kingsley-judewin/dsp project/imagedetectionengine/test images/fake images/genratedimage.jpeg
+==========================================================================
+  Resolution   : 768x1376
+  Format       : JPEG
+  File size    : 71.2 KB
+  Est. quality : 74  (matched the embedded luminance quantization table against Pillow's encoder tables for QF 1-100; best match QF=74 with mean absolute residual 11.047)
+  Has EXIF     : False
+  Is resized   : False  (no EXIF pixel dimensions; resize state unknown, reported False)
+
+  Raw score    : 0.000000
+  Probability  : 0.354344
+  Confidence   : 1.0000
+  Is reliable  : True
+  Time         : 271074.8 ms
+  Reliability  : Standing SKILL caveats: undetectable for scaled or rotated copy-move regions; the noise-residual path (Pipeline A) is defeated by aggressive post-tampering smoothing/denoising; the compression-history path (Pipeline B) is documented as 100%-defeatable by a knowledgeable adversary (Stamm & Liu 2010) and is therefore never scored, only reported as auxiliary evidence. Pipeline B auxiliary evidence: lambda_hat=-2.4411 (converged=False) - not used in raw_score; treat as low-trust per the SKILL's own caveat. PROVISIONAL CALIBRATION: no known-authentic reference scores were supplied. The fraction-of-flagged-blocks scalar itself is an engineering recommendation, not a value the SKILL file defines or calibrates - treat this probability as a rough ordering signal, not a validated likelihood.
+
+  COMPUTATION TRACE:
+    Step 1: LL subband + block tiling
+      Single-level Haar DWT, kept the LL subband, tiled into overlapping blocks.
+      in=  out=
+        total_blocks = 248337
+        block_size = 16
+    Step 2: Pipeline C: copy-move detection (SCORE-DRIVING)
+      Blur-invariant moment features, PCA reduction, similarity search, and 16-neighbour consistency confirmation.
+      in=  out=
+        flagged_block_count = 0
+        total_blocks = 248337
+        fraction_flagged = 0.0
+        confirmed_pairs = 0
+    Step 3: Pipeline A: noise-residual extraction (AUXILIARY, NOT SCORED)
+      Feeds the separate noise-analysis engine per the SKILL; does not affect this engine's raw_score.
+      in=  out=
+        noise_sigma = 0.03
+        threshold_method = visushrink
+        threshold_mode = soft
+    Step 4: Pipeline B: compression-history fit (AUXILIARY, LOW-TRUST, NOT SCORED)
+      SKILL: this pipeline is documented as 100%-defeatable by a knowledgeable adversary; reported as evidence only.
+      in=  out=
+        lambda_hat = -2.4411
+        converged = False
+        iterations_run = 50
+    Step 5: Scoring
+      Fraction-flagged scalar converted to probability via the provisional_sigmoid route.
+      in=  out=
+        is_calibrated = False
+
+  REASONING:
+    Engine reported raw_score=0.000000 at confidence 1.0000, is_reliable=True, flagged_regions=0 confirmed pair(s). Pipeline C reported {'flagged_block_count': 0, 'total_blocks': 248337, 'fraction_flagged': 0.0, 'confirmed_pairs': 0}; Pipeline A (unscored) {'noise_sigma': 0.03, 'threshold_method': 'visushrink', 'threshold_mode': 'soft'}; Pipeline B (unscored, low-trust) {'lambda_hat': -2.4411, 'converged': False, 'iterations_run': 50}. The LL subband is [688, 384] and tiled into 248337 overlapping blocks. Eq. 27's threshold of 0.95 corresponds to a maximum Euclidean distance of 0.052632 in the 33-dimensional invariant space, but the measured pairwise distances over 400 sampled blocks run min 996718000000.0, median 3815470000000000.0, max 1.87464e+16 - a gap of 16.86 orders of magnitude - and 0 of 79800 sampled pairs fall inside it. Feature magnitude by moment order: {'order_2_median_abs': 0.331559, 'order_3_median_abs': 0.000712868, 'order_4_median_abs': 0.197326, 'order_5_median_abs': 0.000610027, 'order_6_median_abs': 0.138935, 'order_7_median_abs': 0.000587549}.
+
+  MATHEMATICAL EXPLANATION:
+    Pipeline C's premise, from Kashyap & Joshi via the SKILL, is that a copied region keeps its blur-invariant moments through the paste, so two distant blocks with matching invariants are a duplication. The engine builds those invariants by the recursion of Eq. 12 and contrast-normalises them by Eq. 17's (R/2)^r * mu_00. For this image that normalisation does not bring the orders onto a common scale - the median |invariant| per moment order is {'order_2_median_abs': 0.331559, 'order_3_median_abs': 0.000712868, 'order_4_median_abs': 0.197326, 'order_5_median_abs': 0.000610027, 'order_6_median_abs': 0.138935, 'order_7_median_abs': 0.000587549} - so the highest orders dominate every Euclidean distance and the population spans 2.26114e-08 to 1.81541e+16. Eq. 27's similarity S = 1/(1+rho) is a function of an ABSOLUTE distance, so applying the unsourced threshold 0.95 to that unnormalised space compares a cutoff of 0.052632 against typical distances of 3815470000000000.0, which is why raw_score came out 0.000000 with 0 confirmed pairs.
+
+  Engine says   : UNCERTAIN
+  Ground truth  : AI-GENERATED
+  Correct       : False
+  Surprise level: WRONG
+  Evidence map  : /home/kingsley-judewin/dsp project/imagedetectionengine/test results/wavelet_engine/before/wavelet_case3_img2_genratedimage_heatmap.png
+
+  CASE 3 SUMMARY
+    average probability : 0.3543
+    score spread        : 0.0000
+    correct verdicts    : 0 / 2
+    case verdict        : 
+    
+
+
+==========================================================================
+OVERALL
+==========================================================================
+  real average probability     : None
+  manipulated average          : 0.36169264629927134
+  ai-generated average         : 0.35434369377420455
+  separation (fake - real)     : None
+  raw-score separation         : 0.002664403514312839
+  reliable results             : 3 / 6
+  average processing time (ms) : 338461.03951033327
